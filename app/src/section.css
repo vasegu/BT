@@ -215,118 +215,6 @@
   left: -3.5px;
   top: 5px;
 }
-.scope-board {
-  display: grid;
-  grid-template-columns: minmax(260px, 0.8fr) minmax(0, 1.5fr);
-  gap: 10%;
-  padding: 34px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  color: var(--ink);
-  position: relative;
-}
-.scope-origin {
-  align-self: center;
-}
-.scope-origin .eyebrow {
-  color: var(--muted);
-}
-.scope-origin h3 {
-  font-size: var(--text-page);
-  font-weight: 600;
-  margin: 12px 0;
-}
-.scope-origin p {
-  font-size: var(--text-body);
-  line-height: 1.7;
-  color: var(--muted);
-  max-width: 280px;
-}
-.scope-origin code {
-  font-size: var(--text-small);
-  color: var(--muted);
-  display: block;
-  margin-top: 23px;
-}
-.scope-services {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.scope-services article {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  border: 1px solid var(--line);
-  background: var(--canvas);
-  padding: 17px 20px;
-  border-radius: 5px;
-  position: relative;
-}
-.scope-services .current-household {
-  border-color: #bca4db;
-  background: var(--soft);
-}
-.scope-services .eyebrow {
-  color: var(--muted);
-  font-size: var(--text-small);
-}
-.scope-services h3 {
-  font-size: var(--text-section);
-  font-weight: 600;
-  margin-top: 6px;
-}
-.scope-services .membership {
-  font: var(--text-meta) var(--mono);
-  color: var(--muted);
-}
-.scope-services .affected .membership {
-  color: #875000;
-}
-.scope-connector {
-  position: absolute;
-  width: 55px;
-  height: 1px;
-  background: #bca4db;
-  left: -56px;
-  top: 50%;
-}
-.full-slots > div {
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  border-bottom: 1px solid var(--line);
-  padding: 23px 0;
-}
-.full-slots time {
-  font-size: var(--text-page);
-  color: var(--brand);
-  letter-spacing: -0.05em;
-}
-.full-slots strong {
-  font-size: var(--text-body);
-  font-weight: 600;
-  display: block;
-}
-.full-slots small {
-  font-size: var(--text-small);
-  color: var(--muted);
-  display: block;
-  margin-top: 5px;
-}
-.full-slots i {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  border: 1px solid #aa97be;
-  margin-left: auto;
-}
-.full-slots i.allocated {
-  background: var(--brand);
-  border-color: var(--brand);
-}
 .section-footnote {
   font-size: var(--text-small);
   color: var(--muted);
@@ -620,23 +508,6 @@
   .section-columns {
     grid-template-columns: 1fr;
   }
-  .scope-board {
-    grid-template-columns: 1fr;
-    padding: 24px;
-    gap: 24px;
-  }
-  .scope-origin h3 {
-    font-size: var(--text-page);
-  }
-  .scope-origin p {
-    max-width: none;
-  }
-  .scope-origin code {
-    margin-top: 12px;
-  }
-  .scope-connector {
-    display: none;
-  }
   .outcome-cards {
     gap: 10px;
   }
@@ -747,22 +618,6 @@
     font-size: var(--text-body);
   }
   .section-field > span {
-    font-size: var(--text-meta);
-  }
-  .scope-board {
-    padding: 21px;
-  }
-  .scope-services article {
-    padding: 15px;
-    gap: 15px;
-  }
-  .scope-services h3 {
-    font-size: var(--text-section);
-  }
-  .scope-services .eyebrow {
-    font-size: var(--text-small);
-  }
-  .scope-services .membership {
     font-size: var(--text-meta);
   }
   .outcome-cards {

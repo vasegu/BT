@@ -49,6 +49,8 @@ Each attempt persists a frozen input hash, prompt version, typed questions, retu
 
 The full-page workspace links proposal selection, source activity, memory changes, checks, rules baseline, historical runs, Jev distributions and execution receipts. The persisted JSON includes the exact scoped context sent to the model. Model selection can hold a rule-eligible plan; it cannot create new facts or override permissions. In-app action/receipt persistence remains transactional and delivery is simulated. Embedding retrieval and backtested forecasts do not yet drive decisions.
 
+Operational memory now persists explicit expectation contracts and revisioned outcome checks. The expanded view links each plan to its verification deadline, qualifying source evidence and memory for Jev’s next assessment. Older plans are visibly reconstructed; new plans capture contracts when committed. The bandit learning loop is conceptual only. See [operational-memory design and limits](docs/design/2026-09-25-operational-memory.md).
+
 Implementation and source comparison: [Jev integration and the real Sainsbury's CA2 pattern](docs/design/2026-09-25-jev-arbiter.md).
 
 ### Eve: live chat and voice

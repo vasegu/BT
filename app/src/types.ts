@@ -152,8 +152,47 @@ export type Snapshot = {
   decisions: Decision[];
   actions: DemoAction[];
   operations: {
+    outcomes: OutcomeEpisode[];
     incident: { id: string; affected: PersonId[]; status: string } | null;
     slots: { time: string; owner: string | null; person: PersonId | null }[];
   };
   nextStep: Step | null;
 };
+
+export type OutcomeGoal =
+  | "service"
+  | "callback"
+  | "confirmation"
+  | "activation"
+  | "watch";
+export type OutcomeContract = {
+  id: string;
+  person: PersonId;
+  goal: OutcomeGoal;
+  scopeId: string;
+  decisionId: string;
+  actionId: string | null;
+  revision: number;
+  createdAt: string;
+  dueAt: string;
+  title: string;
+  baseline: string;
+  target: string;
+  expectedEvent: string;
+  deadlineBasis: string;
+  attribution: string;
+  evidenceIds: string[];
+  provenance: "committed" | "reconstructed";
+  version: "bt-outcomes-v1";
+};
+export type OutcomeCheck = {
+  revision: number;
+  checkedAt: string;
+  status: "waiting" | "met" | "unverified" | "contradicted";
+  observedAt: string | null;
+  onTime: boolean | null;
+  evidenceIds: string[];
+  finding: string;
+  nextDecision: string;
+};
+export type OutcomeEpisode = OutcomeContract & { check: OutcomeCheck };

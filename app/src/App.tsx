@@ -458,14 +458,31 @@ export function App() {
           ))}
         </div>
       </Section>
-      <div className="domain-tags">
-        <span>network</span>
-        <span>activation</span>
-        <span>case continuity</span>
-      </div>
-      <p className="source-foot">
-        Local relational store · source events retained
-      </p>
+      <Section title="Did the plan work?" note="verification ledger">
+        <div className="outcome-row">
+          <span>Evidence-backed targets</span>
+          <b>
+            {
+              snapshot.operations.outcomes.filter(
+                (o) => o.person === person && o.check.status === "met",
+              ).length
+            }{" "}
+            /{" "}
+            {
+              snapshot.operations.outcomes.filter((o) => o.person === person)
+                .length
+            }{" "}
+            verified
+          </b>
+        </div>
+        <p className="source-foot">
+          Delivery, restored service and customer confirmation are separate
+          observations.
+        </p>
+      </Section>
+      <button className="text-link" onClick={() => openPanel("operations")}>
+        Trace expectation → outcome <span>↗</span>
+      </button>
     </Panel>
   );
   const phone = h && snapshot && (
@@ -842,7 +859,7 @@ export function App() {
         id="workspace"
         className={
           focused
-            ? `focused-workspace${panel === "customer" ? " customer-focus" : panel === "phone" ? " phone-focus" : panel === "arbiter" ? " arbiter-focus" : ""}`
+            ? `focused-workspace${panel === "customer" ? " customer-focus" : panel === "phone" ? " phone-focus" : panel === "arbiter" ? " arbiter-focus" : panel === "operations" ? " operations-focus" : ""}`
             : "account-workspace"
         }
       >
@@ -976,6 +993,11 @@ export function App() {
           </section>
         ) : panel ? (
           <SectionView
+            onCutoff={(at) =>
+              change({
+                at: at === snapshot.session.revision ? null : String(at),
+              })
+            }
             panel={panel}
             h={h}
             snapshot={snapshot}

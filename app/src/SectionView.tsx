@@ -1,3 +1,4 @@
+import { OperationalMemory } from "./OperationalMemory";
 import { ArbiterWorkbench } from "./ArbiterWorkbench";
 import { CustomerMemory } from "./CustomerMemory";
 import type { ReactNode } from "react";
@@ -128,8 +129,10 @@ export function SectionView({
   actions,
   phone,
   inspect,
+  onCutoff,
 }: {
   panel: string;
+  onCutoff: (at: number) => void;
   h: Household;
   snapshot: Snapshot;
   decision: Decision | undefined;
@@ -137,8 +140,7 @@ export function SectionView({
   phone: ReactNode;
   inspect: (e: SourceEvent) => void;
 }) {
-  const personal = h.evidence.filter((e) => e.subject === h.id),
-    ops = snapshot.events.filter((e) => e.subject === "shared");
+  const personal = h.evidence.filter((e) => e.subject === h.id);
   if (panel === "customer")
     return (
       <CustomerMemory
@@ -151,104 +153,13 @@ export function SectionView({
     );
   if (panel === "operations")
     return (
-      <div className="full-section operations-section">
-        <div className="section-banner">
-          <div>
-            <span className="eyebrow">Shared operating context</span>
-            <h2>Scope is explicit. Capacity is finite.</h2>
-            <p>
-              The shared incident register and callback allocation, separate
-              from private customer conversations.
-            </p>
-          </div>
-          <div className="section-metrics">
-            <Field label="Incident">
-              {snapshot.operations.incident?.id || "Unconfirmed"}
-            </Field>
-            <Field label="Services in scope">
-              {snapshot.operations.incident
-                ? `${snapshot.operations.incident.affected.length} / ${snapshot.households.length}`
-                : "Unknown"}
-            </Field>
-            <Field label="Unallocated slots">
-              {String(
-                snapshot.operations.slots.filter((s) => !s.person && !s.owner)
-                  .length,
-              ).padStart(2, "0")}
-            </Field>
-          </div>
-        </div>
-        <div className="scope-board">
-          <div className="scope-origin">
-            <span className="eyebrow">AFFECTED-SERVICE REGISTER</span>
-            <h3>
-              {snapshot.operations.incident?.id || "No confirmed incident"}
-            </h3>
-            <p>
-              {snapshot.operations.incident?.status ||
-                "Membership cannot be inferred from missing telemetry."}
-            </p>
-            <code>
-              {ops.at(-1) ? short(ops.at(-1)!.id) : "—"} / source record
-            </code>
-          </div>
-          <div className="scope-services">
-            {snapshot.households.map((p) => (
-              <article
-                key={p.id}
-                className={`${p.id === h.id ? "current-household" : ""} ${p.incident ? "affected" : ""}`}
-              >
-                <span className="scope-connector" />
-                <div>
-                  <span className="eyebrow">{p.serviceId}</span>
-                  <h3>{p.name}</h3>
-                </div>
-                <span className="membership">
-                  {snapshot.operations.incident
-                    ? p.incident
-                      ? "IN SCOPE"
-                      : "OUTSIDE SCOPE"
-                    : "UNKNOWN"}
-                </span>
-              </article>
-            ))}
-          </div>
-        </div>
-        <div className="section-columns">
-          <Block title="Operational source records" note="SHARED SCOPE ONLY">
-            <Records events={ops} inspect={inspect} />
-          </Block>
-          <Block title="Callback allocation" note="SOURCE-BACKED SNAPSHOT">
-            <div className="full-slots">
-              {snapshot.operations.slots.map((s) => (
-                <div key={s.time}>
-                  <time>{s.time}</time>
-                  <span>
-                    <strong>
-                      {s.owner
-                        ? `${s.owner} / ${snapshot.households.find((p) => p.id === s.person)?.name.split(" ")[0] || "Reserved"}`
-                        : "Available"}
-                    </strong>
-                    <small>
-                      {s.owner
-                        ? snapshot.households.find((p) => p.id === s.person)
-                            ?.promiseFulfilled
-                          ? "Callback completed; historical allocation retained"
-                          : "Reserved for the existing promise"
-                        : "No customer has been promised this slot"}
-                    </small>
-                  </span>
-                  <i className={s.owner ? "allocated" : ""} />
-                </div>
-              ))}
-            </div>
-            <p className="section-footnote">
-              A restored service does not cancel an outstanding callback. No new
-              appointment is allocated by this scenario.
-            </p>
-          </Block>
-        </div>
-      </div>
+      <OperationalMemory
+        key={h.id}
+        h={h}
+        snapshot={snapshot}
+        inspect={inspect}
+        onCutoff={onCutoff}
+      />
     );
   if (panel === "arbiter")
     return (

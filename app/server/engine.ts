@@ -1,4 +1,5 @@
 import { DatabaseSync } from "node:sqlite";
+import { contractsFor, verifyOutcome } from "./outcomes.ts";
 import { randomUUID } from "node:crypto";
 import { arbitrate, serviceMessage } from "./arbiter.ts";
 import {
@@ -15,6 +16,8 @@ import type {
   DemoAction,
   PersonId,
   Step,
+  OutcomeContract,
+  OutcomeCheck,
 } from "../src/types.ts";
 
 const steps: Step[] = [
@@ -99,9 +102,20 @@ function project(
         break;
       case "promise.created":
         h.promise = String(e.payload.dueAt);
+        h.promiseFulfilled = false;
         break;
       case "promise.fulfilled":
-        h.promiseFulfilled = true;
+        if (
+          h.promise &&
+          (e.payload.dueAt === h.promise ||
+            e.payload.promiseTime ===
+              new Date(h.promise).toLocaleTimeString("en-GB", {
+                timeZone: "Europe/London",
+                hour: "2-digit",
+                minute: "2-digit",
+              }))
+        )
+          h.promiseFulfilled = true;
         break;
       case "order.delivered":
         h.activation = "Delivered · activation unconfirmed";
@@ -126,8 +140,15 @@ function project(
           h.serviceState = `Confirmed incident · ${String(e.payload.incidentId)}`;
         break;
       case "service.restored_observed":
-        h.restored = true;
-        h.serviceState = "Restoration observed";
+        if (e.payload.lineTest === "passed") {
+          h.restored = true;
+          h.serviceState = "Restoration observed";
+        }
+        break;
+      case "service.failure_observed":
+        h.restored = false;
+        h.confirmed = false;
+        h.serviceState = "Fresh line test failed";
         break;
       case "customer.confirmed_working":
         h.confirmed = true;
@@ -138,7 +159,9 @@ function project(
   return h;
 }
 
-function projectOperations(events: SourceEvent[]): Snapshot["operations"] {
+function projectOperations(
+  events: SourceEvent[],
+): Omit<Snapshot["operations"], "outcomes"> {
   const incident = events.filter((e) => e.type === "incident.confirmed").at(-1);
   const capacity = events
     .filter((e) => e.type === "capacity.recorded")
@@ -197,8 +220,52 @@ export class Engine {
       CREATE TABLE IF NOT EXISTS decisions(id TEXT PRIMARY KEY,session_id TEXT NOT NULL,person TEXT NOT NULL,revision INTEGER NOT NULL,data TEXT NOT NULL,FOREIGN KEY(session_id,person) REFERENCES customers(session_id,id),UNIQUE(session_id,person,revision));
       CREATE TABLE IF NOT EXISTS actions(id TEXT PRIMARY KEY,session_id TEXT NOT NULL,person TEXT NOT NULL,revision INTEGER NOT NULL,logical_key TEXT NOT NULL,decision_id TEXT NOT NULL REFERENCES decisions(id),data TEXT NOT NULL,FOREIGN KEY(session_id,person) REFERENCES customers(session_id,id),UNIQUE(session_id,person,logical_key));
       CREATE TABLE IF NOT EXISTS model_evaluations(job_id TEXT NOT NULL REFERENCES jobs(id),person TEXT NOT NULL,state TEXT NOT NULL,data TEXT NOT NULL,PRIMARY KEY(job_id,person));
+      CREATE TABLE IF NOT EXISTS outcome_contracts(id TEXT PRIMARY KEY,session_id TEXT NOT NULL REFERENCES sessions(id),person TEXT NOT NULL,goal TEXT NOT NULL,scope_id TEXT NOT NULL,revision INTEGER NOT NULL,decision_id TEXT NOT NULL REFERENCES decisions(id),data TEXT NOT NULL,UNIQUE(session_id,person,goal,scope_id));
+      CREATE TABLE IF NOT EXISTS outcome_checks(contract_id TEXT NOT NULL REFERENCES outcome_contracts(id),revision INTEGER NOT NULL,data TEXT NOT NULL,PRIMARY KEY(contract_id,revision));
       CREATE TABLE IF NOT EXISTS receipts(id TEXT PRIMARY KEY,action_id TEXT NOT NULL UNIQUE REFERENCES actions(id),provenance TEXT NOT NULL CHECK(provenance='simulated_delivery'),created_at TEXT NOT NULL);
     `);
+    // Existing sessions predate verification contracts. Reconstruction is insert-only and explicitly labelled.
+    const revisions = this.db
+      .prepare(
+        "SELECT DISTINCT session_id,revision FROM decisions ORDER BY revision",
+      )
+      .all() as { session_id: string; revision: number }[];
+    for (const r of revisions)
+      this.transaction(() =>
+        this.recordOutcomes(r.session_id, r.revision, true),
+      );
+  }
+  recordOutcomes(id: string, revision: number, reconstructed = false) {
+    const s = this.snapshot(id, revision);
+    for (const d of s.decisions.filter((d) => d.revision === revision)) {
+      const h = s.households.find((h) => h.id === d.person)!;
+      for (const c of contractsFor(h, d, s, reconstructed))
+        this.db
+          .prepare(
+            "INSERT OR IGNORE INTO outcome_contracts VALUES(?,?,?,?,?,?,?,?)",
+          )
+          .run(
+            c.id,
+            id,
+            c.person,
+            c.goal,
+            c.scopeId,
+            c.revision,
+            c.decisionId,
+            JSON.stringify(c),
+          );
+    }
+    const contracts = this.db
+      .prepare(
+        "SELECT data FROM outcome_contracts WHERE session_id=? AND revision<=?",
+      )
+      .all(id, revision) as { data: string }[];
+    for (const row of contracts) {
+      const c = JSON.parse(row.data) as OutcomeContract;
+      this.db
+        .prepare("INSERT OR IGNORE INTO outcome_checks VALUES(?,?,?)")
+        .run(c.id, revision, JSON.stringify(verifyOutcome(c, s)));
+    }
   }
   transaction<T>(fn: () => T): T {
     this.db.exec("BEGIN IMMEDIATE");
@@ -469,6 +536,9 @@ export class Engine {
             | { id: string; session_id: string; revision: number }
             | undefined;
           if (!job) continue;
+          this.transaction(() =>
+            this.recordOutcomes(job.session_id, job.revision),
+          );
           const snapshot = this.snapshot(job.session_id, job.revision);
           const before = this.snapshot(job.session_id, job.revision - 1);
           const prepared: Decision[] = [];
@@ -648,6 +718,7 @@ export class Engine {
                 .prepare("UPDATE decisions SET data=? WHERE id=?")
                 .run(JSON.stringify(d), d.id);
             }
+            this.recordOutcomes(job.session_id, job.revision);
             this.db
               .prepare(
                 "UPDATE jobs SET state='complete',attempts=attempts+1,error=NULL WHERE id=?",
@@ -725,7 +796,20 @@ export class Engine {
       events,
       decisions,
       actions,
-      operations: projectOperations(events),
+      operations: {
+        ...projectOperations(events),
+        outcomes: (
+          this.db
+            .prepare(
+              `SELECT c.data AS contract, k.data AS verification FROM outcome_contracts c JOIN outcome_checks k ON k.contract_id=c.id
+          WHERE c.session_id=? AND c.revision<=? AND k.revision=(SELECT MAX(revision) FROM outcome_checks WHERE contract_id=c.id AND revision<=?) ORDER BY c.revision,c.rowid`,
+            )
+            .all(id, at, at) as { contract: string; verification: string }[]
+        ).map((row) => ({
+          ...(JSON.parse(row.contract) as OutcomeContract),
+          check: JSON.parse(row.verification) as OutcomeCheck,
+        })),
+      },
       nextStep: at < session.revision ? null : (steps[session.step] ?? null),
     };
   }

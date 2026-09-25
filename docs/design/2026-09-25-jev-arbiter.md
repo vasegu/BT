@@ -41,6 +41,6 @@ Automated regressions cover scoped requests, model-driven deferral, hard-gate re
 
 ## Next capability to add
 
-The present next-action vocabulary is authored and eligibility is deterministic. A further slice can introduce multi-step domain plans, resource contention and explicit outcome write-back, then let retrieval inform those plans. That requires a richer scenario and measured evaluation, not merely more model calls or decorative confidence scores.
+The present next-action vocabulary is authored and eligibility is deterministic. A further slice can introduce multi-step domain plans, resource contention and retrieval-informed plans. Explicit outcome write-back was added in the operational-memory pass (see `2026-09-25-operational-memory.md`). That requires a richer scenario and measured evaluation, not merely more model calls or decorative confidence scores.
 
 Official API contract: [Vercel evaluation documentation](https://vercel.com/docs/ai-gateway/modalities/evaluation). TypeSafe's [introduction](https://docs.typesafe.ai/introduction) describes its typed evaluation model.
