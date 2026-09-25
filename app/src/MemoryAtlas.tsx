@@ -13,6 +13,13 @@ type Episode = {
   clusterId: string;
   recordIds: string[];
 };
+const clusterLabels: Record<string, string> = {
+  "Routines & watch": "Routines",
+  "Service context": "Service",
+  "Getting connected": "First use",
+  "Promises & permission": "Relationship",
+  "Money & plans": "Money",
+};
 type Cluster = { id: string; label: string; color: string; size: number };
 type Space = {
   manifest: {
@@ -180,15 +187,26 @@ export function MemoryAtlas({
     setNearby(false);
     setSelected(null);
   };
-  const fingerprintMax = chosen ? Math.max(...chosen.vector.map(Math.abs)) : 1;
+  const chosenRank = ranked.findIndex((r) => r.id === chosen?.id);
+  const captionLines: string[] = [];
+  for (const word of chosen?.title.split(" ") || []) {
+    const last = captionLines.at(-1);
+    if (!last || last.length + word.length > 27) captionLines.push(word);
+    else captionLines[captionLines.length - 1] += ` ${word}`;
+  }
+  const contextTitle = person === "maya"
+    ? "A quiet router. A familiar rhythm."
+    : person === "sam"
+      ? "A delivery is only the beginning."
+      : "The history behind this signal.";
   return (
     <section className="km-atlas" aria-label="Customer semantic memory atlas">
       <header>
         <div>
           <span className="km-kicker">
-            01 / SEMANTIC MEMORY · {space?.episodes.length || "…"} EPISODES
+            01 / FIND THE RELEVANT MEMORY
           </span>
-          <h2>Explore the neighbourhood.</h2>
+          <h2>{contextTitle}</h2>
         </div>
         <span className="km-model">
           MiniLM <b>384D</b>
@@ -196,6 +214,9 @@ export function MemoryAtlas({
       </header>
       {space ? (
         <>
+          <p className="km-atlas-intro">
+            {space.episodes.length} example episodes. Colour groups related histories.
+          </p>
           <div
             className="km-clusters"
             aria-label="Filter by computed memory group"
@@ -204,11 +225,13 @@ export function MemoryAtlas({
               <button
                 key={c.id}
                 aria-pressed={group === c.id}
+                aria-label={`${c.label} ${c.size}`}
+                title={c.label}
                 onClick={() => selectGroup(c.id)}
                 style={{ "--cluster": c.color } as CSSProperties}
               >
                 <i />
-                {c.label}
+                {clusterLabels[c.label] || c.label}
                 <span>{c.size}</span>
               </button>
             ))}
@@ -294,28 +317,6 @@ export function MemoryAtlas({
                 }
               }}
             >
-              <defs>
-                <radialGradient id="memory-illumination">
-                  <stop stopColor="#8664b6" stopOpacity=".24" />
-                  <stop offset="1" stopColor="#171828" stopOpacity="0" />
-                </radialGradient>
-                {space.clusters.map((c) => (
-                  <radialGradient key={c.id} id={`glow-${c.id}`}>
-                    <stop
-                      stopColor={c.color}
-                      stopOpacity={group === c.id ? ".18" : ".10"}
-                    />
-                    <stop offset="1" stopColor={c.color} stopOpacity="0" />
-                  </radialGradient>
-                ))}
-              </defs>
-              <ellipse
-                cx="300"
-                cy="180"
-                rx="270"
-                ry="180"
-                fill="url(#memory-illumination)"
-              />
               {polygons.map((poly, i) => (
                 <polygon
                   className={`km-plane km-plane-${i}`}
@@ -366,15 +367,19 @@ export function MemoryAtlas({
                 return (
                   <g
                     key={c.id}
-                    opacity={active && !nearby ? 1 : 0.2}
+                    opacity={active && !nearby ? 1 : 0.15}
                     className="km-region"
                   >
                     <ellipse
                       cx={x}
                       cy={y}
-                      rx={rx + 15}
-                      ry={ry + 15}
-                      fill={`url(#glow-${c.id})`}
+                      rx={rx}
+                      ry={ry}
+                      fill={c.color}
+                      fillOpacity={group === c.id ? 0.09 : 0.035}
+                      stroke={c.color}
+                      strokeOpacity={group === c.id ? 0.35 : 0.12}
+                      strokeWidth="0.7"
                     />
                     {group === c.id && (
                       <ellipse
@@ -415,6 +420,7 @@ export function MemoryAtlas({
                 .map((r) => {
                   const active = visibleIds.has(r.id),
                     isSelected = chosen?.id === r.id,
+                    rank = ranked.findIndex((match) => match.id === r.id),
                     color = space.clusters.find(
                       (c) => c.id === r.clusterId,
                     )!.color;
@@ -430,7 +436,7 @@ export function MemoryAtlas({
                       aria-hidden={!active}
                       style={{
                         pointerEvents: active ? "auto" : "none",
-                        opacity: active ? 1 : 0.1,
+                        opacity: active ? 1 : 0.16,
                       }}
                       onClick={() => {
                         if (!drag.current?.moved) setSelected(r.id);
@@ -447,23 +453,24 @@ export function MemoryAtlas({
                       {isSelected && (
                         <circle
                           r="12"
+                          className="km-selection"
                           fill={color}
-                          fillOpacity=".13"
+                          fillOpacity=".06"
                           stroke={color}
                           strokeOpacity=".6"
                         />
                       )}
                       <circle
-                        r={(isSelected ? 5.5 : 4) * r.p.scale}
+                        r={(isSelected ? 6 : 4.5) * r.p.scale}
                         fill={color}
-                        stroke={isSelected ? "#fff" : color}
+                        stroke={isSelected ? "#fbfaf6" : color}
                         strokeWidth={isSelected ? 1.1 : 0.6}
                       />
-                      <circle
-                        r="1.2"
-                        fill="#fff"
-                        opacity={isSelected ? 1 : 0.48}
-                      />
+                      {active && rank >= 0 && rank < 3 && (
+                        <text className="km-point-rank" x="11" y="-7">
+                          {String(rank + 1).padStart(2, "0")}
+                        </text>
+                      )}
                     </g>
                   );
                 })}
@@ -475,23 +482,41 @@ export function MemoryAtlas({
                   <circle
                     r="20"
                     fill="none"
-                    stroke="#f3e7ff"
-                    strokeOpacity=".22"
+                    stroke="#615469"
+                    strokeOpacity=".35"
                     strokeDasharray="2 5"
                   />
                   <path
                     d="M0 -8L8 0L0 8L-8 0Z"
-                    fill="#fff6e7"
-                    stroke="#211c32"
+                    fill="#fbfaf6"
+                    stroke="#483650"
                     strokeWidth="2"
                   />
                   <text x="-13" y="-20" textAnchor="end">
-                    {name.toUpperCase()} / CONTEXT
+                    {name.toUpperCase()} / SAVED CONTEXT
+                  </text>
+                </g>
+              )}
+              {chosen && (
+                <g className="km-annotation">
+                  <path
+                    d={`M 28 ${64 + captionLines.length * 13} V ${76 + captionLines.length * 13} L ${project(chosen.position).x} ${project(chosen.position).y}`}
+                    fill="none"
+                    stroke={chosenGroup?.color}
+                    strokeWidth="0.8"
+                    strokeOpacity="0.55"
+                  />
+                  <rect x="18" y="23" width="179" height={39 + captionLines.length * 13} rx="3" />
+                  <text x="28" y="42" className="km-annotation-label" fill={chosenGroup?.color}>
+                    {chosenRank >= 0 ? `MATCH ${String(chosenRank + 1).padStart(2, "0")}` : "EXAMPLE"} / {chosen.id}
+                  </text>
+                  <text x="28" y="62" className="km-annotation-text">
+                    {captionLines.map((line, i) => <tspan key={i} x="28" dy={i === 0 ? 0 : 13}>{line}</tspan>)}
                   </text>
                 </g>
               )}
               <text className="km-plot-note" x="18" y="340">
-                COSINE GROUPS / 3D PCA
+                01–03 / CLOSEST EXAMPLES
               </text>
               <text className="km-plot-note" x="582" y="340" textAnchor="end">
                 {(zoom * 100).toFixed(0)}%
@@ -545,27 +570,14 @@ export function MemoryAtlas({
               <span>
                 {similarity === undefined
                   ? "EXAMPLE MEMORY"
-                  : `COSINE ${similarity.toFixed(3)}`}
+                  : `#${chosenRank + 1} / ${space.episodes.length} · COSINE ${similarity.toFixed(3)}`}
               </span>
             </div>
             <p>{chosen?.title}</p>
             <div className="km-vector-row">
-              <div
-                className="km-fingerprint"
-                role="img"
-                aria-label="384-dimensional episode vector, averaged from three formulations"
-              >
-                {chosen?.vector.map((v, i) => (
-                  <i
-                    key={i}
-                    title={`Dimension ${i + 1}: ${v.toFixed(5)}`}
-                    style={{
-                      background: v < 0 ? "#a99ad9" : "#81b8c6",
-                      opacity: 0.18 + (0.82 * Math.abs(v)) / fingerprintMax,
-                    }}
-                  />
-                ))}
-              </div>
+              <span className="km-retrieval-note">
+                {query ? "Retrieved from the saved scenario · inspect the evidence →" : "Example library · customer retrieval starts with a signal"}
+              </span>
               <button onClick={() => dialog.current?.showModal()}>
                 Read memory ↗
               </button>
@@ -588,6 +600,12 @@ export function MemoryAtlas({
                 ? ""
                 : `Cosine similarity to the saved customer context: ${similarity.toFixed(4)}.`}
             </p>
+            {query && (
+              <div className="km-query-detail">
+                <span className="eyebrow">Saved retrieval context / {query.id}</span>
+                <p>{query.text}</p>
+              </div>
+            )}
             <div className="km-formulations">
               {chosen?.recordIds.map((id) => (
                 <div key={id}>
@@ -599,7 +617,7 @@ export function MemoryAtlas({
             <p className="km-detail-note">
               Three formulations of one authored synthetic episode, collapsed to
               one point. Groups use spherical k-means on the 384D mean vectors.
-              Projected envelopes are visual guides; groups overlap. Similarity
+              Tinted regions are visual guides; groups overlap. Similarity
               does not establish customer facts or authorise action.
             </p>
           </dialog>

@@ -17,7 +17,7 @@ Open **http://127.0.0.1:5185/**. Vite serves the React/TypeScript app on 5185; t
 Press **Play**. The same missing heartbeat produces three different policy decisions. The replay adds the shared incident, observes Daniel's restoration and records Aisha's kept callback. It pauses for Daniel's **“It’s working again”** response in the phone. That response writes a source event and closes the case after the worker processes it.
 
 - Five panels read one persisted session snapshot. Each opens its own full-page section with one **Back to account** action; sibling navigation and customer switching stay on the account overview. Opening a section pauses replay and preserves the customer, session and historical cutoff.
-- **Customer memory** brings the lab atlas, original-space cosine retrieval, 384-component fingerprint, current customer readout and clickable source timeline into one desktop screen. The atlas groups 42 example memories into five computed cosine-space clusters, with group filters, six nearest matches, drag rotation, zoom and source inspection. It uses saved synthetic lab contexts; the readout and timeline use the current session. It remains a single section with one return control.
+- **Customer memory** brings the lab atlas, original-space cosine retrieval, annotated matches, current customer readout and clickable source timeline into one desktop screen. The atlas groups 42 example memories into five computed cosine-space clusters, with group filters, six nearest matches, drag rotation, zoom and source inspection. It uses saved synthetic lab contexts; the readout and timeline use the current session. It remains a single section with one return control.
 - **Source records** opens the event ledger. Click a record to inspect IDs, source, occurred/received time and payload.
 - The numbered replay positions are read-only historical snapshots. **New session** preserves the previous session and starts an isolated one. Its URL is the return point.
 - The **Visual lab** contains the semantic atlas, decision flow and memory timeline. These are clearly labelled independent studies, not a live view of the app session's records. A link returns to the same app session.
@@ -61,6 +61,12 @@ Open `http://127.0.0.1:5181/design/review.html`. Port 5181 keeps the existing So
 Design pack moved from `../SohoHouse` on 25 September 2026. Original BT specification commit: Soho `a38501c`. The first working app is in `app/`; hosted database, Gateway configuration and deployment remain unconfigured. This is a local Git repository; no GitHub remote has been created or published.
 
 Reference implementations remain in the sibling `SohoHouse`, `ecd_jio_cx` and `sainsburys-demo` repositories. The spec records the inspected revisions. No credentials or customer datasets were transferred.
+
+## Workspace visual hierarchy
+
+The React app shares three surfaces: `--canvas` (#F6F5F8) for the page and neutral insets, `--surface` (white) for panels, and `--soft` (#F1EBFA) for selection and decisions. BT purple (#5514B4) marks focus, the current query and primary actions. Chart colours identify groups; they do not introduce extra panel backgrounds. The native phone and explicit error states remain distinct.
+
+One system sans-serif handles reading and controls; system monospace is for data, IDs and timestamps. Five shared sizes replace component-specific guesses: page 26px, section 18px, body 12px, supporting text 11px and metadata 9px. Compact desktop uses 24/16/11/10/8px through the same tokens. The customer view stays on one desktop screen; selecting a fact traces its source below. The account uses a 48px desktop header, a compact replay strip and a shared title/customer-selector row to give the five panels more space.
 
 ## Review decisions
 

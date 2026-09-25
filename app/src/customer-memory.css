@@ -1,5 +1,5 @@
 .customer-focus.focused-workspace {
-  height: calc(100dvh - 58px);
+  height: calc(100dvh - var(--header-height));
   min-height: 640px;
   padding: 16px 24px 0;
   display: flex;
@@ -12,7 +12,7 @@
   align-items: center;
 }
 .customer-focus .workspace-intro h1 {
-  font-size: 25px;
+  font-size: var(--text-page);
   margin-top: 3px;
 }
 .customer-focus .focused-context {
@@ -23,7 +23,7 @@
   flex-shrink: 0;
   margin-top: 10px;
   padding: 8px 0;
-  font-size: 8px;
+  font-size: var(--text-small);
   gap: 12px;
 }
 .customer-memory {
@@ -41,17 +41,12 @@
 }
 .km-atlas {
   min-height: 0;
-  background: radial-gradient(
-    ellipse at 65% 30%,
-    #302640 0%,
-    #1c1d30 53%,
-    #151928 100%
-  );
-  border: 1px solid #3b3650;
+  background: var(--surface);
+  border: 1px solid var(--line);
   border-radius: 9px;
   display: flex;
   flex-direction: column;
-  color: #eee6f8;
+  color: var(--ink);
   overflow: hidden;
 }
 .km-atlas > header {
@@ -63,28 +58,28 @@
   flex-shrink: 0;
 }
 .km-kicker {
-  font: 8px/1.5 var(--mono);
-  letter-spacing: 0.09em;
-  color: #95829f;
+  font: 600 var(--text-meta)/1.5 var(--sans);
+  letter-spacing: 0.07em;
+  color: var(--brand);
   display: block;
 }
 .km-atlas h2 {
-  font-size: 19px;
-  font-weight: 450;
+  font-size: var(--text-section);
+  font-weight: 600;
   letter-spacing: -0.025em;
   margin-top: 4px;
 }
 .km-model {
-  font: 9px var(--mono);
-  color: #aa92bf;
+  font: var(--text-meta) var(--mono);
+  color: var(--muted);
   white-space: nowrap;
 }
 .km-model b {
   font-weight: 400;
-  color: #e6d4f9;
+  color: var(--brand);
   display: block;
   text-align: right;
-  font-size: 17px;
+  font-size: var(--text-section);
   margin-top: 3px;
 }
 .km-space {
@@ -103,27 +98,27 @@
   max-height: 500px;
 }
 .km-grid {
-  stroke: #abb3dc;
-  stroke-opacity: 0.27;
+  stroke: #a097b3;
+  stroke-opacity: 0.48;
   stroke-width: 0.65;
   fill: none;
 }
 .km-neighbour {
-  stroke: #edddf5;
+  stroke: var(--brand);
   stroke-width: 0.8;
-  stroke-opacity: 0.55;
+  stroke-opacity: 0.4;
 }
 .km-point {
   cursor: pointer;
   outline: none;
 }
 .km-point:focus-visible > circle:first-of-type {
-  stroke: #fff;
+  stroke: var(--brand);
   stroke-width: 1.4;
 }
 .km-query text {
   font: 8px var(--mono);
-  fill: #dbc3f5;
+  fill: var(--brand);
 }
 .km-orbit {
   display: flex;
@@ -132,8 +127,8 @@
   gap: 15px;
   padding: 6px 22px 11px;
   flex-shrink: 0;
-  font: 7px var(--mono);
-  color: #aca7bf;
+  font: var(--text-meta) var(--mono);
+  color: #827c83;
   letter-spacing: 0.04em;
 }
 .km-orbit label {
@@ -144,16 +139,16 @@
 .km-orbit input {
   width: 90px;
   height: 12px;
-  accent-color: #c49ae9;
+  accent-color: var(--brand);
   margin: 0;
 }
 .km-orbit input:focus-visible {
-  outline: 1px solid #dbc5ef;
+  outline: 1px solid var(--brand);
   outline-offset: 3px;
 }
 .km-retrieved {
-  background: #1a1d2ed9;
-  border-top: 1px solid #77718b40;
+  background: var(--surface);
+  border-top: 1px solid var(--line);
   padding: 11px 22px 13px;
   flex-shrink: 0;
 }
@@ -161,30 +156,47 @@
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  font: 7px var(--mono);
+  font: var(--text-meta) var(--mono);
   letter-spacing: 0.065em;
-  color: #b6b8d1;
+  color: #7a737f;
 }
 .km-retrieved p {
-  font-size: 11px;
+  font-size: var(--text-body);
   line-height: 1.6;
   margin: 7px 0 9px;
-  color: #ebe9f1;
+  color: var(--ink);
   min-height: 18px;
 }
-.km-fingerprint {
-  display: grid;
-  grid-template-columns: repeat(96, 1fr);
-  grid-template-rows: repeat(4, 4px);
-  gap: 1px;
-  min-width: 0;
+.km-atlas-intro {
+  margin: 5px 22px 0;
+  font-size: var(--text-small);
+  line-height: 1.5;
+  color: var(--muted);
 }
-.km-fingerprint i {
-  border-radius: 0.5px;
-  min-width: 0;
+.km-point-rank {
+  font: 10px var(--mono);
+  fill: #49414e;
+  stroke: var(--surface);
+  stroke-width: 3px;
+  paint-order: stroke;
+  pointer-events: none;
+}
+.km-annotation { pointer-events: none; }
+.km-annotation path { stroke: var(--brand); }
+.km-annotation-label { fill: var(--brand); }
+.km-query path { fill: var(--brand); stroke: white; }
+.km-query circle { stroke: var(--brand); }
+.km-point .km-selection { stroke: var(--brand); fill: var(--soft); }
+.km-annotation rect { fill: var(--surface); fill-opacity: 0.96; }
+.km-annotation-label { font: 8px var(--mono); letter-spacing: 0.025em; }
+.km-annotation-text { font: 11px/1.4 var(--sans); fill: var(--ink); }
+.km-retrieval-note {
+  font: var(--text-meta)/1.5 var(--sans);
+  color: var(--muted);
+  flex: 1;
 }
 .km-understanding {
-  background: white;
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 9px;
   padding: 18px 21px;
@@ -193,14 +205,14 @@
   flex-direction: column;
 }
 .km-person h2 {
-  font-size: 23px;
-  font-weight: 500;
+  font-size: var(--text-section);
+  font-weight: 600;
   letter-spacing: -0.04em;
   line-height: 1.16;
   margin: 6px 0 8px;
 }
 .km-person > p {
-  font-size: 11px;
+  font-size: var(--text-body);
   color: var(--muted);
   line-height: 1.6;
   max-width: 410px;
@@ -208,62 +220,89 @@
 .km-facts {
   display: grid;
   gap: 0;
-  margin: 13px 0 0;
+  margin: 10px 0 0;
 }
 .km-facts > div {
-  padding: 10px 0;
+  padding: 8px 0;
   border-top: 1px solid #ece7f0;
   display: grid;
   grid-template-columns: 105px minmax(0, 1fr);
   gap: 15px;
 }
 .km-facts dt {
-  font: 8px/1.65 var(--mono);
+  font: var(--text-small)/1.5 var(--sans);
   color: var(--muted);
 }
 .km-facts dd {
-  font-size: 11px;
+  font-size: var(--text-body);
   line-height: 1.5;
   margin: 0;
-  color: #47374f;
+  color: var(--ink);
 }
+.km-fact { --fact: #547e70; }
+.km-fact-1 { --fact: #577e99; }
+.km-fact-2 { --fact: #a18742; }
+.km-facts dt > span {
+  display: block;
+  color: var(--fact);
+  font-size: var(--text-small);
+  margin-bottom: 0;
+}
+.km-facts dd > button {
+  text-align: left;
+  border: 0;
+  border-radius: 3px;
+  padding: 3px 5px;
+  margin: -3px -5px;
+  width: calc(100% + 10px);
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  line-height: inherit;
+}
+.km-facts dd > button > span { margin-left: 7px; color: var(--fact); }
+.km-facts dd > button:hover,
+.km-facts dd > button[aria-pressed="true"] {
+  background: var(--soft);
+}
+.km-facts dd > button:focus-visible { outline: 1px solid var(--fact); }
 .km-implication {
   margin-top: auto;
   padding: 13px 15px;
-  background: #f6f1fb;
-  border-left: 2px solid #966fc3;
+  background: var(--soft);
+  border-left: 2px solid var(--brand);
   border-radius: 0 5px 5px 0;
 }
 .km-implication .km-kicker {
-  color: #82629c;
+  color: var(--brand);
 }
 .km-implication h3 {
-  font-size: 14px;
-  font-weight: 550;
+  font-size: var(--text-section);
+  font-weight: 600;
   letter-spacing: -0.02em;
   margin: 5px 0 6px;
 }
 .km-implication p {
-  font-size: 10px;
+  font-size: var(--text-small);
   line-height: 1.65;
-  color: #7d6b89;
+  color: #62536f;
 }
 .km-decision-tag {
-  font: 7px var(--mono);
+  font: var(--text-meta) var(--mono);
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: #865da4;
+  color: var(--brand);
   display: block;
   margin-top: 9px;
 }
 .km-provenance {
-  font-size: 8px;
+  font-size: var(--text-meta);
   color: #9b8fa4;
   line-height: 1.6;
   margin-top: 10px;
 }
 .km-history {
-  background: white;
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 8px;
   display: flex;
@@ -278,11 +317,11 @@
   gap: 10px;
 }
 .km-history h2 {
-  font-size: 11px;
-  font-weight: 550;
+  font-size: var(--text-body);
+  font-weight: 600;
 }
 .km-history > header > span {
-  font: 7px var(--mono);
+  font: var(--text-meta) var(--mono);
   color: #8d7c98;
   letter-spacing: 0.05em;
 }
@@ -311,7 +350,7 @@
   left: 0;
   right: 0;
   height: 1px;
-  background: #e8dff0;
+  background: var(--canvas);
   top: 42px;
 }
 .km-timeline button:first-child:before {
@@ -321,14 +360,14 @@
   right: 50%;
 }
 .km-timeline time {
-  font-size: 8px;
+  font-size: var(--text-small);
   line-height: 1.25;
   color: #8d7b9a;
   display: block;
 }
 .km-timeline time small {
   display: block;
-  font-size: 6px;
+  font-size: var(--text-small);
   margin-top: 2px;
   color: #aa9cb4;
 }
@@ -338,21 +377,21 @@
   height: 6px;
   border: 1px solid #b99acf;
   border-radius: 50%;
-  background: white;
+  background: var(--surface);
   margin: 8px 0 6px;
   z-index: 1;
   flex-shrink: 0;
 }
 .km-timeline button[aria-pressed="true"] i {
-  background: #7641a3;
+  background: var(--brand);
   box-shadow: 0 0 0 4px #eee4f7;
-  border-color: #7641a3;
+  border-color: var(--brand);
 }
 .km-timeline button[aria-pressed="true"] span {
-  color: #622a94;
+  color: var(--brand);
 }
 .km-timeline button > span {
-  font-size: 8px;
+  font-size: var(--text-small);
   line-height: 1.4;
   color: #93809f;
   white-space: nowrap;
@@ -375,20 +414,20 @@
   min-height: 39px;
 }
 .km-evidence code {
-  font: 7px var(--mono);
+  font: var(--text-meta) var(--mono);
   color: #9c83ae;
 }
 .km-evidence p {
-  font-size: 10px;
+  font-size: var(--text-small);
   line-height: 1.5;
   color: #5d4e69;
 }
 .km-evidence > button {
-  font-size: 9px;
+  font-size: var(--text-small);
   padding: 5px 8px;
   white-space: nowrap;
   color: #6e4192;
-  background: #fbf8fd;
+  background: var(--canvas);
   flex-shrink: 0;
 }
 .km-load {
@@ -398,7 +437,7 @@
   justify-content: center;
   align-items: center;
   gap: 15px;
-  font-size: 12px;
+  font-size: var(--text-body);
   color: #bfa7d2;
 }
 @media (min-width: 1600px) {
@@ -409,32 +448,32 @@
     grid-template-columns: minmax(0, 1.9fr) minmax(340px, 1fr);
   }
   .km-person h2 {
-    font-size: 28px;
+    font-size: var(--text-section);
   }
   .km-person > p {
-    font-size: 13px;
+    font-size: var(--text-body);
   }
   .km-facts dd {
-    font-size: 13px;
+    font-size: var(--text-body);
   }
   .km-facts dt {
-    font-size: 10px;
+    font-size: var(--text-small);
   }
   .km-facts > div {
     padding: 15px 0;
     grid-template-columns: 120px 1fr;
   }
   .km-implication h3 {
-    font-size: 17px;
+    font-size: var(--text-section);
   }
   .km-implication p {
-    font-size: 12px;
+    font-size: var(--text-small);
   }
   .km-provenance {
-    font-size: 9px;
+    font-size: var(--text-meta);
   }
   .km-retrieved p {
-    font-size: 13px;
+    font-size: var(--text-body);
   }
 }
 @media (max-width: 1000px) {
@@ -446,18 +485,20 @@
     padding: 14px 15px 3px;
   }
   .km-atlas h2 {
-    font-size: 16px;
+    font-size: var(--text-section);
   }
+  .km-atlas-intro { margin-left: 15px; margin-right: 15px; font-size: var(--text-small); }
+  .km-retrieval-note { font-size: var(--text-meta); }
   .km-model {
-    font-size: 8px;
+    font-size: var(--text-meta);
   }
   .km-model b {
-    font-size: 14px;
+    font-size: var(--text-section);
   }
   .km-orbit {
     padding-right: 15px;
     padding-left: 15px;
-    font-size: 6px;
+    font-size: var(--text-meta);
   }
   .km-orbit input {
     width: 60px;
@@ -466,16 +507,16 @@
     padding: 10px 15px;
   }
   .km-retrieved p {
-    font-size: 10px;
+    font-size: var(--text-body);
   }
   .km-understanding {
-    padding: 15px;
+    padding: 13px;
   }
   .km-person h2 {
-    font-size: 21px;
+    font-size: var(--text-section);
   }
   .km-person > p {
-    font-size: 10px;
+    font-size: var(--text-body);
   }
   .km-facts {
     margin-top: 10px;
@@ -486,19 +527,19 @@
     padding: 9px 0;
   }
   .km-facts dd {
-    font-size: 10px;
+    font-size: var(--text-body);
   }
   .km-implication {
     padding: 10px 12px;
   }
   .km-implication h3 {
-    font-size: 12px;
+    font-size: var(--text-section);
   }
   .km-implication p {
-    font-size: 9px;
+    font-size: var(--text-small);
   }
   .km-provenance {
-    font-size: 7px;
+    font-size: var(--text-meta);
   }
 }
 @media (min-width: 681px) and (max-height: 780px) {
@@ -506,7 +547,7 @@
     padding-top: 10px;
   }
   .customer-focus .workspace-intro h1 {
-    font-size: 22px;
+    font-size: var(--text-page);
   }
   .customer-focus .focused-context {
     margin-bottom: 9px;
@@ -519,11 +560,11 @@
     padding: 12px 16px;
   }
   .km-person h2 {
-    font-size: 20px;
+    font-size: var(--text-section);
     margin: 4px 0 6px;
   }
   .km-person > p {
-    font-size: 10px;
+    font-size: var(--text-body);
   }
   .km-facts {
     margin-top: 8px;
@@ -532,30 +573,30 @@
     padding: 7px 0;
   }
   .km-facts dd {
-    font-size: 10px;
+    font-size: var(--text-body);
   }
   .km-implication {
     padding: 9px 12px;
   }
   .km-implication h3 {
-    font-size: 12px;
+    font-size: var(--text-section);
     margin: 4px 0;
   }
   .km-implication p {
-    font-size: 9px;
+    font-size: var(--text-small);
   }
   .km-decision-tag {
     margin-top: 5px;
   }
   .km-provenance {
-    font-size: 7px;
+    font-size: var(--text-meta);
     margin-top: 7px;
   }
   .km-atlas > header {
     padding-top: 12px;
   }
   .km-atlas h2 {
-    font-size: 17px;
+    font-size: var(--text-section);
   }
   .km-retrieved {
     padding-top: 8px;
@@ -572,7 +613,7 @@
   }
   .customer-focus .focused-context {
     flex-wrap: nowrap;
-    font-size: 8px;
+    font-size: var(--text-small);
   }
   .customer-focus .focused-context span:last-child {
     width: auto;
@@ -590,20 +631,16 @@
     flex-shrink: 0;
   }
   .km-atlas h2 {
-    font-size: 14px;
+    font-size: var(--text-section);
   }
   .km-model {
     display: none;
   }
   .km-retrieved-heading {
-    font-size: 6px;
-  }
-  .km-fingerprint {
-    grid-template-columns: repeat(64, 1fr);
-    grid-template-rows: repeat(6, 3px);
+    font-size: var(--text-meta);
   }
   .km-timeline button > span {
-    font-size: 7px;
+    font-size: var(--text-small);
   }
   .km-history {
     padding-left: 11px;
@@ -617,7 +654,7 @@
     padding: 17px 13px 0;
   }
   .customer-focus .workspace-intro h1 {
-    font-size: 25px;
+    font-size: var(--text-page);
   }
   .customer-memory {
     display: flex;
@@ -643,19 +680,19 @@
     padding: 20px;
   }
   .km-person h2 {
-    font-size: 25px;
+    font-size: var(--text-section);
   }
   .km-person > p {
-    font-size: 12px;
+    font-size: var(--text-body);
   }
   .km-facts {
     margin: 15px 0;
   }
   .km-facts dd {
-    font-size: 12px;
+    font-size: var(--text-body);
   }
   .km-facts dt {
-    font-size: 9px;
+    font-size: var(--text-small);
   }
   .km-facts > div {
     padding: 12px 0;
@@ -665,20 +702,20 @@
     padding: 14px;
   }
   .km-implication h3 {
-    font-size: 15px;
+    font-size: var(--text-section);
   }
   .km-implication p {
-    font-size: 11px;
+    font-size: var(--text-small);
   }
   .km-provenance {
-    font-size: 9px;
+    font-size: var(--text-meta);
   }
   .km-history {
     min-height: 210px;
     padding: 14px;
   }
   .km-history > header > span {
-    font-size: 6px;
+    font-size: var(--text-meta);
   }
   .km-timeline {
     min-height: 83px;
@@ -696,10 +733,10 @@
     gap: 10px;
   }
   .km-evidence p {
-    font-size: 10px;
+    font-size: var(--text-small);
   }
   .km-evidence > button {
-    font-size: 8px;
+    font-size: var(--text-small);
   }
   .customer-focus > footer {
     flex-direction: column;
@@ -715,8 +752,6 @@
 .km-query {
   pointer-events: none;
 }
-@media (max-width: 1000px) {
-}
 .km-clusters {
   display: flex;
   flex-wrap: wrap;
@@ -728,10 +763,10 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font: 8px var(--mono);
-  color: var(--cluster);
-  background: color-mix(in srgb, var(--cluster) 6%, transparent);
-  border: 1px solid color-mix(in srgb, var(--cluster) 16%, transparent);
+  font: var(--text-small) var(--sans);
+  color: color-mix(in srgb, var(--cluster) 85%, #29242d);
+  background: transparent;
+  border: 1px solid var(--line);
   padding: 5px 7px;
   border-radius: 5px;
   transition:
@@ -743,17 +778,16 @@
   height: 5px;
   border-radius: 50%;
   background: var(--cluster);
-  box-shadow: 0 0 7px color-mix(in srgb, var(--cluster) 30%, transparent);
 }
 .km-clusters button > span {
-  font-size: 7px;
+  font-size: var(--text-small);
   opacity: 0.5;
   margin-left: 2px;
 }
 .km-clusters button:hover,
 .km-clusters button[aria-pressed="true"] {
-  background: color-mix(in srgb, var(--cluster) 16%, transparent);
-  border-color: color-mix(in srgb, var(--cluster) 60%, transparent);
+  background: var(--soft);
+  border-color: #bca4db;
 }
 .km-atlas-toolbar {
   display: flex;
@@ -763,31 +797,31 @@
   flex-shrink: 0;
 }
 .km-atlas-toolbar button {
-  font: 8px var(--mono);
+  font: var(--text-small) var(--sans);
   padding: 5px 7px;
-  border: 1px solid #ffffff15;
+  border: 1px solid #d9d4dc;
   background: transparent;
-  color: #c8bfd9;
+  color: var(--brand);
   border-radius: 4px;
 }
 .km-atlas-toolbar button:hover {
-  border-color: #d5bdea88;
-  background: #b397d818;
+  border-color: #a192ac;
+  background: var(--canvas);
 }
 .km-atlas-toolbar .km-relevance[aria-pressed="true"] {
-  background: #f1e4bc18;
-  border-color: #e8dbaa6b;
-  color: #f4e8c6;
+  background: var(--soft);
+  border-color: #ad92cf;
+  color: var(--brand);
 }
 .km-atlas-toolbar > span {
-  font: 7px var(--mono);
-  color: #88839f;
+  font: var(--text-meta) var(--mono);
+  color: #8d858f;
   flex: 1;
 }
 .km-atlas-toolbar > button:last-child {
   margin-left: auto;
   border-color: transparent;
-  color: #9994ac;
+  color: #817584;
 }
 .km-space {
   position: relative;
@@ -803,21 +837,21 @@
   cursor: grabbing;
 }
 .km-space svg:focus-visible {
-  outline: 1px solid #cab2e66b;
+  outline: 1px solid var(--brand);
   outline-offset: -4px;
   border-radius: 4px;
 }
 .km-plane-0 {
-  fill: #a8c9e00a;
-  stroke: #b6c9e711;
+  fill: var(--canvas);
+  stroke: #d3cadf;
   stroke-width: 0.7;
 }
 .km-plane-1 {
-  fill: #aa87eb06;
+  fill: var(--canvas);
 }
 .km-floor {
-  stroke: #b4c7e2;
-  stroke-opacity: 0.095;
+  stroke: #a89cb9;
+  stroke-opacity: 0.22;
   stroke-width: 0.5;
   fill: none;
 }
@@ -825,19 +859,19 @@
   pointer-events: none;
 }
 .km-plot-note {
-  fill: #8a8aa4;
+  fill: #8d848e;
   font: 7px var(--mono);
   letter-spacing: 0.065em;
 }
 .km-query text {
-  fill: #e5dccc;
+  fill: var(--brand);
   font-size: 9px;
 }
 .km-point > circle {
   transition: opacity 0.16s;
 }
 .km-point:hover > circle:first-of-type {
-  stroke: #ffffff80;
+  stroke: #685673;
   stroke-width: 0.8;
 }
 .km-zoom {
@@ -852,15 +886,15 @@
   width: 25px;
   height: 25px;
   padding: 0;
-  border: 1px solid #aaa2c333;
+  border: 1px solid #d5cfd8;
   border-radius: 4px;
-  background: #23283c80;
-  color: #d5cfdf;
+  background: var(--canvas);
+  color: #746779;
   font: 14px var(--mono);
 }
 .km-zoom button:hover {
-  background: #3a344c;
-  border-color: #c9bade66;
+  background: var(--soft);
+  border-color: #afa1b7;
 }
 .km-zoom button:disabled {
   opacity: 0.3;
@@ -870,21 +904,32 @@
   align-items: center;
   gap: 15px;
 }
-.km-vector-row .km-fingerprint {
-  flex: 1;
-  grid-template-rows: repeat(4, 3px);
-}
 .km-vector-row > button {
-  font: 8px var(--mono);
-  padding: 4px 6px;
-  border-color: #b7a5c633;
-  color: #c5bdd6;
-  background: transparent;
+  font: var(--text-small) var(--sans);
+  padding: 4px 8px;
+  border-color: var(--brand);
+  color: white;
+  background: var(--brand);
   white-space: nowrap;
 }
 .km-vector-row > button:hover {
-  background: #5e477c44;
-  border-color: #c5b3d566;
+  background: #42108c;
+  border-color: #42108c;
+}
+.km-memory-dialog h2 {
+  font-family: var(--sans);
+  font-size: var(--text-section);
+}
+.km-query-detail {
+  padding: 14px 0;
+  margin-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.km-query-detail p {
+  margin-top: 7px;
+  color: var(--muted);
+  font-size: var(--text-body);
+  line-height: 1.6;
 }
 .km-memory-dialog .km-formulations {
   margin: 20px 0;
@@ -895,15 +940,15 @@
 }
 .km-formulations code {
   color: #9775b1;
-  font-size: 9px;
+  font-size: var(--text-small);
 }
 .km-formulations p {
-  font-size: 12px;
+  font-size: var(--text-body);
   line-height: 1.75;
   margin: 6px 0 0;
 }
 .km-memory-dialog .km-detail-note {
-  font-size: 10px;
+  font-size: var(--text-small);
   color: var(--muted);
   line-height: 1.7;
 }
@@ -913,12 +958,12 @@
     gap: 5px;
   }
   .km-clusters button {
-    font-size: 7px;
+    font-size: var(--text-small);
     padding: 4px 6px;
     gap: 4px;
   }
   .km-clusters button > span {
-    font-size: 6px;
+    font-size: var(--text-small);
   }
   .km-atlas-toolbar {
     padding: 0 14px 6px;
@@ -928,20 +973,16 @@
     display: none;
   }
   .km-atlas-toolbar button {
-    font-size: 7px;
+    font-size: var(--text-small);
   }
   .km-vector-row {
     gap: 8px;
   }
-  .km-vector-row .km-fingerprint {
-    grid-template-columns: repeat(64, 1fr);
-    grid-template-rows: repeat(6, 2px);
-  }
   .km-vector-row > button {
-    font-size: 7px;
+    font-size: var(--text-small);
   }
   .km-orbit > span {
-    font-size: 6px;
+    font-size: var(--text-small);
   }
 }
 @media (max-width: 680px) {
@@ -949,7 +990,7 @@
     height: 470px;
   }
   .km-clusters button {
-    font-size: 8px;
+    font-size: var(--text-small);
     padding: 5px 7px;
   }
   .km-atlas-toolbar {
@@ -957,13 +998,13 @@
     padding-bottom: 5px;
   }
   .km-atlas-toolbar button {
-    font-size: 8px;
+    font-size: var(--text-small);
   }
   .km-vector-row > button {
-    font-size: 8px;
+    font-size: var(--text-small);
   }
   .km-orbit > span {
-    font-size: 6px;
+    font-size: var(--text-small);
   }
 }
 @media (prefers-reduced-motion: reduce) {

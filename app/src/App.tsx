@@ -921,7 +921,7 @@ export function App() {
         className={
           focused
             ? `focused-workspace${panel === "customer" ? " customer-focus" : ""}`
-            : undefined
+            : "account-workspace"
         }
       >
         <div className="workspace-intro">
@@ -943,9 +943,6 @@ export function App() {
                   : "The next move depends on what we know."}
             </h1>
           </div>
-          {!focused && (
-            <p>Customer memory + operational context → a bounded action.</p>
-          )}
         </div>
         {focused ? (
           <div className="focused-context">

@@ -42,9 +42,9 @@ for seed in range(24):
  if best is None or objective>best[0]:best=(objective,labels,centers,seed)
 _,labels,centers,seed=best
 # Editorial names assigned after inspecting membership. Anchors name groups, not their members.
-anchors=[('EP-402','Routines & watch','#68ddc0'),('EP-301','Service context','#a998ff'),
- ('EP-201','Getting connected','#70caff'),('EP-701','Promises & permission','#f2a6c7'),
- ('EP-501','Money & plans','#efcb7f')]
+anchors=[('EP-402','Routines & watch','#527f7b'),('EP-301','Service context','#8568af'),
+ ('EP-201','Getting connected','#597da1'),('EP-701','Promises & permission','#9a7494'),
+ ('EP-501','Money & plans','#9a875c')]
 clusters=[]
 for anchor,label,color in anchors:
  group=int(labels[next(i for i,r in enumerate(episodes) if r['id']==anchor)])

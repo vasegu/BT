@@ -112,3 +112,10 @@ This is a deliberate cross-project design adaptation, not an assertion that the 
 
 
 The running 9 July Jio snapshot (`621fa991`) was subsequently confirmed by the user as the fidelity reference. Its compact record typography, section hierarchy, status tags and source/trace rows now inform the BT review. BT purple marks selection and mandate; unknown, pending and unobserved states retain neutral text and explicit labels.
+
+
+## Working app hierarchy refinement
+
+The current React workspace consolidates surfaces to neutral `#F6F5F8` page/insets, white panels and `#F1EBFA` selected/decision surfaces. These supersede the warm Jio canvas for the running app; the static historical review remains a reference. BT purple remains `#5514B4`. Operations scope and arbiter diagrams share the same light hierarchy as customer memory. Supporting chart hues distinguish data groups without assigning each panel a different background.
+
+Five shared type roles are defined in `app/src/styles.css`: page 26px, section 18px, body 12px, supporting text 11px and metadata 9px. Compact desktop uses 24/16/11/10/8px through the same tokens. System sans-serif handles prose and controls; system monospace identifies data, record IDs and times. SVG labels use chart coordinates. Native phone chrome retains its own scale. These are demonstrator design choices, not newly verified official BT typography rules.

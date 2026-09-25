@@ -40,12 +40,13 @@ export function CustomerMemory({
   const knowledge =
     h.id === "maya"
       ? [
-          ["Stated habit", h.habit || "No habit recorded"],
+          ["Maya told us", h.habit || "No habit recorded", "preference.stated"],
           [
-            "Retained pattern",
-            `${events.find((e) => e.type === "pattern.recorded")?.payload.sampleSize ?? "No"} recovered gaps · synthetic summary`,
+            "History shows",
+            `${events.find((e) => e.type === "pattern.recorded")?.payload.sampleSize ?? "No"} overnight gaps followed by recovery`,
+            "pattern.recorded",
           ],
-          ["Latest observation", h.serviceState],
+          ["Latest signal", h.serviceState, events.at(-1)?.type],
         ]
       : h.id === "daniel"
         ? [
@@ -54,22 +55,25 @@ export function CustomerMemory({
               h.restartTried
                 ? "Restart tried · unsuccessful"
                 : "No restart result",
+              "diagnostic.completed",
             ],
             [
               "Relationship",
               `${h.owner || "Unassigned"} · ${h.caseStatus} case`,
+              "case.opened",
             ],
             [
               "Commitment",
               h.promise
                 ? `${time(h.promise)} callback · ${h.promiseFulfilled ? "kept" : "outstanding"}`
                 : "No promise recorded",
+              h.promiseFulfilled ? "promise.fulfilled" : "promise.created",
             ],
           ]
         : [
-            ["Known history", "Hub delivery recorded"],
-            ["Still unknown", "Activation and successful first use"],
-            ["Latest observation", h.serviceState],
+            ["What arrived", "Hub delivery recorded", "order.delivered"],
+            ["What is missing", "Activation and successful first use", undefined],
+            ["Latest signal", h.serviceState, events.at(-1)?.type],
           ];
   return (
     <div className="customer-memory">
@@ -82,7 +86,7 @@ export function CustomerMemory({
         />
         <aside className="km-understanding">
           <div className="km-person">
-            <span className="km-kicker">02 / WHAT WE KNOW</span>
+            <span className="km-kicker">02 / READ THE CUSTOMER’S HISTORY</span>
             <h2>
               {h.id === "maya"
                 ? "An overnight rhythm."
@@ -92,22 +96,36 @@ export function CustomerMemory({
             </h2>
             <p>
               {h.id === "maya"
-                ? "Her stated habit changes how a quiet router is interpreted."
+                ? "A missing heartbeat means more when you remember the person behind it."
                 : h.id === "sam"
                   ? "Delivered equipment does not establish a working connection."
                   : "Earlier attempts and promises stay attached to the relationship."}
             </p>
           </div>
           <dl className="km-facts">
-            {knowledge.map(([label, value]) => (
-              <div key={label}>
-                <dt>{label}</dt>
-                <dd>{value}</dd>
-              </div>
-            ))}
+            {knowledge.map(([label, value, sourceType], i) => {
+              const source = events.filter((e) => e.type === sourceType).at(-1);
+              return (
+                <div key={label} className={`km-fact km-fact-${i}`}>
+                  <dt><span>{String(i + 1).padStart(2, "0")}</span>{label}</dt>
+                  <dd>
+                    {source ? (
+                      <button
+                        aria-label={`Trace ${label?.toLowerCase()}`}
+                        aria-pressed={event?.id === source.id}
+                        onClick={() => setEventId(source.id)}
+                        title="Trace this to its source record below"
+                      >
+                        {value}<span aria-hidden="true">↙</span>
+                      </button>
+                    ) : value}
+                  </dd>
+                </div>
+              );
+            })}
           </dl>
           <div className="km-implication">
-            <span className="km-kicker">03 / WHAT THIS CHANGES</span>
+            <span className="km-kicker">03 / CHOOSE THE RESPONSE</span>
             <h3>{decision?.title || "Wait for the first signal."}</h3>
             <p>
               {decision?.reason ||
@@ -120,18 +138,14 @@ export function CustomerMemory({
             </span>
           </div>
           <p className="km-provenance">
-            Atlas: saved lab scenario context,{" "}
-            {snapshot.operations.incident
-              ? "with incident scope"
-              : "before incident scope"}
-            . Readout and timeline: this session’s source records. Similarity is
-            not confidence.
+            Atlas: saved example context. Readout: synthetic session records.
+            History summary is authored; similarity is not confidence.
           </p>
         </aside>
       </div>
       <section className="km-history" aria-label="Customer memory over time">
         <header>
-          <h2>Memory over time</h2>
+          <h2>Follow the evidence</h2>
           <span>{events.length} CUSTOMER RECORDS · SELECT TO TRACE</span>
         </header>
         <div className="km-timeline">
