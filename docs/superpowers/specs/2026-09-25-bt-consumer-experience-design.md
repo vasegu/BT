@@ -14,7 +14,7 @@ The demonstration must work for a Consumer leadership audience in six minutes an
 
 The commercial purpose is to improve dependable service, reduce avoidable effort, keep promises and earn the opportunity to deepen the relationship. Product breadth and spend are outcomes to observe after a relevant offer; they must not override unresolved service needs or become proxies for customer satisfaction.
 
-This specification and its review mockups now live in the dedicated `GitHub/BT` repository. They propose the next build; no BT database, production connection or deployment has been created. Soho remains the reference implementation. All BT households, operational records, capacities and prices used in the future demonstrator will be fictional and visibly identified as such.
+This specification and its review mockups live in the dedicated `GitHub/BT` repository. A first local app slice now implements the three-router event-to-outcome loop with React/TypeScript, SQLite and a server worker; see the repository README. The hosted schemas, model integration and larger corpus below remain the target design. No BT production connection or deployment has been created. Soho remains the reference implementation. All BT households, operational records, capacities and prices are fictional and visibly identified as such.
 
 ### Success in one viewing
 

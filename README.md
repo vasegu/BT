@@ -1,6 +1,43 @@
 # BT Consumer — Experience intelligence
 
-A demonstrator design that connects Mark's pitch to customer memory, operational context, ambient agents, arbitration and accountable action. It carries forward the strongest interaction and engineering patterns from Jio CX, Sainsbury's and Soho House.
+A working local demonstrator and design pack connecting Mark's pitch to customer memory, operational context, ambient agents, arbitration and accountable action. It carries forward interaction and engineering patterns from Jio CX, Sainsbury's and Soho House.
+
+## Run the app
+
+Requires Node 24 or newer. No Docker, cloud account or API key is needed for this first slice.
+
+```sh
+cd app
+npm install
+npm run dev
+```
+
+Open **http://127.0.0.1:5185/**. Vite serves the React/TypeScript app on 5185; the loopback-only API and worker use 5186. The earlier design review stays on 5181 and Jio's historical preview on 5182.
+
+Press **Play**. The same missing heartbeat produces three different policy decisions. The replay adds the shared incident, observes Daniel's restoration and records Aisha's kept callback. It pauses for Daniel's **“It’s working again”** response in the phone. That response writes a source event and closes the case after the worker processes it.
+
+- Five panels read one persisted session snapshot. Each opens its own full-page section with one **Back to account** action; sibling navigation and customer switching stay on the account overview. Opening a section pauses replay and preserves the customer, session and historical cutoff.
+- **Source records** opens the event ledger. Click a record to inspect IDs, source, occurred/received time and payload.
+- The numbered replay positions are read-only historical snapshots. **New session** preserves the previous session and starts an isolated one. Its URL is the return point.
+- The **Visual lab** contains the semantic atlas, decision flow and memory timeline. These are clearly labelled independent studies, not a live view of the app session's records. A link returns to the same app session.
+- SQLite stores records, jobs, decisions, actions and receipts in `app/.data/bt.sqlite` (ignored by Git). A server worker processes pending jobs independently of browser visibility and recovers them after restart. An in-app delivery is a simulated external effect.
+
+```sh
+npm test          # eight behavioural checks over temporary databases
+npm run test:lab  # vector integrity, retrieval and memory checks
+npm run build    # strict typecheck and production bundle
+BT_PORT=5185 npm start  # serve the built app + API from one local process
+```
+
+Stop the dev processes before starting the production server on the same port. This is a local synthetic demonstrator, not a public multi-user deployment. Local presenter/origin checks are not a replacement for deployed authentication.
+
+### What is real in this slice
+
+React UI, SQLite writes, transactional jobs, idempotency, deterministic arbitration, session isolation, source-time projection, action/receipt persistence and local MiniLM vector computation. Eight engine tests cover separate household decisions, retries, historical causality, retained promises and restart recovery.
+
+### What is still planned
+
+The dedicated RX Supabase/Postgres deployment, full domain schemas, live Gateway/Jev assessments, a larger longitudinal corpus and backtested forecasts. No live AI response is fabricated. The local first-slice schema is not the proposed complete BT schema or a substitute for deployed RLS, leased jobs and outbox delivery. All source records and external business effects are synthetic.
 
 ## Start here
 
@@ -20,7 +57,7 @@ Open `http://127.0.0.1:5181/design/review.html`. Port 5181 keeps the existing So
 
 ## Status and provenance
 
-Design pack moved from `../SohoHouse` on 25 September 2026. Original BT specification commit: Soho `a38501c`. BT product code, hosted database, Gateway configuration and deployment have not been created here. This is a local Git repository; no GitHub remote has been created or published.
+Design pack moved from `../SohoHouse` on 25 September 2026. Original BT specification commit: Soho `a38501c`. The first working app is in `app/`; hosted database, Gateway configuration and deployment remain unconfigured. This is a local Git repository; no GitHub remote has been created or published.
 
 Reference implementations remain in the sibling `SohoHouse`, `ecd_jio_cx` and `sainsburys-demo` repositories. The spec records the inspected revisions. No credentials or customer datasets were transferred.
 
@@ -31,7 +68,7 @@ Reference implementations remain in the sibling `SohoHouse`, `ecd_jio_cx` and `s
 - Does the operational view give the business a credible state and capacity model?
 - Can each important point in Mark's pitch be demonstrated by an observable behaviour?
 
-The next build should follow the full specification after this design review, starting with one complete event-to-outcome loop.
+The first implementation is the event-to-outcome loop described above. Follow the full specification as the hosted data and model integrations are added.
 
 ## Historical Jio comparison currently running
 

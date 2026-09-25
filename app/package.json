@@ -1,0 +1,28 @@
+{
+  "name": "bt-experience-intelligence",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "node server/dev.mjs",
+    "build": "tsc --noEmit && vite build",
+    "start": "node server/server.ts",
+    "test": "node --test tests/*.test.ts",
+    "test:lab": "node ../scripts/verify-lab.mjs"
+  },
+  "dependencies": {
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.2",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.1",
+    "typescript": "7.0.2",
+    "vite": "8.3.1"
+  }
+}
