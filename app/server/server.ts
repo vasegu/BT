@@ -3,11 +3,21 @@ import { readFileSync, existsSync, statSync, mkdirSync } from "node:fs";
 import { resolve, dirname, extname, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Engine, DomainError } from "./engine.ts";
+import {
+  eveConfig,
+  eveContext,
+  parseEveRequest,
+  replyToEve,
+  createEveVoice,
+  voiceBrief,
+} from "./eve.ts";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const port = Number(process.env.BT_PORT || 5186);
 const dbPath = process.env.BT_DB_PATH || resolve(root, ".data/bt.sqlite");
 mkdirSync(dirname(dbPath), { recursive: true });
 const engine = new Engine(dbPath);
+const getEveConfig = () => eveConfig(resolve(root, ".env.local"));
+let eveRequests = 0;
 const worker = setInterval(() => engine.processJobs(), 350);
 const types: Record<string, string> = {
   ".html": "text/html; charset=utf-8",
@@ -41,9 +51,17 @@ const server = createServer(async (req, res) => {
           return send(200, {
             store: "sqlite",
             worker: "running",
-            model: "not_connected",
+            model: getEveConfig().key ? "eve_configured" : "not_connected",
             externalActions: "simulated",
           });
+        if (url.pathname === "/api/eve/status") {
+          const config = getEveConfig();
+          return send(200, {
+            configured: Boolean(config.key.trim()),
+            textModel: config.textModel,
+            voiceModel: "gpt-live-1",
+          });
+        }
         if (url.pathname === "/api/snapshot") {
           const id = url.searchParams.get("session");
           if (!id) throw new DomainError("Session is required");
@@ -82,7 +100,10 @@ const server = createServer(async (req, res) => {
       let body = "";
       for await (const chunk of req) {
         body += chunk.toString();
-        if (Buffer.byteLength(body) > 8192)
+        if (
+          Buffer.byteLength(body) >
+          (url.pathname.startsWith("/api/eve/") ? 65536 : 8192)
+        )
           throw new DomainError("Request too large", 413);
       }
       let value: Record<string, unknown>;
@@ -93,6 +114,57 @@ const server = createServer(async (req, res) => {
       }
       if (!value || typeof value !== "object" || Array.isArray(value))
         throw new DomainError("Expected an object");
+      if (
+        ["/api/eve/chat", "/api/eve/voice", "/api/eve/context"].includes(
+          url.pathname,
+        )
+      ) {
+        const input = parseEveRequest(value);
+        const context = eveContext(
+          engine.snapshot(input.sessionId, input.at),
+          input.person,
+        );
+        if (url.pathname === "/api/eve/context")
+          return send(200, {
+            revision: context.revision,
+            brief: voiceBrief(context),
+          });
+        if (
+          url.pathname === "/api/eve/chat" &&
+          (!input.messages.length || input.messages.at(-1)?.role !== "user")
+        )
+          throw new DomainError("A customer message is required");
+        if (eveRequests >= 4)
+          throw new DomainError("Eve is busy. Please try again shortly.", 429);
+        const cancel = new AbortController();
+        const disconnected = () => cancel.abort();
+        res.on("close", disconnected);
+        eveRequests++;
+        try {
+          const result =
+            url.pathname === "/api/eve/chat"
+              ? await replyToEve(
+                  context,
+                  input.messages,
+                  getEveConfig(),
+                  fetch,
+                  cancel.signal,
+                )
+              : await createEveVoice(
+                  context,
+                  input.messages,
+                  value.sdp,
+                  getEveConfig(),
+                  fetch,
+                  cancel.signal,
+                );
+          if (!res.destroyed) return send(200, result);
+          return;
+        } finally {
+          eveRequests--;
+          res.off("close", disconnected);
+        }
+      }
       if (url.pathname === "/api/scenarios")
         return send(201, engine.createSession());
       if (url.pathname === "/api/events") {

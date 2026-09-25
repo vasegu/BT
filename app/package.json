@@ -15,7 +15,8 @@
   },
   "dependencies": {
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "voice-glow": "^0.2.1"
   },
   "devDependencies": {
     "@types/node": "26.6.2",

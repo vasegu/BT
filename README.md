@@ -4,7 +4,7 @@ A working local demonstrator and design pack connecting Mark's pitch to customer
 
 ## Run the app
 
-Requires Node 24 or newer. No Docker, cloud account or API key is needed for this first slice.
+Requires Node 24 or newer. The scenario works without Docker or an API key. Eve uses an OpenAI project key for live chat and voice.
 
 ```sh
 cd app
@@ -24,7 +24,7 @@ Press **Play**. The same missing heartbeat produces three different policy decis
 - SQLite stores records, jobs, decisions, actions and receipts in `app/.data/bt.sqlite` (ignored by Git). A server worker processes pending jobs independently of browser visibility and recovers them after restart. An in-app delivery is a simulated external effect.
 
 ```sh
-npm test          # eight behavioural checks over temporary databases
+npm test          # engine, Eve grounding and voice lifecycle checks
 npm run test:lab  # vector integrity, retrieval and memory checks
 npm run build    # strict typecheck and production bundle
 BT_PORT=5185 npm start  # serve the built app + API from one local process
@@ -34,7 +34,19 @@ Stop the dev processes before starting the production server on the same port. T
 
 ### What is real in this slice
 
-React UI, SQLite writes, transactional jobs, idempotency, deterministic arbitration, session isolation, source-time projection, action/receipt persistence and local MiniLM vector computation. Eight engine tests cover separate household decisions, retries, historical causality, retained promises and restart recovery.
+React UI, SQLite writes, transactional jobs, idempotency, deterministic arbitration, session isolation, source-time projection, action/receipt persistence and local MiniLM vector computation. Eve adds live OpenAI Responses chat and GPT-Live voice, grounded in the same scoped server snapshot. Engine tests cover separate household decisions, retries, historical causality, retained promises and restart recovery.
+
+### Eve: live chat and voice
+
+Open **Help** or **Talk to Eve** in the phone. Copy `app/.env.example` to the ignored `app/.env.local` and set `OPENAI_API_KEY`. The server reads it on demand; no restart is necessary. Never use a `VITE_` prefix for this key. `EVE_TEXT_MODEL` defaults to `gpt-5.6-terra`; voice uses `gpt-live-1`, which requires project access.
+
+- Chat uses Responses. Each request reads the selected customer's latest SQLite snapshot (or the selected historical cutoff), own records, relevant incident scope and retained promises. Other customer identities and reservations are excluded. **Records read** shows the supplied evidence and revision, not model-generated citations.
+- **Start voice** requests the microphone, negotiates WebRTC through the server and connects audio directly to OpenAI. GPT-Live delegates account questions to the same chat endpoint. Replay updates supply a compact context refresh. Chat and voice transcripts remain in session storage for this browser tab, isolated by demo session, customer and historical cutoff. Leaving Eve releases microphone/audio resources; reopening retains the conversation. Context → Clear conversation removes the local transcript.
+- Voice has mute, end, connection errors, a five-minute demo limit and reduced-motion support. Voice opens a focused dark view with clean live captions, glass microphone/close controls and a soft colour bar; closing returns to text chat. The audio-reactive effect uses the MIT-licensed [`voice-glow`](https://libraries.dev/voice) component.
+- Eve is read-only. It cannot commit business actions, fulfil promises, book callbacks or close cases. Existing deterministic arbitration and Daniel's explicit confirmation button remain authoritative. All account facts are synthetic; answers and speech are live generated responses. `store: false` is requested for Responses and Live; normal provider data policies still apply.
+- The key remains server-side. This is a loopback-only presenter demo, not a deployed authentication boundary. Requests have size limits, timeouts, local origin checks and a bounded number of concurrent provider requests. No mocked answer is substituted for a provider failure.
+
+API routes: `GET /api/eve/status`, `POST /api/eve/chat`, `POST /api/eve/context`, `POST /api/eve/voice`. POSTs require the existing `X-BT-Demo: 1` header. Voice and chat receive only a session ID, selected person, optional cutoff and bounded conversation; the server assembles account context itself.
 
 ### What is still planned
 

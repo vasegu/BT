@@ -513,8 +513,9 @@ export function SectionView({
         <span className="eyebrow">Customer channel / My BT</span>
         <h2>{h.name.split(" ")[0]}’s side of the story.</h2>
         <p>
-          Only the committed customer-facing actions appear here. The internal
-          decision stays behind the experience.
+          Service updates carry through from the shared state. Eve reads the
+          same customer history and operational context for chat and voice
+          support.
         </p>
         <div className="full-fields">
           <Field label="Updates delivered">{actions.length}</Field>

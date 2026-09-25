@@ -410,7 +410,7 @@
   margin: 8px 0;
 }
 .full-held small {
-  font: var(--text-meta)/1.6 var(--mono);
+  font: var(--text-meta) / 1.6 var(--mono);
   color: #977eaa;
 }
 .outcome-cards {
@@ -556,6 +556,40 @@
 }
 .full-phone .panel-body {
   padding: 0;
+}
+.focused-workspace.phone-focus {
+  padding-top: 14px;
+}
+.phone-focus .workspace-intro {
+  display: inline-flex;
+  margin: 0 18px 0 0;
+  vertical-align: middle;
+}
+.phone-focus .workspace-intro .eyebrow {
+  display: none;
+}
+.phone-focus .workspace-intro h1 {
+  font-size: 20px;
+}
+.phone-focus .focused-context {
+  display: inline-flex;
+  margin: 0;
+  vertical-align: middle;
+}
+.phone-focus .focused-context code,
+.phone-focus .focused-context > span {
+  display: none;
+}
+.phone-focus .channel-section {
+  min-height: 0;
+  padding-top: 16px;
+  padding-bottom: 0;
+}
+/* Keep the phone's controls visible on short desktop presenter windows. */
+@media (min-width: 681px) and (max-height: 850px) {
+  .full-phone .phone {
+    zoom: 0.78;
+  }
 }
 .channel-receipts h3 {
   font-size: var(--text-section);

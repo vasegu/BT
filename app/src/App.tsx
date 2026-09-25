@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { SectionView } from "./SectionView";
+import { PhoneExperience } from "./PhoneExperience";
 import type { Snapshot, PersonId, SourceEvent, Step } from "./types";
 
 const formatTime = (iso: string) =>
@@ -216,7 +217,15 @@ export function App() {
     try {
       const session = await api<Snapshot["session"]>("/api/scenarios", {});
       setSnapshot(null);
-      change({ session: session.id, at: null, panel: null }, !sessionId);
+      change(
+        {
+          session: session.id,
+          at: null,
+          panel: sessionId ? null : panel,
+          chat: sessionId ? null : params.get("chat"),
+        },
+        !sessionId,
+      );
       setError("");
     } catch (e) {
       setError((e as Error).message);
@@ -303,7 +312,6 @@ export function App() {
     .filter((d) => d.person === person)
     .at(-1);
   const actions = snapshot?.actions.filter((a) => a.person === person) || [];
-  const messages = [...actions].reverse();
   const pending = !!snapshot?.pendingJobs;
   const current = !!snapshot && snapshot.session.id === sessionId;
   const lab = (study: string) =>
@@ -460,128 +468,16 @@ export function App() {
   );
   const phone = h && snapshot && (
     <Panel id="phone" panel={panel} onOpen={openPanel}>
-      <div className="phone">
-        <div className="island" />
-        <div className="phone-status">
-          <strong>{formatTime(snapshot.clock)}</strong>
-          <span>
-            <Glyph kind="signal" />
-            <Glyph kind="wifi" />
-            <i className="battery" />
-          </span>
-        </div>
-        <div className="phone-body">
-          <div className="phone-app-header">
-            <img src="/reference/references/bt/BT_Logo_purple.png" alt="BT" />
-            <strong>My BT</strong>
-            <span className="phone-avatar">{h.name[0]}</span>
-          </div>
-          <p className="phone-greeting">Good evening, {h.name.split(" ")[0]}</p>
-          <h2>
-            Your home,
-            <br />
-            connected.
-          </h2>
-          <div className="phone-service">
-            <Glyph kind="wifi" />
-            <span>
-              <strong>Broadband</strong>
-              <small>
-                {h.id === "maya"
-                  ? "Your home broadband"
-                  : h.confirmed
-                    ? "Working · confirmed by you"
-                    : h.restored
-                      ? "Connection observed"
-                      : snapshot.cutoff
-                        ? "Your service team has the context"
-                        : "Your service at a glance"}
-              </small>
-            </span>
-            <span className="status-dot" />
-          </div>
-          <div className="phone-section-title">
-            <span>Your updates</span>
-            <span>
-              {messages.length
-                ? `${messages.length} received`
-                : "All caught up"}
-            </span>
-          </div>
-          <div className="phone-messages">
-            {messages.length ? (
-              messages.map((a, i) => (
-                <article
-                  className={`phone-message ${i ? "older" : ""}`}
-                  key={a.id}
-                >
-                  <div className="message-meta">
-                    <span>
-                      <img
-                        src="/reference/references/bt/BT_Logo_purple.png"
-                        alt=""
-                      />{" "}
-                      YOUR BT TEAM
-                    </span>
-                    <time>{formatTime(a.time)}</time>
-                  </div>
-                  <h3>{a.title}</h3>
-                  <p>{a.body}</p>
-                  {i === 0 &&
-                    person === "daniel" &&
-                    snapshot.nextStep === "confirm" &&
-                    !snapshot.historical && (
-                      <button
-                        className="confirm-button"
-                        disabled={busy || pending || !!error}
-                        onClick={() => void advance()}
-                      >
-                        It’s working again ✓
-                      </button>
-                    )}
-                  {i === 0 && h.promise && !h.promiseFulfilled && (
-                    <div className="phone-promise">
-                      <span>◷</span>
-                      <div>
-                        <strong>Aisha will call</strong>
-                        <small>Today, 21:15 · your existing case</small>
-                      </div>
-                    </div>
-                  )}
-                </article>
-              ))
-            ) : (
-              <div className="phone-quiet">
-                <div className="quiet-mark">
-                  <Glyph />
-                </div>
-                <strong>We’re here when you need us.</strong>
-                <p>Your service updates and conversations will appear here.</p>
-              </div>
-            )}
-          </div>
-        </div>
-        <div className="phone-tabs">
-          <span className="active">
-            ⌂<small>Home</small>
-          </span>
-          <span>
-            ▤<small>Services</small>
-          </span>
-          <span>
-            ◌<small>Help</small>
-          </span>
-          <span>
-            ○<small>Account</small>
-          </span>
-        </div>
-        <div className="home-indicator" />
-      </div>
-      <p className="phone-caption">
-        {person === "maya"
-          ? "The operator can see the watch. The customer receives no message."
-          : "A persisted action and simulated delivery receipt power this phone."}
-      </p>
+      <PhoneExperience
+        key={`${snapshot.session.id}/${person}/${cutoff ?? "live"}`}
+        snapshot={snapshot}
+        customer={h}
+        actions={actions}
+        startChat={params.get("chat") === "eve"}
+        busy={busy || pending || !!error}
+        onConfirm={() => void advance()}
+        onSupport={() => setPlaying(false)}
+      />
     </Panel>
   );
   const arbiter = h && snapshot && (
@@ -920,7 +816,7 @@ export function App() {
         id="workspace"
         className={
           focused
-            ? `focused-workspace${panel === "customer" ? " customer-focus" : ""}`
+            ? `focused-workspace${panel === "customer" ? " customer-focus" : panel === "phone" ? " phone-focus" : ""}`
             : "account-workspace"
         }
       >
@@ -1079,7 +975,7 @@ export function App() {
           <span>Accenture / RX · BT Consumer</span>
           <span>Synthetic sources · rule-derived decisions · demo actions</span>
           <span>
-            SQLite + server worker <b>·</b> live model not connected
+            SQLite + server worker <b>·</b> Eve / OpenAI on demand
           </span>
         </footer>
       </main>

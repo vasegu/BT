@@ -1,0 +1,399 @@
+.phone-native {
+  background: #f8f7fa;
+  isolation: isolate;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+.phone-native.phone-conversation {
+  background: white;
+}
+.phone-native .phone-status {
+  height: 55px;
+  padding: 0 22px;
+}
+.phone-native .phone-status > strong {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.phone-native .phone-status svg {
+  width: 15px;
+  height: 15px;
+}
+.phone-native .phone-body {
+  padding: 7px 18px 0;
+  overscroll-behavior: contain;
+}
+.phone-native .phone-app-header {
+  margin-bottom: 21px;
+  gap: 8px;
+}
+.phone-native .phone-app-header strong {
+  font-size: 16px;
+  letter-spacing: -0.4px;
+}
+.phone-native .phone-avatar {
+  display: grid;
+  place-items: center;
+  border: 0;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 50%;
+  margin-left: auto;
+  background: #eee7f6;
+  color: #785598;
+  font-size: 12px;
+}
+.phone-native .phone-greeting {
+  font-size: 11px;
+  color: #8c7d96;
+  margin-bottom: 6px;
+}
+.phone-native .phone-body > h2 {
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: -1.2px;
+  line-height: 1.12;
+  margin-bottom: 22px;
+}
+.phone-native .phone-service {
+  width: 100%;
+  text-align: left;
+  min-height: 67px;
+  padding: 14px 12px;
+  border-color: #e8e2ee;
+  border-radius: 15px;
+}
+.phone-native .phone-service > span {
+  flex: 1;
+}
+.phone-native .phone-service strong {
+  font-size: 12px;
+}
+.phone-native .phone-service small {
+  font-size: 9px;
+  line-height: 1.4;
+  margin-top: 4px;
+  color: #93859e;
+}
+.phone-native .phone-service > svg:last-child {
+  width: 12px;
+  height: 12px;
+  color: #ab9fb5;
+}
+.phone-native .phone-eve-entry {
+  margin: 10px 0 21px;
+  padding: 12px;
+  min-height: 64px;
+  border-radius: 15px;
+  background: linear-gradient(110deg, #f3eefb, #f9f7fc 75%);
+  border-color: #e8dff2;
+  gap: 10px;
+  box-shadow: none;
+}
+.phone-native .phone-eve-entry strong {
+  font-size: 12px;
+  color: #513668;
+  font-weight: 600;
+}
+.phone-native .phone-eve-entry small {
+  font-size: 9px;
+  line-height: 1.5;
+  color: #9885aa;
+}
+.phone-native .phone-eve-entry > svg {
+  width: 12px;
+  height: 12px;
+  color: #9a82b2;
+}
+.phone-native .eve-entry-icon {
+  background: #5514b4;
+  color: white;
+  border-radius: 10px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+  line-height: 1;
+  letter-spacing: -2px;
+  padding-right: 3px;
+}
+.phone-native .eve-entry-icon > span {
+  font-size: 12px;
+  margin-top: 12px;
+}
+.phone-native .phone-section-title {
+  font-size: 12px;
+  margin: 22px 1px 11px;
+}
+.phone-native .phone-section-title > span:last-child {
+  font-size: 9px;
+}
+.phone-native .phone-message {
+  padding: 14px;
+  border-color: #e8e2ef;
+  border-radius: 15px;
+  box-shadow: 0 2px 6px #26113903;
+}
+.phone-native .phone-message > summary {
+  list-style: none;
+  cursor: pointer;
+}
+.phone-native .phone-message > summary::-webkit-details-marker {
+  display: none;
+}
+.phone-native .message-meta {
+  margin-bottom: 10px;
+}
+.phone-native .message-meta > span {
+  font: 9px/1.4 var(--sans);
+  letter-spacing: 0;
+  color: #8f7c9e;
+}
+.phone-native .message-meta time {
+  font: 9px/1.4 var(--sans);
+}
+.phone-native .phone-message h3 {
+  font-size: 14px;
+  line-height: 1.35;
+  font-weight: 600;
+  margin-bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.phone-native .phone-message h3 > svg {
+  margin-left: auto;
+  flex-shrink: 0;
+  width: 11px;
+  height: 11px;
+  color: #a794b6;
+  transform: rotate(90deg);
+  transition: transform 160ms;
+}
+.phone-native .phone-message[open] h3 > svg {
+  transform: rotate(-90deg);
+}
+.phone-native .phone-message[open] > p {
+  display: block;
+  font-size: 11px;
+  line-height: 1.65;
+  margin-top: 10px;
+  color: #8b7b94;
+}
+.phone-native .phone-message.older {
+  background: #f2eff6;
+  border-color: #ece6f2;
+}
+.phone-native .phone-message.older h3 {
+  font-size: 12px;
+}
+.phone-native .phone-promise {
+  border-color: #eee8f4;
+  padding-top: 12px;
+  margin-top: 13px;
+}
+.phone-native .phone-promise > svg {
+  width: 21px;
+  height: 21px;
+  color: #785898;
+}
+.phone-native .phone-promise strong {
+  font-size: 10px;
+}
+.phone-native .phone-promise small {
+  font-size: 9px;
+}
+.phone-native .confirm-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 40px;
+  border-radius: 10px;
+  font-size: 11px;
+}
+.phone-native .confirm-button svg {
+  width: 15px;
+  height: 15px;
+}
+.phone-native .phone-quiet {
+  border: 0;
+  padding: 22px 7px 28px;
+  background: transparent;
+}
+.phone-quiet-check {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  margin: 0 auto 14px;
+  background: #eeebf2;
+  color: #9a85af;
+  border-radius: 50%;
+}
+.phone-quiet-check svg {
+  width: 17px;
+  height: 17px;
+}
+.phone-native .phone-quiet strong {
+  font-size: 12px;
+  color: #756383;
+}
+.phone-native .phone-quiet p {
+  font-size: 10px;
+  color: #a193ab;
+  line-height: 1.7;
+}
+.phone-native .phone-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  padding: 7px 13px 0;
+  border-top: 1px solid #ebe5f0;
+  background: #ffffffd9;
+  backdrop-filter: blur(20px);
+}
+.phone-native .phone-tabs > button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 47px;
+  gap: 4px;
+  border: 0;
+  padding: 4px;
+  border-radius: 12px;
+  color: #a093aa;
+  background: none;
+}
+.phone-native .phone-tabs > button:hover {
+  background: #f1edf6;
+}
+.phone-native .phone-tabs svg {
+  width: 20px;
+  height: 20px;
+}
+.phone-native .phone-tabs small {
+  font-size: 9px;
+  line-height: 1.2;
+  font-weight: 500;
+}
+.phone-native .phone-tabs > button.active {
+  color: var(--brand);
+}
+.phone-native .phone-tabs > button.active svg {
+  stroke-width: 2;
+}
+.phone-native .home-indicator {
+  height: 4px;
+  width: 106px;
+  margin: 8px auto 8px;
+  z-index: 2;
+}
+.phone-native .phone-service-detail {
+  text-align: center;
+  background: white;
+  border: 1px solid #e8e2ef;
+  border-radius: 18px;
+  padding: 23px 18px;
+}
+.phone-service-icon {
+  display: grid;
+  place-items: center;
+  width: 45px;
+  height: 45px;
+  margin: 0 auto 12px;
+  border-radius: 14px;
+  color: var(--brand);
+  background: #f4effa;
+}
+.phone-service-icon svg {
+  width: 24px;
+  height: 24px;
+}
+.phone-service-detail h3,
+.phone-account-identity h3 {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.4px;
+}
+.phone-service-detail p,
+.phone-account-identity p {
+  font-size: 10px;
+  color: #93819f;
+  margin-top: 6px;
+  line-height: 1.5;
+}
+.phone-native-list {
+  background: white;
+  border: 1px solid #e8e2ef;
+  border-radius: 14px;
+  padding: 0 13px;
+  margin: 0 0 18px;
+}
+.phone-native-list > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  min-height: 46px;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0ebf4;
+  font-size: 10px;
+}
+.phone-native-list > div:last-child {
+  border-bottom: 0;
+}
+.phone-native-list dt {
+  color: #93819f;
+  flex-shrink: 0;
+}
+.phone-native-list dd {
+  text-align: right;
+  margin: 0;
+  color: #604b70;
+}
+.phone-account-identity {
+  padding: 7px 0 8px;
+  text-align: center;
+}
+.phone-account-identity > span {
+  display: grid;
+  place-items: center;
+  margin: 0 auto 14px;
+  background: #ece3f4;
+  color: #83639e;
+  border: 3px solid #fff;
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  font-size: 21px;
+  font-weight: 500;
+}
+.phone-preference {
+  padding: 15px;
+  margin-bottom: 18px;
+  background: #f0ebf6;
+  border-radius: 14px;
+}
+.phone-preference small {
+  font-size: 9px;
+  color: #a18aaf;
+}
+.phone-preference p {
+  font-size: 13px;
+  color: #685078;
+  margin: 8px 0;
+  line-height: 1.5;
+}
+.phone-preference > span {
+  font-size: 9px;
+  color: #a18aaf;
+  line-height: 1.5;
+}
+@media (prefers-reduced-motion: reduce) {
+  .phone-native * {
+    transition: none !important;
+  }
+}

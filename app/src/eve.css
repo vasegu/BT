@@ -1,0 +1,790 @@
+.eve {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  color: #30243f;
+}
+.eve button {
+  font-family: var(--sans);
+}
+.eve-header {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 17px 15px 9px;
+  flex-shrink: 0;
+}
+.eve-back {
+  background: none;
+  border: 0;
+  color: var(--brand);
+  font-size: 32px;
+  width: 30px;
+  height: 40px;
+  line-height: 1;
+}
+.eve-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  color: #fff;
+  background: var(--brand);
+  font-size: 32px;
+  font-weight: 550;
+  letter-spacing: -4px;
+  padding-right: 5px;
+  line-height: 1;
+}
+.eve-mark > span {
+  font-size: 13px;
+  align-self: flex-end;
+  margin-bottom: 7px;
+}
+.eve-header > div {
+  flex: 1;
+}
+.eve-header strong {
+  display: block;
+  font-size: 16px;
+  letter-spacing: -0.4px;
+}
+.eve-header small {
+  font-size: 9px;
+  color: #82748e;
+}
+.eve-connection {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #b1a4c3;
+}
+.eve-connection.connected {
+  background: #56857a;
+}
+.eve-context-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 11px 17px;
+  background: #f6f5f8;
+  border: 0;
+  border-block: 1px solid #eeeaf1;
+  font-size: 9px;
+  color: #776b80;
+  flex-shrink: 0;
+}
+.eve-context-toggle > span:first-child {
+  color: #544362;
+}
+.eve-context-toggle b {
+  color: #c3bacb;
+  margin: 0 4px;
+}
+.eve-context-toggle i {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 2px;
+  background: #8c71b2;
+  margin-right: 5px;
+}
+.eve-context {
+  background: #f6f5f8;
+  padding: 12px 17px;
+  border-bottom: 1px solid #eeeaf1;
+  flex-shrink: 0;
+}
+.eve-context strong {
+  font-size: 11px;
+}
+.eve-context dl {
+  margin: 10px 0;
+}
+.eve-context dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 10px;
+  margin-top: 5px;
+}
+.eve-context dt {
+  color: #82748e;
+}
+.eve-context dd {
+  text-align: right;
+  margin: 0;
+}
+.eve-context > small {
+  font-size: 8px;
+  color: #82748e;
+}
+.eve-thread {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 20px 16px 14px;
+  scrollbar-width: thin;
+  scrollbar-color: #ddd5e8 transparent;
+}
+.eve-welcome {
+  padding: 8px 2px 0;
+}
+.eve-welcome-label {
+  display: block;
+  color: #8a72a2;
+  font-size: 10px;
+  margin-bottom: 12px;
+}
+.eve-welcome h3 {
+  font-size: 30px;
+  font-weight: 550;
+  letter-spacing: -1.5px;
+  line-height: 1.12;
+  margin: 0 0 13px;
+  color: #30203f;
+}
+.eve-welcome p {
+  font-size: 12px;
+  line-height: 1.65;
+  color: #887b92;
+  margin: 0;
+}
+.eve-context-pills {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+.eve-context-pills > span {
+  font-size: 8px;
+  color: #8c779c;
+  padding: 4px 7px;
+  border: 1px solid #ece6f2;
+  border-radius: 4px;
+}
+.eve-prompts {
+  display: grid;
+  gap: 7px;
+  margin-top: 28px;
+}
+.eve-prompts button {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  font-size: 11px;
+  line-height: 1.5;
+  background: #faf9fc;
+  border: 1px solid #eae4f1;
+  padding: 11px 12px;
+  border-radius: 10px;
+  color: #59436b;
+}
+.eve-prompts button:hover:not(:disabled) {
+  background: #f1ebfa;
+  border-color: #d9cbed;
+}
+.eve-prompts button > span {
+  color: var(--brand);
+}
+.eve-message {
+  margin-bottom: 17px;
+  font-size: 12px;
+  line-height: 1.65;
+  max-width: 95%;
+}
+.eve-message > small {
+  font-size: 8px;
+  color: #92849e;
+  display: block;
+  margin: 0 2px 5px;
+}
+.eve-message > small > span {
+  color: #b0a5b9;
+}
+.eve-message p {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.eve-message.user {
+  margin-left: auto;
+  max-width: 88%;
+}
+.eve-message.user > small {
+  text-align: right;
+}
+.eve-message.user p {
+  background: #f1ebfa;
+  color: #4b286c;
+  border-radius: 14px 14px 3px 14px;
+  padding: 10px 12px;
+}
+.eve-message.assistant {
+  padding-right: 4px;
+}
+.eve-thinking {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  color: #8a749c;
+  padding: 3px 0 10px;
+}
+.eve-thinking > span {
+  letter-spacing: 3px;
+  color: #765094;
+}
+.eve-evidence {
+  flex-shrink: 0;
+  border-top: 1px solid #eeeaf1;
+  padding: 8px 17px;
+  background: #faf9fc;
+  font-size: 9px;
+  color: #8b7b97;
+}
+.eve-evidence summary {
+  cursor: pointer;
+}
+.eve-evidence summary > span {
+  float: right;
+  font-family: var(--mono);
+  font-size: 8px;
+}
+.eve-evidence > div {
+  max-height: 120px;
+  overflow-y: auto;
+  font-size: 10px;
+  line-height: 1.5;
+}
+.eve-evidence p {
+  padding: 7px 0;
+  margin: 0;
+  border-bottom: 1px solid #eeeaf1;
+}
+.eve-evidence small {
+  display: block;
+  margin-top: 8px;
+  font-family: var(--mono);
+  font-size: 8px;
+}
+.eve-error,
+.eve-setup {
+  padding: 9px 16px;
+  background: #fcf6f2;
+  color: #8b614b;
+  font-size: 10px;
+  line-height: 1.5;
+  flex-shrink: 0;
+}
+.eve-error p {
+  margin: 0;
+}
+.eve-error button {
+  border: 0;
+  background: none;
+  padding: 5px 0 0;
+  color: var(--brand);
+  font-size: 10px;
+}
+.eve-setup {
+  background: #f6f5f8;
+  color: #8a749c;
+}
+.eve-setup code {
+  font-size: 9px;
+}
+.eve-input-area {
+  padding: 12px 14px 4px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+.eve-composer {
+  border: 1px solid #e2d9eb;
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 2px 8px #3a155607;
+  overflow: hidden;
+}
+.eve-composer form {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px;
+}
+.eve-composer textarea {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--sans);
+  font-size: 12px;
+  line-height: 20px;
+  color: #30243f;
+  background: transparent;
+  resize: none;
+  padding: 6px 5px;
+  border: 0;
+  outline: none;
+  max-height: 80px;
+}
+.eve-composer textarea::placeholder {
+  color: #a294ad;
+}
+.eve-composer:focus-within {
+  border-color: #b391d5;
+}
+.eve-composer form > button {
+  border: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--brand);
+  color: white;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.eve-input-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 4px;
+  padding: 9px 2px 0;
+  color: #a496af;
+  font-size: 8px;
+  min-height: 29px;
+}
+.eve-input-meta > button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border: 0;
+  background: none;
+  color: var(--brand);
+  font-size: 10px;
+  padding: 3px 0 3px 6px;
+}
+.eve-input-meta svg {
+  width: 13px;
+  height: 13px;
+}
+.eve-call-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px;
+  min-height: 50px;
+}
+.eve-call-controls > span {
+  font-size: 11px;
+  text-align: center;
+}
+.eve-call-controls small {
+  display: block;
+  font-size: 8px;
+  color: #a496af;
+  margin-top: 3px;
+}
+.eve-call-controls button {
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #f1ebfa;
+  color: var(--brand);
+}
+.eve-call-controls svg {
+  width: 18px;
+  height: 18px;
+}
+.eve-call-controls .eve-end {
+  background: #a94f59;
+  color: white;
+  font-size: 12px;
+}
+.eve button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.eve button:focus-visible {
+  outline: 2px solid #b391d5;
+  outline-offset: 2px;
+}
+.eve-mobile-beam {
+  position: relative;
+  border-radius: 0 0 25px 25px;
+}
+.eve-mobile-beam > .eve {
+  min-height: 0;
+  width: 100%;
+}
+.phone-native .eve-header {
+  padding: 5px 17px 14px 8px;
+  gap: 9px;
+}
+.phone-native .eve-back {
+  min-height: 40px;
+  width: 31px;
+}
+.phone-native .eve-header strong {
+  font-size: 17px;
+}
+.phone-native .eve-header small {
+  font-size: 10px;
+}
+.phone-native .eve-context-toggle {
+  font-size: 10px;
+  padding: 12px 17px;
+}
+.phone-native .eve-thread {
+  padding: 21px 17px 14px;
+}
+.phone-native .eve-welcome {
+  padding-top: 10px;
+}
+.phone-native .eve-welcome-label {
+  font-size: 11px;
+}
+.phone-native .eve-welcome h3 {
+  font-size: 32px;
+  letter-spacing: -1.5px;
+  line-height: 1.12;
+  margin-bottom: 15px;
+}
+.phone-native .eve-welcome p {
+  font-size: 12px;
+  line-height: 1.65;
+}
+.phone-native .eve-context-pills > span {
+  font-size: 9px;
+  padding: 5px 7px;
+}
+.phone-native .eve-prompts {
+  margin-top: 24px;
+}
+.phone-native .eve-prompts button {
+  min-height: 45px;
+  font-size: 11px;
+  border-radius: 12px;
+}
+.phone-native .eve-message {
+  font-size: 13px;
+  line-height: 1.6;
+  margin-bottom: 21px;
+}
+.phone-native .eve-message > small {
+  font-size: 9px;
+  margin-bottom: 6px;
+}
+.phone-native .eve-message.user p {
+  padding: 11px 13px;
+  border-radius: 16px 16px 4px 16px;
+}
+.phone-native .eve-thinking {
+  font-size: 11px;
+}
+.phone-native .eve-input-area {
+  padding: 10px 13px 2px;
+}
+.phone-native .eve-composer {
+  border-radius: 19px;
+  background: #ffffffd4;
+  backdrop-filter: blur(24px);
+  border: 1px solid #e6deee;
+  box-shadow: 0 3px 14px #32194e06;
+}
+.phone-native .eve-composer form {
+  display: block;
+  padding: 11px 9px 8px;
+}
+.phone-native .eve-composer textarea {
+  display: block;
+  width: 100%;
+  font-size: 13px;
+  line-height: 21px;
+  min-height: 34px;
+  padding: 2px 4px 8px;
+}
+.eve-compose-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.eve-compose-actions > div {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.eve-compose-actions button {
+  height: 34px;
+  border: 0;
+  padding: 0;
+  border-radius: 20px;
+}
+.eve-compose-actions .eve-voice-launch {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 10px;
+  color: #755089;
+  background: #f3edf9;
+  font-size: 10px;
+}
+.eve-voice-launch svg {
+  width: 16px;
+  height: 16px;
+}
+.eve-compose-actions .eve-send {
+  width: 34px;
+  color: #fff;
+  background: var(--brand);
+  font-size: 23px;
+  line-height: 1;
+}
+.phone-native .eve-input-meta {
+  justify-content: center;
+  min-height: 27px;
+  padding-top: 7px;
+  font-size: 8px;
+  color: #ac9eb6;
+}
+.phone-native .eve-call-controls {
+  min-height: 68px;
+  padding: 11px 12px;
+  gap: 9px;
+}
+.phone-native .eve-call-controls button {
+  width: 41px;
+  height: 41px;
+  flex-shrink: 0;
+  background: #f5effadc;
+}
+.phone-native .eve-call-controls .eve-end {
+  background: #a84f60;
+}
+.phone-native .eve-call-controls > span {
+  font-size: 11px;
+}
+.phone-native .eve-call-controls small {
+  font-size: 9px;
+}
+.phone-native .eve-voice-active .eve-input-area {
+  padding-top: 30px;
+}
+.phone-native .eve-voice-active .eve-composer {
+  border-radius: 36px;
+  background: #ffffffac;
+}
+.eve-composer-hint {
+  padding-left: 5px;
+  font-size: 10px;
+  color: #b3a5bc;
+}
+.eve-clear {
+  display: block;
+  margin-top: 10px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--brand);
+  font-size: 9px;
+}
+.phone-native,
+.phone-native .eve,
+.phone-native .phone-status {
+  transition:
+    background-color 240ms ease,
+    color 240ms ease;
+}
+.phone.phone-native:has(.eve-voice-active),
+.phone-native .eve-voice-active {
+  background: #18171b;
+  color: #efedf2;
+}
+.phone-native:has(.eve-voice-active) .phone-status {
+  color: #e8e5ec;
+}
+.phone-native:has(.eve-voice-active) .home-indicator {
+  background: #eeeaf2;
+}
+.phone-native:has(.eve-voice-active) .battery:before,
+.phone-native:has(.eve-voice-active) .battery:after {
+  background: #e8e5ec;
+}
+.phone-native .eve-voice-active .eve-header {
+  background: none;
+}
+.eve-voice-active .eve-header strong {
+  font-weight: 500;
+  color: #e5e1ea;
+}
+.eve-voice-active .eve-header small {
+  color: #807b88;
+}
+.eve-voice-active .eve-back {
+  color: #b1a9bc;
+}
+.eve-voice-active .eve-mark {
+  background: #ffffff0c;
+  color: #b5a5c4;
+}
+.eve-voice-active .eve-context-toggle,
+.eve-voice-active .eve-context {
+  display: none;
+}
+.phone-native .eve-thread.eve-voice-transcript {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 30px 25px 76px;
+  overflow: hidden;
+}
+.eve-voice-copy {
+  width: 100%;
+  text-align: center;
+  animation: eve-voice-appear 250ms ease both;
+}
+.eve-voice-copy > small {
+  display: block;
+  font-size: 9px;
+  letter-spacing: 0.03em;
+  color: #817b8c;
+  margin-bottom: 13px;
+}
+.eve-voice-copy > p {
+  font-size: 21px;
+  font-weight: 400;
+  letter-spacing: -0.4px;
+  line-height: 1.4;
+  color: #cfccd4;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+.phone-native .eve-voice-active .eve-input-area {
+  padding: 0 17px 7px;
+}
+.phone-native .eve-voice-active .eve-composer {
+  background: none;
+  border: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  overflow: visible;
+}
+.phone-native .eve-voice-active .eve-call-controls {
+  min-height: 59px;
+  padding: 4px 0;
+  gap: 11px;
+}
+.phone-native .eve-voice-active .eve-call-controls > span {
+  order: -1;
+  flex: 1;
+  text-align: left;
+  margin-left: 8px;
+  color: #b5aabd;
+  font-size: 10px;
+  font-weight: 400;
+}
+.phone-native .eve-voice-active .eve-call-controls > span small {
+  display: none;
+}
+.phone-native .eve-voice-active .eve-call-controls button {
+  width: 44px;
+  height: 44px;
+  background: #ffffff0c;
+  border: 1px solid #ffffff13;
+  color: #e8ddea;
+  box-shadow: 0 2px 9px #0000000a;
+  backdrop-filter: blur(20px);
+}
+.phone-native .eve-voice-active .eve-call-controls button:hover {
+  background: #ffffff19;
+}
+.phone-native .eve-voice-active .eve-call-controls button[aria-pressed="true"] {
+  background: #ffffff23;
+}
+.phone-native .eve-voice-active .eve-call-controls svg {
+  width: 20px;
+  height: 20px;
+}
+.phone-native .eve-voice-active .eve-input-meta {
+  color: #8c8495;
+  font-size: 8px;
+  padding-top: 9px;
+}
+.eve-voice-active .eve-error {
+  background: #33262d;
+  color: #d3afb9;
+}
+@keyframes eve-voice-appear {
+  from {
+    opacity: 0;
+    transform: translateY(7px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .eve-voice-copy {
+    animation: none;
+  }
+}
+.phone-tabs > button {
+  text-align: center;
+  font-size: 18px;
+  line-height: 1.3;
+  color: var(--brand);
+  padding: 0;
+  border: 0;
+  background: none;
+}
+.phone-eve-entry {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  text-align: left;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #e5dced;
+  background: #fff;
+  border-radius: 12px;
+  margin: 0 0 18px;
+  color: #5d4372;
+}
+.phone-eve-entry > span {
+  flex: 1;
+}
+.phone-eve-entry strong {
+  display: block;
+  font-size: 11px;
+}
+.phone-eve-entry small {
+  display: block;
+  font-size: 9px;
+  color: #9b88a8;
+  margin-top: 3px;
+}
+.phone-eve-entry .eve-entry-icon {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  background: #f1ebfa;
+  color: var(--brand);
+  font-size: 23px;
+  font-weight: 500;
+  font-style: normal;
+}
