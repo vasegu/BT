@@ -71,8 +71,38 @@ export type Proposal = {
   checks: ProposalCheck[];
   evidenceIds: string[];
 };
+export type AssessmentQuestion = {
+  type: "choice" | "score";
+  instructions: string;
+  criteria: Record<string, string> | string[];
+};
+export type ModelAssessment = {
+  id: string;
+  status: "ok" | "error" | "interrupted";
+  provider: string;
+  model: string;
+  promptVersion: string;
+  inputHash: string;
+  state: Record<string, unknown>;
+  questions: Record<string, AssessmentQuestion>;
+  answers: Record<
+    string,
+    { choice?: string; score?: number; probabilities: Record<string, number> }
+  >;
+  latencyMs: number;
+  inputTokens: number | null;
+  outputTokens: number | null;
+  costUsd: number | null;
+  generationId: string | null;
+  httpStatus?: number;
+  error?: string;
+  baselineId?: string;
+  effective?: "model" | "policy_hold";
+  resolution?: string;
+};
 export type ArbitrationTrace = {
   version: 1;
+  assessment?: ModelAssessment;
   triggerIds: string[];
   selectedId: string;
   previousDecisionId: string | null;

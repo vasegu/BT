@@ -8,7 +8,7 @@ import {
   createEveVoice,
 } from "../server/eve.ts";
 
-test("Eve receives one person's records and never other customers' identities", () => {
+test("Eve receives one person's records and never other customers' identities", async () => {
   const engine = new Engine(":memory:");
   try {
     const session = engine.createSession();
@@ -22,7 +22,7 @@ test("Eve receives one person's records and never other customers' identities", 
   }
 });
 
-test("historical grounding cannot see future restoration or callback completion", () => {
+test("historical grounding cannot see future restoration or callback completion", async () => {
   const engine = new Engine(":memory:");
   try {
     const session = engine.createSession();
@@ -33,7 +33,7 @@ test("historical grounding cannot see future restoration or callback completion"
         step,
         engine.snapshot(session.id).session.revision,
       );
-      engine.processJobs();
+      await engine.processJobs();
     }
     const past = eveContext(engine.snapshot(session.id, 1), "daniel");
     const now = eveContext(engine.snapshot(session.id), "daniel");
@@ -56,7 +56,7 @@ test("historical grounding cannot see future restoration or callback completion"
   }
 });
 
-test("client input cannot supply system instructions, arbitrary people or unlimited history", () => {
+test("client input cannot supply system instructions, arbitrary people or unlimited history", async () => {
   const valid = {
     sessionId: "example",
     person: "maya",

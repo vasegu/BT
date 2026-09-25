@@ -4,7 +4,7 @@ A working local demonstrator and design pack connecting Mark's pitch to customer
 
 ## Run the app
 
-Requires Node 24 or newer. The scenario works without Docker or an API key. Eve uses an OpenAI project key for live chat and voice.
+Requires Node 24 or newer. The rules baseline works without Docker or an API key. Jev uses a Vercel AI Gateway key for live arbitration; Eve uses an OpenAI project key for live chat and voice.
 
 ```sh
 cd app
@@ -35,17 +35,21 @@ Stop the dev processes before starting the production server on the same port. T
 
 ### What is real in this slice
 
-React UI, SQLite writes, transactional jobs, idempotency, deterministic arbitration, session isolation, source-time projection, action/receipt persistence and local MiniLM vector computation. Eve adds live OpenAI Responses chat and GPT-Live voice, grounded in the same scoped server snapshot. Engine tests cover separate household decisions, retries, historical causality, retained promises and restart recovery.
+React UI, SQLite writes, transactional jobs, idempotency, deterministic arbitration, session isolation, source-time projection, action/receipt persistence and local MiniLM vector computation. Eve adds live OpenAI Responses chat and GPT-Live voice, grounded in the same scoped server snapshot. Jev evaluates typed questions through Vercel AI Gateway and the worker applies deterministic constraints before committing a simulated action. Tests cover model errors and holds, separate household decisions, retries, historical causality, retained promises and restart recovery.
 
 ### Arbiter: evidence to execution
 
-The worker evaluates domain proposals against the same customer and operations snapshot. Hard gates determine eligibility before explicit policy factors rank the remaining proposals. The displayed 0–100 values are **policy priority units**, not model confidence or calibrated probabilities. The domain labels identify deterministic proposal evaluators in one worker, not independent live model agents.
+Set `AI_GATEWAY_API_KEY` in the ignored `app/.env.local`. New scenario jobs automatically call `typesafe-ai/jev` through the Gateway evaluation endpoint. Existing runs remain immutable; opening a panel or changing historical cutoff does not call the model. With no key, new jobs use the labelled rules baseline. A model-enabled job with recorded attempts never silently reverts to rules after a key is removed.
 
-A fresh case or affected-service incident can overturn a remembered routine for the same person. Incident membership and callback availability project from their source payloads. Restoration, fulfilment of a human promise and customer confirmation remain separate observations. New faults reset current recovery state without erasing previous decisions.
+The worker freezes one customer's facts, dated source observations, current capacity, recent demo actions and constrained proposals. It replaces customer/adviser names, excludes other customers' private records, and sends no credentials, raw event payloads or baseline scores. Jev returns three typed answers: **interpretation**, **urgency** and **next_action**, with probability distributions. The first two explain its assessment; `next_action` selects a permitted authored plan or defers. This is a bounded model decision, not a general planning agent or new callback-booking capability.
 
-Each new decision persists its trigger, proposal checks and specific evidence IDs, selected and rejected alternatives, projected memory changes, prior decision link and execution stages. Message commits and simulated delivery receipts are linked to the decision in the same transaction. Duplicate prevention and contact-authority holds appear in the execution strip. Historical runs are read-only; older decisions without a trace retain a concise fallback.
+The UI shows genuine model probabilities separately from **policy priority units**. A 70% next-action threshold is an explicit demo policy, not a calibrated BT confidence guarantee. Failed/unknown eligibility gates, existing ownership and contact authority remain authoritative. Low selection probability, invalid output, provider failure or an interrupted attempt holds new automated actions; existing commitments remain. There is no hidden model or rules fallback on provider failure.
 
-Callback capacity is checked from the rota, but this slice does not reserve new appointments. Retrieval and predictive forecasts do not yet drive arbitration; their lab studies remain separate. The workbench exposes actual deterministic behaviour and source provenance, without claiming live autonomous agents or external delivery.
+Each attempt persists a frozen input hash, prompt version, typed questions, returned answers, model, latency, usage, provider-reported cost and generation ID. Cost is unknown if absent, not assumed zero. Calls request zero retention and pin TypeSafe; there are no automatic paid retries. Provider calls occur outside the SQLite transaction, with a durable attempt record before each request. Results survive job retries without another paid call; an interrupted request remains visibly held because its result/cost may be unknown. This is one local worker; hosted multi-worker use needs leases and recovery controls.
+
+The full-page workspace links proposal selection, source activity, memory changes, checks, rules baseline, historical runs, Jev distributions and execution receipts. The persisted JSON includes the exact scoped context sent to the model. Model selection can hold a rule-eligible plan; it cannot create new facts or override permissions. In-app action/receipt persistence remains transactional and delivery is simulated. Embedding retrieval and backtested forecasts do not yet drive decisions.
+
+Implementation and source comparison: [Jev integration and the real Sainsbury's CA2 pattern](docs/design/2026-09-25-jev-arbiter.md).
 
 ### Eve: live chat and voice
 
@@ -61,7 +65,7 @@ API routes: `GET /api/eve/status`, `POST /api/eve/chat`, `POST /api/eve/context`
 
 ### What is still planned
 
-The dedicated RX Supabase/Postgres deployment, full domain schemas, live Gateway/Jev assessments, a larger longitudinal corpus and backtested forecasts. No live AI response is fabricated. The local first-slice schema is not the proposed complete BT schema or a substitute for deployed RLS, leased jobs and outbox delivery. All source records and external business effects are synthetic.
+The dedicated RX Supabase/Postgres deployment, full domain schemas, richer domain plans, a larger longitudinal corpus and backtested forecasts. No live AI response is fabricated. The local first-slice schema is not the proposed complete BT schema or a substitute for deployed RLS, leased jobs and outbox delivery. All source records and external business effects are synthetic.
 
 ## Start here
 

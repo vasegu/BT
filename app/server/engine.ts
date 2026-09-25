@@ -1,6 +1,12 @@
 import { DatabaseSync } from "node:sqlite";
 import { randomUUID } from "node:crypto";
 import { arbitrate, serviceMessage } from "./arbiter.ts";
+import {
+  buildAssessmentRequest,
+  emptyAssessment,
+  applyAssessment,
+  type Evaluator,
+} from "./assessment.ts";
 import type {
   Snapshot,
   SourceEvent,
@@ -177,6 +183,7 @@ function projectOperations(events: SourceEvent[]): Snapshot["operations"] {
 
 export class Engine {
   db: DatabaseSync;
+  private processing = false;
   constructor(path: string) {
     this.db = new DatabaseSync(path);
     this.db
@@ -189,6 +196,7 @@ export class Engine {
       CREATE TABLE IF NOT EXISTS jobs(id TEXT PRIMARY KEY,session_id TEXT NOT NULL REFERENCES sessions(id),revision INTEGER NOT NULL,step TEXT NOT NULL,idempotency_key TEXT NOT NULL,state TEXT NOT NULL DEFAULT 'pending',attempts INTEGER NOT NULL DEFAULT 0,error TEXT,UNIQUE(session_id,idempotency_key));
       CREATE TABLE IF NOT EXISTS decisions(id TEXT PRIMARY KEY,session_id TEXT NOT NULL,person TEXT NOT NULL,revision INTEGER NOT NULL,data TEXT NOT NULL,FOREIGN KEY(session_id,person) REFERENCES customers(session_id,id),UNIQUE(session_id,person,revision));
       CREATE TABLE IF NOT EXISTS actions(id TEXT PRIMARY KEY,session_id TEXT NOT NULL,person TEXT NOT NULL,revision INTEGER NOT NULL,logical_key TEXT NOT NULL,decision_id TEXT NOT NULL REFERENCES decisions(id),data TEXT NOT NULL,FOREIGN KEY(session_id,person) REFERENCES customers(session_id,id),UNIQUE(session_id,person,logical_key));
+      CREATE TABLE IF NOT EXISTS model_evaluations(job_id TEXT NOT NULL REFERENCES jobs(id),person TEXT NOT NULL,state TEXT NOT NULL,data TEXT NOT NULL,PRIMARY KEY(job_id,person));
       CREATE TABLE IF NOT EXISTS receipts(id TEXT PRIMARY KEY,action_id TEXT NOT NULL UNIQUE REFERENCES actions(id),provenance TEXT NOT NULL CHECK(provenance='simulated_delivery'),created_at TEXT NOT NULL);
     `);
   }
@@ -442,148 +450,220 @@ export class Engine {
       return { jobId, revision: rev };
     });
   }
-  processJobs() {
-    // ponytail: one synchronous local worker, SQLite transaction is the crash/claim boundary.
-    // Move to leased Postgres jobs before a hosted multi-worker deployment.
-    const ids = this.db
-      .prepare(
-        "SELECT id FROM jobs WHERE state IN ('pending','failed') AND attempts<3 ORDER BY rowid LIMIT 12",
-      )
-      .all() as { id: string }[];
-    for (const { id } of ids) {
-      try {
-        this.transaction(() => {
+  async processJobs(evaluate?: Evaluator) {
+    if (this.processing) return;
+    this.processing = true;
+    // ponytail: one local worker. Provider calls stay outside SQLite transactions.
+    // Durable attempt records prevent automatic rebilling after a crash; use leases for multiple workers.
+    try {
+      const ids = this.db
+        .prepare(
+          "SELECT id FROM jobs WHERE state IN ('pending','failed') AND attempts<3 ORDER BY rowid LIMIT 12",
+        )
+        .all() as { id: string }[];
+      for (const { id } of ids) {
+        try {
           const job = this.db
             .prepare("SELECT * FROM jobs WHERE id=? AND state!='complete'")
             .get(id) as
             | { id: string; session_id: string; revision: number }
             | undefined;
-          if (!job) return;
+          if (!job) continue;
           const snapshot = this.snapshot(job.session_id, job.revision);
           const before = this.snapshot(job.session_id, job.revision - 1);
+          const prepared: Decision[] = [];
+          const modeledJob =
+            !!evaluate ||
+            !!this.db
+              .prepare("SELECT 1 FROM model_evaluations WHERE job_id=? LIMIT 1")
+              .get(job.id);
           for (const h of snapshot.households) {
-            const d = arbitrate(
+            if (
+              snapshot.decisions.some(
+                (d) => d.person === h.id && d.revision === job.revision,
+              )
+            )
+              continue;
+            let d = arbitrate(
               h,
               before.households.find((p) => p.id === h.id)!,
               snapshot,
             );
-            this.db
-              .prepare("INSERT OR IGNORE INTO decisions VALUES(?,?,?,?,?)")
-              .run(d.id, job.session_id, h.id, job.revision, JSON.stringify(d));
-            const proposed = serviceMessage(h, d);
-            const priorAction = proposed
-              ? (this.db
+            if (modeledJob) {
+              const request = buildAssessmentRequest(h, snapshot, d);
+              const saved = this.db
+                .prepare(
+                  "SELECT data FROM model_evaluations WHERE job_id=? AND person=?",
+                )
+                .get(job.id, h.id) as { data: string } | undefined;
+              let assessment = saved
+                ? JSON.parse(saved.data)
+                : emptyAssessment(request);
+              if (!saved) {
+                this.db
+                  .prepare("INSERT INTO model_evaluations VALUES(?,?,?,?)")
+                  .run(job.id, h.id, "started", JSON.stringify(assessment));
+                try {
+                  if (evaluate) assessment = await evaluate(request);
+                  else {
+                    assessment.status = "error";
+                    assessment.error =
+                      "Model key unavailable while recovering this job. New actions remain held.";
+                  }
+                } catch {
+                  assessment.error =
+                    "Provider attempt failed without a usable result. No automatic retry.";
+                }
+                this.db
                   .prepare(
-                    "SELECT id FROM actions WHERE session_id=? AND person=? AND logical_key=?",
+                    "UPDATE model_evaluations SET state='recorded',data=? WHERE job_id=? AND person=?",
                   )
-                  .get(job.session_id, h.id, proposed.key) as
-                  | { id: string }
-                  | undefined)
-              : undefined;
-            d.trace!.execution.push(
-              {
-                stage: "Context read",
-                status: "passed",
-                detail: `Revision ${job.revision}; occurred and received timestamps bounded by ${clocks[job.revision]}.`,
-              },
-              {
-                stage: "Policy evaluated",
-                status: "passed",
-                detail: `${d.trace!.candidates.length} proposals; hard eligibility gates applied before priority ranking.`,
-              },
-              {
-                stage: "Contact authority",
-                status: h.contactAllowed ? "passed" : "held",
-                detail: h.contactAllowed
-                  ? "Service / in-app authority verified from the source record."
-                  : "No permitted service contact; outbound action withheld.",
-              },
-            );
-            if (!proposed)
-              d.trace!.execution.push({
-                stage: "Channel held",
-                status: "held",
-                detail: h.contactAllowed
-                  ? "Internal observation only; no customer message proposed."
-                  : "No message committed without contact authority.",
-              });
-            else if (priorAction)
-              d.trace!.execution.push({
-                stage: "Duplicate prevented",
-                status: "deduplicated",
-                detail: `Logical action ${proposed.key} already exists in this session.`,
-                actionId: priorAction.id,
-              });
-            if (proposed && h.contactAllowed && !priorAction) {
-              const actionId = randomUUID(),
-                receiptId = randomUUID();
-              const action: DemoAction = {
-                id: actionId,
-                person: h.id,
-                revision: job.revision,
-                time: clocks[job.revision],
-                kind: "in_app_update",
-                title: proposed.title,
-                body: proposed.body,
-                status: "simulated_delivered",
-                decisionId: d.id,
-                receiptId,
-                provenance: "demo_action",
-              };
-              d.trace!.execution.push(
-                {
-                  stage: "Action committed",
-                  status: "committed",
-                  detail:
-                    "Decision and in-app action committed in one SQLite transaction.",
-                  actionId,
-                },
-                {
-                  stage: "Demo delivery",
-                  status: "committed",
-                  detail:
-                    "Simulated in-app delivery receipt; no external send.",
-                  actionId,
-                  receiptId,
-                },
-              );
+                  .run(JSON.stringify(assessment), job.id, h.id);
+              }
+              d = applyAssessment(d, assessment);
+            }
+            prepared.push(d);
+          }
+          this.transaction(() => {
+            for (const d of prepared) {
+              const h = snapshot.households.find((p) => p.id === d.person)!;
               this.db
-                .prepare("INSERT INTO actions VALUES(?,?,?,?,?,?,?)")
+                .prepare("INSERT OR IGNORE INTO decisions VALUES(?,?,?,?,?)")
                 .run(
-                  actionId,
+                  d.id,
                   job.session_id,
                   h.id,
                   job.revision,
-                  proposed.key,
-                  d.id,
-                  JSON.stringify(action),
+                  JSON.stringify(d),
                 );
-              this.db
-                .prepare("INSERT INTO receipts VALUES(?,?,?,?)")
-                .run(
+              const proposed = serviceMessage(h, d);
+              const priorAction = proposed
+                ? (this.db
+                    .prepare(
+                      "SELECT id FROM actions WHERE session_id=? AND person=? AND logical_key=?",
+                    )
+                    .get(job.session_id, h.id, proposed.key) as
+                    | { id: string }
+                    | undefined)
+                : undefined;
+              d.trace!.execution.push(
+                {
+                  stage: "Context read",
+                  status: "passed",
+                  detail: `Revision ${job.revision}; occurred and received timestamps bounded by ${clocks[job.revision]}.`,
+                },
+                {
+                  stage: "Policy evaluated",
+                  status: "passed",
+                  detail: d.trace!.assessment
+                    ? d.trace!.assessment.resolution!
+                    : `${d.trace!.candidates.length} proposals; hard eligibility gates applied before priority ranking.`,
+                },
+                {
+                  stage: "Contact authority",
+                  status: h.contactAllowed ? "passed" : "held",
+                  detail: h.contactAllowed
+                    ? "Service / in-app authority verified from the source record."
+                    : "No permitted service contact; outbound action withheld.",
+                },
+              );
+              if (d.trace!.assessment)
+                d.trace!.execution.splice(1, 0, {
+                  stage: "Jev evaluation",
+                  status:
+                    d.trace!.assessment.status === "ok" ? "passed" : "held",
+                  detail: `${d.trace!.assessment.model} · ${d.trace!.assessment.latencyMs}ms · ${d.trace!.assessment.status}. ${d.trace!.assessment.error || "Typed answers recorded; policy gates enforced."}`,
+                });
+              if (!proposed)
+                d.trace!.execution.push({
+                  stage: "Channel held",
+                  status: "held",
+                  detail: h.contactAllowed
+                    ? d.trace!.assessment?.effective === "policy_hold"
+                      ? d.trace!.assessment.resolution!
+                      : "Internal observation only; no customer message proposed."
+                    : "No message committed without contact authority.",
+                });
+              else if (priorAction)
+                d.trace!.execution.push({
+                  stage: "Duplicate prevented",
+                  status: "deduplicated",
+                  detail: `Logical action ${proposed.key} already exists in this session.`,
+                  actionId: priorAction.id,
+                });
+              if (proposed && h.contactAllowed && !priorAction) {
+                const actionId = randomUUID(),
+                  receiptId = randomUUID();
+                const action: DemoAction = {
+                  id: actionId,
+                  person: h.id,
+                  revision: job.revision,
+                  time: clocks[job.revision],
+                  kind: "in_app_update",
+                  title: proposed.title,
+                  body: proposed.body,
+                  status: "simulated_delivered",
+                  decisionId: d.id,
                   receiptId,
-                  actionId,
-                  "simulated_delivery",
-                  new Date().toISOString(),
+                  provenance: "demo_action",
+                };
+                d.trace!.execution.push(
+                  {
+                    stage: "Action committed",
+                    status: "committed",
+                    detail:
+                      "Decision and in-app action committed in one SQLite transaction.",
+                    actionId,
+                  },
+                  {
+                    stage: "Demo delivery",
+                    status: "committed",
+                    detail:
+                      "Simulated in-app delivery receipt; no external send.",
+                    actionId,
+                    receiptId,
+                  },
                 );
+                this.db
+                  .prepare("INSERT INTO actions VALUES(?,?,?,?,?,?,?)")
+                  .run(
+                    actionId,
+                    job.session_id,
+                    h.id,
+                    job.revision,
+                    proposed.key,
+                    d.id,
+                    JSON.stringify(action),
+                  );
+                this.db
+                  .prepare("INSERT INTO receipts VALUES(?,?,?,?)")
+                  .run(
+                    receiptId,
+                    actionId,
+                    "simulated_delivery",
+                    new Date().toISOString(),
+                  );
+              }
+              this.db
+                .prepare("UPDATE decisions SET data=? WHERE id=?")
+                .run(JSON.stringify(d), d.id);
             }
             this.db
-              .prepare("UPDATE decisions SET data=? WHERE id=?")
-              .run(JSON.stringify(d), d.id);
-          }
+              .prepare(
+                "UPDATE jobs SET state='complete',attempts=attempts+1,error=NULL WHERE id=?",
+              )
+              .run(id);
+          });
+        } catch (error) {
           this.db
             .prepare(
-              "UPDATE jobs SET state='complete',attempts=attempts+1,error=NULL WHERE id=?",
+              "UPDATE jobs SET state='failed',attempts=attempts+1,error=? WHERE id=?",
             )
-            .run(id);
-        });
-      } catch (error) {
-        this.db
-          .prepare(
-            "UPDATE jobs SET state='failed',attempts=attempts+1,error=? WHERE id=?",
-          )
-          .run(error instanceof Error ? error.message : "Worker failure", id);
+            .run(error instanceof Error ? error.message : "Worker failure", id);
+        }
       }
+    } finally {
+      this.processing = false;
     }
   }
   snapshot(id: string, cutoff?: number): Snapshot {

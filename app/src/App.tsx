@@ -510,7 +510,7 @@ export function App() {
             <span className="eyebrow">
               {pending
                 ? "Re-evaluating context"
-                : `${decision.disposition} / rule-derived`}
+                : `${decision.disposition} / ${decision.trace?.assessment ? (decision.trace.assessment.effective === "model" ? "Jev + policy" : "policy hold") : "rule-derived"}`}
             </span>
             <h3>{decision.title}</h3>
             <p>{decision.reason}</p>
@@ -999,7 +999,13 @@ export function App() {
         )}
         <footer>
           <span>Accenture / RX · BT Consumer</span>
-          <span>Synthetic sources · rule-derived decisions · demo actions</span>
+          <span>
+            Synthetic sources ·{" "}
+            {decision?.trace?.assessment
+              ? "Jev + policy"
+              : "rule-derived decisions"}{" "}
+            · demo actions
+          </span>
           <span>
             SQLite + server worker <b>·</b> Eve / OpenAI on demand
           </span>

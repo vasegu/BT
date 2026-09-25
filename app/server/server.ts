@@ -3,6 +3,7 @@ import { readFileSync, existsSync, statSync, mkdirSync } from "node:fs";
 import { resolve, dirname, extname, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Engine, DomainError } from "./engine.ts";
+import { assessmentConfig, evaluateJev } from "./assessment.ts";
 import {
   eveConfig,
   eveContext,
@@ -18,7 +19,16 @@ mkdirSync(dirname(dbPath), { recursive: true });
 const engine = new Engine(dbPath);
 const getEveConfig = () => eveConfig(resolve(root, ".env.local"));
 let eveRequests = 0;
-const worker = setInterval(() => engine.processJobs(), 350);
+const worker = setInterval(() => {
+  const config = assessmentConfig(resolve(root, ".env.local"));
+  void engine
+    .processJobs(
+      config.key ? (request) => evaluateJev(request, config) : undefined,
+    )
+    .catch(() =>
+      console.error("Arbiter worker could not complete a local job."),
+    );
+}, 350);
 const types: Record<string, string> = {
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
@@ -50,6 +60,9 @@ const server = createServer(async (req, res) => {
         if (url.pathname === "/api/health")
           return send(200, {
             store: "sqlite",
+            arbiter: assessmentConfig(resolve(root, ".env.local")).key
+              ? "jev_configured"
+              : "rules",
             worker: "running",
             model: getEveConfig().key ? "eve_configured" : "not_connected",
             externalActions: "simulated",

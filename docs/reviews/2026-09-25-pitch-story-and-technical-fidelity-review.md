@@ -12,6 +12,10 @@ The engine now derives decisions from context rather than customer identity. Fre
 
 Still outstanding from the broader proposal: competing resource reservations and replanning, Eve outcome write-back, retrieval influencing arbitration, watch expiry, a complete Sam outcome, subsequent reuse of learned episodes and measured commercial impact. Domain proposals are deterministic; delivery remains simulated. This slice makes the existing decision loop inspectable without claiming those future capabilities.
 
+### Subsequent Jev slice
+
+The arbiter now runs real Jev assessments through Vercel AI Gateway when configured, with scoped frozen context, typed interpretation/urgency/action answers, probability distributions and durable call receipts. Code validates model output and enforces hard gates before any simulated action. Failures and uncertain selections hold new actions. See [integration details and verification](../design/2026-09-25-jev-arbiter.md). The earlier rule-only limitation is superseded for new model-enabled runs; authored plan vocabulary, resource replanning, retrieval influence and commercial evaluation remain limitations.
+
 ## Verdict
 
 The five-panel composition is the right foundation. The current demo makes retained context, named ownership and a consistent customer experience tangible. Its strongest moment is a restored connection that does **not** erase a promised callback or stand in for customer confirmation.

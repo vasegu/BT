@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Engine } from "../server/engine.ts";
 
-test("fresh incident scope overrides a remembered quiet habit everywhere", () => {
+test("fresh incident scope overrides a remembered quiet habit everywhere", async () => {
   const engine = new Engine(":memory:");
   try {
     const { id } = engine.createSession();
@@ -17,7 +17,7 @@ test("fresh incident scope overrides a remembered quiet habit everywhere", () =>
       description: "Fresh scope includes Maya.",
       payload: { incidentId: "INC-NEW", affected: ["maya"] },
     });
-    engine.processJobs();
+    await engine.processJobs();
     const s = engine.snapshot(id);
     const d = s.decisions.find((d) => d.person === "maya")!;
     assert.equal(d.domain, "network");
@@ -30,7 +30,7 @@ test("fresh incident scope overrides a remembered quiet habit everywhere", () =>
   }
 });
 
-test("a new case overrides a quiet habit without losing the remembered preference", () => {
+test("a new case overrides a quiet habit without losing the remembered preference", async () => {
   const engine = new Engine(":memory:");
   try {
     const { id } = engine.createSession();
@@ -42,7 +42,7 @@ test("a new case overrides a quiet habit without losing the remembered preferenc
       description: "Maya reports a fault tonight.",
       payload: { owner: "Care team", caseId: "M-1" },
     });
-    engine.processJobs();
+    await engine.processJobs();
     const s = engine.snapshot(id);
     assert.equal(
       s.decisions.find((d) => d.person === "maya")?.domain,
@@ -58,12 +58,12 @@ test("a new case overrides a quiet habit without losing the remembered preferenc
   }
 });
 
-test("the persisted arbitration trace links the trigger, constraints, memory delta and delivery", () => {
+test("the persisted arbitration trace links the trigger, constraints, memory delta and delivery", async () => {
   const engine = new Engine(":memory:");
   try {
     const { id } = engine.createSession();
-    step(engine, id, "heartbeat");
-    const s = step(engine, id, "incident");
+    await step(engine, id, "heartbeat");
+    const s = await step(engine, id, "incident");
     const d = s.decisions.findLast((d) => d.person === "daniel")!;
     const trace = (d as any).trace;
     assert.ok(trace, "new decisions retain their technical trace");
@@ -106,7 +106,7 @@ test("the persisted arbitration trace links the trigger, constraints, memory del
   }
 });
 
-test("callback capacity is projected from its source and gates new appointments", () => {
+test("callback capacity is projected from its source and gates new appointments", async () => {
   const engine = new Engine(":memory:");
   try {
     const { id } = engine.createSession();
@@ -123,7 +123,7 @@ test("callback capacity is projected from its source and gates new appointments"
         ],
       },
     });
-    engine.processJobs();
+    await engine.processJobs();
     const s = engine.snapshot(id);
     assert.equal(s.operations.slots.filter((slot) => !slot.person).length, 0);
     const candidate = (
@@ -140,7 +140,7 @@ test("callback capacity is projected from its source and gates new appointments"
   }
 });
 
-test("service authority for another channel cannot authorise an in-app delivery", () => {
+test("service authority for another channel cannot authorise an in-app delivery", async () => {
   const engine = new Engine(":memory:");
   try {
     const { id } = engine.createSession();
@@ -157,7 +157,7 @@ test("service authority for another channel cannot authorise an in-app delivery"
         allowed: true,
       },
     });
-    engine.processJobs();
+    await engine.processJobs();
     const s = engine.snapshot(id);
     assert.equal(s.actions.filter((a) => a.person === "daniel").length, 0);
     const d = s.decisions.find((d) => d.person === "daniel")!;
@@ -171,11 +171,11 @@ test("service authority for another channel cannot authorise an in-app delivery"
   }
 });
 
-test("an incident-only customer can recover without an existing care case", () => {
+test("an incident-only customer can recover without an existing care case", async () => {
   const engine = new Engine(":memory:");
   try {
     const { id } = engine.createSession();
-    step(engine, id, "heartbeat");
+    await step(engine, id, "heartbeat");
     engine.advance(id, "incident", "incident", 1);
     engine.append(id, 2, {
       type: "incident.confirmed",
@@ -184,8 +184,8 @@ test("an incident-only customer can recover without an existing care case", () =
       description: "Maya is now in the affected-service register.",
       payload: { incidentId: "INC-017", affected: ["daniel", "sam", "maya"] },
     });
-    engine.processJobs();
-    const s = step(engine, id, "restore");
+    await engine.processJobs();
+    const s = await step(engine, id, "restore");
     assert.equal(s.failedJobs, 0);
     assert.equal(
       s.decisions.filter((d) => d.person === "maya").at(-1)?.trace?.selectedId,
@@ -201,13 +201,13 @@ test("an incident-only customer can recover without an existing care case", () =
   }
 });
 
-test("a later fault report supersedes an earlier recovery observation", () => {
+test("a later fault report supersedes an earlier recovery observation", async () => {
   const engine = new Engine(":memory:");
   try {
     const { id } = engine.createSession();
-    step(engine, id, "heartbeat");
-    step(engine, id, "incident");
-    step(engine, id, "restore");
+    await step(engine, id, "heartbeat");
+    await step(engine, id, "incident");
+    await step(engine, id, "restore");
     engine.advance(id, "callback", "later", 3);
     engine.append(id, 4, {
       type: "case.opened",
@@ -216,7 +216,7 @@ test("a later fault report supersedes an earlier recovery observation", () => {
       description: "A new fault after the earlier heartbeat returned.",
       payload: { owner: "Care team", caseId: "M-2" },
     });
-    engine.processJobs();
+    await engine.processJobs();
     const s = engine.snapshot(id);
     assert.equal(s.households.find((h) => h.id === "maya")?.restored, false);
     assert.equal(
@@ -249,19 +249,19 @@ function fixture() {
     },
   };
 }
-function step(engine: Engine, id: string, name: string, key = name) {
+async function step(engine: Engine, id: string, name: string, key = name) {
   const snapshot = engine.snapshot(id);
   engine.advance(id, name, key, snapshot.session.revision);
-  engine.processJobs();
+  await engine.processJobs();
   return engine.snapshot(id);
 }
 
-test("the same heartbeat makes three distinct evidence-backed decisions", () => {
+test("the same heartbeat makes three distinct evidence-backed decisions", async () => {
   const f = fixture();
   try {
     const session = f.engine.createSession();
     assert.ok(session?.id, "session is persisted");
-    const s = step(f.engine, session.id, "heartbeat");
+    const s = await step(f.engine, session.id, "heartbeat");
     assert.equal(s.decisions.length, 3);
     assert.equal(
       s.decisions.find((d: any) => d.person === "maya").disposition,
@@ -287,7 +287,7 @@ test("the same heartbeat makes three distinct evidence-backed decisions", () => 
   }
 });
 
-test("duplicate submission is idempotent and stale presenters cannot advance", () => {
+test("duplicate submission is idempotent and stale presenters cannot advance", async () => {
   const f = fixture();
   try {
     const a = f.engine.createSession();
@@ -295,7 +295,7 @@ test("duplicate submission is idempotent and stale presenters cannot advance", (
     const receipt = f.engine.advance(a.id, "heartbeat", "same-key", 0);
     const duplicate = f.engine.advance(a.id, "heartbeat", "same-key", 0);
     assert.deepEqual(duplicate, receipt);
-    f.engine.processJobs();
+    await f.engine.processJobs();
     const before = f.engine.snapshot(a.id);
     assert.throws(
       () => f.engine.advance(a.id, "incident", "next", 0),
@@ -305,7 +305,7 @@ test("duplicate submission is idempotent and stale presenters cannot advance", (
       () => f.engine.advance(a.id, "incident", "same-key", 1),
       /idempotency|different/i,
     );
-    f.engine.processJobs();
+    await f.engine.processJobs();
     const after = f.engine.snapshot(a.id);
     assert.deepEqual(after.actions, before.actions);
     assert.equal(after.events.length, before.events.length);
@@ -314,21 +314,21 @@ test("duplicate submission is idempotent and stale presenters cannot advance", (
   }
 });
 
-test("restoration cannot fulfil a promise; later outcomes stay out of historical reads", () => {
+test("restoration cannot fulfil a promise; later outcomes stay out of historical reads", async () => {
   const f = fixture();
   try {
     const a = f.engine.createSession();
     assert.ok(a?.id);
-    step(f.engine, a.id, "heartbeat");
-    step(f.engine, a.id, "incident");
-    let s = step(f.engine, a.id, "restore");
+    await step(f.engine, a.id, "heartbeat");
+    await step(f.engine, a.id, "incident");
+    let s = await step(f.engine, a.id, "restore");
     let daniel = s.households.find((p: any) => p.id === "daniel");
     assert.equal(daniel.restored, true);
     assert.equal(daniel.promiseFulfilled, false);
     assert.equal(daniel.confirmed, false);
     assert.equal(daniel.caseStatus, "open");
-    step(f.engine, a.id, "callback");
-    step(f.engine, a.id, "confirm");
+    await step(f.engine, a.id, "callback");
+    await step(f.engine, a.id, "confirm");
     s = f.engine.snapshot(a.id);
     daniel = s.households.find((p: any) => p.id === "daniel");
     assert.equal(daniel.promiseFulfilled, true);
@@ -349,14 +349,14 @@ test("restoration cannot fulfil a promise; later outcomes stay out of historical
   }
 });
 
-test("sessions isolate incident membership, records and actions", () => {
+test("sessions isolate incident membership, records and actions", async () => {
   const f = fixture();
   try {
     const a = f.engine.createSession(),
       b = f.engine.createSession();
     assert.ok(a?.id && b?.id);
-    step(f.engine, a.id, "heartbeat");
-    const s = step(f.engine, a.id, "incident");
+    await step(f.engine, a.id, "heartbeat");
+    const s = await step(f.engine, a.id, "incident");
     assert.equal(
       s.households.find((p: any) => p.id === "maya").incident,
       false,
@@ -373,7 +373,7 @@ test("sessions isolate incident membership, records and actions", () => {
   }
 });
 
-test("pending work and receipts survive reopen; retry does not deliver twice", () => {
+test("pending work and receipts survive reopen; retry does not deliver twice", async () => {
   const f = fixture();
   try {
     const a = f.engine.createSession();
@@ -381,12 +381,12 @@ test("pending work and receipts survive reopen; retry does not deliver twice", (
     f.engine.advance(a.id, "heartbeat", "resume-me", 0);
     f.reopen();
     assert.equal(f.engine.snapshot(a.id).pendingJobs, 1);
-    f.engine.processJobs();
+    await f.engine.processJobs();
     const before = f.engine.snapshot(a.id);
     assert.equal(before.pendingJobs, 0);
     assert.equal(before.actions.length, 2);
     f.reopen();
-    f.engine.processJobs();
+    await f.engine.processJobs();
     const after = f.engine.snapshot(a.id);
     assert.deepEqual(after.actions, before.actions);
     assert.deepEqual(after.decisions, before.decisions);
@@ -395,7 +395,7 @@ test("pending work and receipts survive reopen; retry does not deliver twice", (
   }
 });
 
-test("rejects unsupported steps and out-of-order outcomes without writing events", () => {
+test("rejects unsupported steps and out-of-order outcomes without writing events", async () => {
   const f = fixture();
   try {
     const a = f.engine.createSession();
@@ -417,7 +417,7 @@ test("rejects unsupported steps and out-of-order outcomes without writing events
   }
 });
 
-test("service contact authority comes from a scoped source record", () => {
+test("service contact authority comes from a scoped source record", async () => {
   const f = fixture();
   try {
     const a = f.engine.createSession();
@@ -437,17 +437,17 @@ test("service contact authority comes from a scoped source record", () => {
   }
 });
 
-test("a decision cannot claim incident exclusion before the incident exists", () => {
+test("a decision cannot claim incident exclusion before the incident exists", async () => {
   const f = fixture();
   try {
     const a = f.engine.createSession();
-    let s = step(f.engine, a.id, "heartbeat");
+    let s = await step(f.engine, a.id, "heartbeat");
     assert.equal(s.operations.incident, null);
     assert.doesNotMatch(
       s.decisions.find((d: any) => d.person === "maya").reason,
       /INC-017/,
     );
-    s = step(f.engine, a.id, "incident");
+    s = await step(f.engine, a.id, "incident");
     assert.match(
       s.decisions.filter((d: any) => d.person === "maya").at(-1).reason,
       /outside INC-017/,

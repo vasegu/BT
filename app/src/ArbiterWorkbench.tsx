@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type {
   Decision,
+  ModelAssessment,
   Household,
   Proposal,
   Snapshot,
@@ -195,6 +196,92 @@ function PriorityHistory({
   );
 }
 
+function ModelReadout({ assessment }: { assessment: ModelAssessment }) {
+  return (
+    <div className="aw-model-readout">
+      <div className="aw-subhead">
+        <span>Jev assessment</span>
+        <small>
+          {assessment.status === "ok"
+            ? "Recorded model output"
+            : assessment.status}
+        </small>
+      </div>
+      <div className="aw-model-receipt">
+        <code>{assessment.model}</code>
+        <span>{assessment.latencyMs} ms</span>
+        <span>
+          {assessment.inputTokens ?? "—"} in / {assessment.outputTokens ?? "—"}{" "}
+          out
+        </span>
+        <span>
+          {assessment.costUsd === null
+            ? "Cost unavailable"
+            : `$${assessment.costUsd.toFixed(6)}`}
+        </span>
+      </div>
+      {Object.entries(assessment.questions).map(([key, question]) => {
+        const answer = assessment.answers[key];
+        const labels = Array.isArray(question.criteria)
+          ? question.criteria
+          : null;
+        const ranked = Object.entries(answer?.probabilities || {}).sort(
+          (a, b) => (labels ? Number(a[0]) - Number(b[0]) : b[1] - a[1]),
+        );
+        return (
+          <details
+            className="aw-model-question"
+            key={key}
+            open={key === "interpretation"}
+          >
+            <summary>
+              <code>{key}</code>
+              <strong>
+                {answer?.choice?.replaceAll("_", " ") ||
+                  (answer?.score === undefined
+                    ? "Unavailable"
+                    : `${answer.score.toFixed(2)} / ${(labels?.length || 1) - 1}`)}
+              </strong>
+              <small>{question.type}</small>
+            </summary>
+            <p>{question.instructions}</p>
+            <div className="aw-distribution">
+              {ranked.map(([option, value]) => (
+                <div
+                  key={option}
+                  className={option === answer?.choice ? "chosen" : ""}
+                >
+                  <span
+                    title={
+                      labels?.[Number(option)] ||
+                      (!Array.isArray(question.criteria)
+                        ? question.criteria[option]
+                        : option)
+                    }
+                  >
+                    {labels
+                      ? `${option} · ${labels[Number(option)]?.split(":")[0] || option}`
+                      : option.replaceAll("_", " ")}
+                  </span>
+                  <i>
+                    <b style={{ width: `${value * 100}%` }} />
+                  </i>
+                  <code>{Math.round(value * 100)}%</code>
+                </div>
+              ))}
+            </div>
+          </details>
+        );
+      })}
+      <p className="aw-model-resolution">{assessment.resolution}</p>
+      <p className="aw-note">
+        Model probabilities are uncalibrated for BT. The 70% selection threshold
+        is demo policy; facts, permissions and obligations stay in code.
+      </p>
+    </div>
+  );
+}
+
 export function ArbiterWorkbench({
   h,
   snapshot,
@@ -271,6 +358,8 @@ export function ArbiterWorkbench({
   const evidence = context.filter((e) => used.has(e.id));
   const triggers = context.filter((e) => trace.triggerIds.includes(e.id));
   const eligible = selected.checks.every((c) => c.state === "pass");
+  const assessment = trace.assessment;
+  const modelProbabilities = assessment?.answers.next_action?.probabilities;
   const prior = runs.find((d) => d.id === trace.previousDecisionId);
   const changed = prior && prior.trace?.selectedId !== trace.selectedId;
   const names = {
@@ -288,7 +377,9 @@ export function ArbiterWorkbench({
           <small>
             {changed
               ? `Revised from ${prior.title}`
-              : "Context evaluated · decision recorded"}
+              : assessment
+                ? `${assessment.status === "ok" ? "Jev evaluated" : "Model unavailable"} · ${assessment.effective === "policy_hold" ? "policy hold" : "decision recorded"}`
+                : "Rule-derived · decision recorded"}
           </small>
         </div>
         <div className="aw-run-id">
@@ -406,7 +497,7 @@ export function ArbiterWorkbench({
           />
           <div className="aw-queue-legend">
             <span>DOMAIN / PROPOSED ACTION</span>
-            <span>PRIORITY</span>
+            <span>{assessment ? "JEV P" : "PRIORITY"}</span>
             <span>DISPOSITION</span>
           </div>
           <div className="aw-queue" aria-label="Domain proposals">
@@ -422,9 +513,19 @@ export function ArbiterWorkbench({
                   <strong>{c.title}</strong>
                 </span>
                 <span className="aw-score">
-                  <b>{c.priority}</b>
+                  <b>
+                    {assessment
+                      ? modelProbabilities?.[c.id] === undefined
+                        ? "—"
+                        : `${Math.round(modelProbabilities[c.id] * 100)}%`
+                      : c.priority}
+                  </b>
                   <i>
-                    <em style={{ width: `${c.priority}%` }} />
+                    <em
+                      style={{
+                        width: `${assessment ? (modelProbabilities?.[c.id] || 0) * 100 : c.priority}%`,
+                      }}
+                    />
                   </i>
                 </span>
                 <span className={`aw-status ${c.status}`}>
@@ -449,8 +550,14 @@ export function ArbiterWorkbench({
               </span>
               <i>→</i>
               <span className={eligible ? "pass" : "muted"}>
-                <small>Priority</small>
-                <b>{selected.priority} / 100</b>
+                <small>{assessment ? "Jev selection" : "Priority"}</small>
+                <b>
+                  {assessment
+                    ? modelProbabilities?.[selected.id] === undefined
+                      ? "Unavailable"
+                      : `${Math.round(modelProbabilities[selected.id] * 100)}%`
+                    : `${selected.priority} / 100`}
+                </b>
               </span>
               <i>→</i>
               <span className={selected.status}>
@@ -460,8 +567,9 @@ export function ArbiterWorkbench({
             </div>
           </div>
           <p className="aw-queue-foot">
-            Eligible proposals are ranked by policy priority. Merged work
-            retains its existing owner.
+            {assessment
+              ? "Jev proposes a plan; hard gates and the 70% selection threshold determine acceptance. Merged work retains its owner."
+              : "Eligible proposals are ranked by policy priority. Merged work retains its existing owner."}
           </p>
         </section>
 
@@ -469,7 +577,13 @@ export function ArbiterWorkbench({
           <PanelHead
             number="03"
             title="Decision inspection"
-            note="Rule-derived"
+            note={
+              assessment
+                ? assessment.effective === "model"
+                  ? "Jev + policy"
+                  : "Policy hold"
+                : "Rule-derived"
+            }
           />
           <div className="aw-panel-scroll">
             <div className="aw-selected-summary">
@@ -480,6 +594,7 @@ export function ArbiterWorkbench({
               <h3>{selected.title}</h3>
               <p>{selected.reason}</p>
             </div>
+            {assessment && <ModelReadout assessment={assessment} />}
             <div className="aw-checks">
               <div className="aw-subhead">
                 <span>Eligibility checks</span>
@@ -515,7 +630,9 @@ export function ArbiterWorkbench({
             </div>
             <div className="aw-factors">
               <div className="aw-subhead">
-                <span>Priority components</span>
+                <span>
+                  {assessment ? "Rules baseline" : "Priority components"}
+                </span>
                 <small>Policy units</small>
               </div>
               {selected.factors.map((f) => (
@@ -533,7 +650,7 @@ export function ArbiterWorkbench({
             </div>
             <div className="aw-evidence">
               <div className="aw-subhead">
-                <span>Evidence used</span>
+                <span>{assessment ? "Policy evidence" : "Evidence used"}</span>
                 <small>{evidence.length} linked</small>
               </div>
               {evidence.map((e) => (
