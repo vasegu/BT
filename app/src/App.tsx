@@ -918,7 +918,11 @@ export function App() {
       ) : null}
       <main
         id="workspace"
-        className={focused ? "focused-workspace" : undefined}
+        className={
+          focused
+            ? `focused-workspace${panel === "customer" ? " customer-focus" : ""}`
+            : undefined
+        }
       >
         <div className="workspace-intro">
           <div>
@@ -933,7 +937,9 @@ export function App() {
               {records
                 ? "Read the records behind the experience."
                 : panel
-                  ? panelNames[panel]
+                  ? panel === "customer"
+                    ? "Knowing your customer."
+                    : panelNames[panel]
                   : "The next move depends on what we know."}
             </h1>
           </div>

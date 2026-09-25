@@ -1,3 +1,4 @@
+import { CustomerMemory } from "./CustomerMemory";
 import type { ReactNode } from "react";
 import type {
   Snapshot,
@@ -139,71 +140,13 @@ export function SectionView({
     ops = snapshot.events.filter((e) => e.subject === "shared");
   if (panel === "customer")
     return (
-      <div className="full-section memory-section">
-        <div className="section-banner">
-          <div>
-            <span className="eyebrow">
-              Records → current state → retained learning
-            </span>
-            <h2>The history stays with {h.name.split(" ")[0]}.</h2>
-            <p>
-              Every current fact below resolves to a source record. Later
-              observations add to the history.
-            </p>
-          </div>
-          <div className="section-metrics">
-            <Field label="Source records">
-              {personal.length.toString().padStart(2, "0")}
-            </Field>
-            <Field label="Visible through">{time(snapshot.clock)}</Field>
-            <Field label="Scope">This customer</Field>
-          </div>
-        </div>
-        <div className="section-columns">
-          <Block
-            title="Customer source history"
-            note="APPEND-ONLY / SELECT TO INSPECT"
-          >
-            <Records events={personal} inspect={inspect} />
-          </Block>
-          <div className="section-side">
-            <Block title="Current state" note="PROJECTED FROM RECORDS">
-              <div className="full-fields">
-                <Field label="Service">{h.serviceState}</Field>
-                <Field label="Case">{h.caseStatus}</Field>
-                <Field label="Named owner">{h.owner || "No open case"}</Field>
-                <Field label="Commitment">
-                  {h.promise
-                    ? `${time(h.promise)} · ${h.promiseFulfilled ? "fulfilled" : "outstanding"}`
-                    : "None recorded"}
-                </Field>
-                <Field label="Service contact authority">
-                  {h.contactAllowed ? "Verified / in-app" : "Not established"}
-                </Field>
-              </div>
-            </Block>
-            <Block title="What carries forward" note="RETAINED EVIDENCE">
-              <div className="retained-memory">
-                <span>◈</span>
-                <h3>
-                  {h.id === "daniel"
-                    ? "Earlier attempts are not forgotten."
-                    : h.id === "sam"
-                      ? "Delivery and first use stay separate."
-                      : "A stated habit has a source."}
-                </h3>
-                <p>
-                  {h.id === "daniel"
-                    ? "The unsuccessful restart, the existing owner and the callback remain available even when the service state changes."
-                    : h.id === "sam"
-                      ? "The order proves that equipment arrived. No successful-use observation is available in this record set."
-                      : `${h.habit}. The synthetic history summary records 26 gaps followed by recovery; this is context for a watch, not proof that every future gap is harmless.`}
-                </p>
-              </div>
-            </Block>
-          </div>
-        </div>
-      </div>
+      <CustomerMemory
+        key={h.id}
+        h={h}
+        snapshot={snapshot}
+        decision={decision}
+        inspect={inspect}
+      />
     );
   if (panel === "operations")
     return (

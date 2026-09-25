@@ -112,11 +112,6 @@
   gap: 20px;
   align-items: start;
 }
-.section-side {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
 .section-block {
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -219,25 +214,6 @@
   background: white;
   left: -3.5px;
   top: 5px;
-}
-.retained-memory {
-  padding: 16px 2px 8px;
-}
-.retained-memory > span {
-  color: var(--brand);
-  font-size: 27px;
-  line-height: 1;
-}
-.retained-memory h3 {
-  font-size: 15px;
-  font-weight: 500;
-  margin: 11px 0 9px;
-  letter-spacing: -0.02em;
-}
-.retained-memory p {
-  font-size: 12px;
-  line-height: 1.8;
-  color: var(--muted);
 }
 .scope-board {
   display: grid;
