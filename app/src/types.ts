@@ -47,6 +47,49 @@ export type Decision = {
   evidenceIds: string[];
   held: { title: string; reason: string; wake: string }[];
   policyVersion: string;
+  trace?: ArbitrationTrace;
+};
+export type ProposalCheck = {
+  id: string;
+  label: string;
+  state: "pass" | "fail" | "unknown";
+  detail: string;
+  evidenceIds: string[];
+};
+export type Proposal = {
+  id: string;
+  agent: string;
+  title: string;
+  domain: string;
+  disposition: string;
+  reason: string;
+  wake: string;
+  effect: string;
+  status: "selected" | "held" | "blocked" | "merged";
+  priority: number;
+  factors: { label: string; value: number }[];
+  checks: ProposalCheck[];
+  evidenceIds: string[];
+};
+export type ArbitrationTrace = {
+  version: 1;
+  triggerIds: string[];
+  selectedId: string;
+  previousDecisionId: string | null;
+  candidates: Proposal[];
+  changes: {
+    field: string;
+    before: string;
+    after: string;
+    evidenceIds: string[];
+  }[];
+  execution: {
+    stage: string;
+    status: "passed" | "committed" | "held" | "deduplicated";
+    detail: string;
+    actionId?: string;
+    receiptId?: string;
+  }[];
 };
 export type DemoAction = {
   id: string;

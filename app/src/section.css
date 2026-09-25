@@ -333,86 +333,6 @@
   line-height: 1.7;
   margin-top: 17px;
 }
-.runtime-flow {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  color: var(--ink);
-  border-radius: 8px;
-  padding: 10px 20px 0;
-  overflow: auto;
-}
-.runtime-flow svg {
-  width: 100%;
-  min-width: 750px;
-  display: block;
-}
-.runtime-wires path {
-  stroke: var(--brand);
-  stroke-width: 1.3;
-  fill: none;
-}
-.runtime-wires .held-wire {
-  stroke: #afa5bb;
-  stroke-dasharray: 4 6;
-}
-.runtime-node rect {
-  fill: var(--canvas);
-  stroke: #ccc2d7;
-}
-.runtime-node text {
-  fill: var(--ink);
-  font: 13px var(--sans);
-}
-.runtime-node .kicker {
-  font: 9px var(--mono);
-  fill: var(--muted);
-  letter-spacing: 0.05em;
-}
-.key-node rect {
-  stroke: var(--brand);
-  fill: var(--soft);
-}
-.held-node rect {
-  stroke: var(--line);
-  fill: var(--surface);
-}
-.held-node text {
-  fill: var(--muted);
-}
-.runtime-flow-foot {
-  border-top: 1px solid var(--line);
-  padding: 15px 0;
-  display: flex;
-  justify-content: space-between;
-  gap: 20px;
-  min-width: 600px;
-  font: var(--text-meta) var(--mono);
-  color: var(--muted);
-}
-.full-held {
-  display: flex;
-  gap: 18px;
-  align-items: start;
-  padding: 22px 0;
-  border-bottom: 1px solid var(--line);
-}
-.full-held:last-child {
-  border-bottom: 0;
-}
-.full-held h3 {
-  font-size: var(--text-section);
-  font-weight: 600;
-}
-.full-held p {
-  font-size: var(--text-body);
-  line-height: 1.7;
-  color: var(--muted);
-  margin: 8px 0;
-}
-.full-held small {
-  font: var(--text-meta) / 1.6 var(--mono);
-  color: #977eaa;
-}
 .outcome-cards {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -857,9 +777,6 @@
   }
   .outcome-cards p {
     margin-top: 10px;
-  }
-  .runtime-flow {
-    padding: 10px 14px 0;
   }
   .channel-section {
     grid-template-columns: 1fr;

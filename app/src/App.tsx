@@ -398,7 +398,9 @@ export function App() {
             "Shared incident",
             snapshot.operations.incident ? (
               <>
-                <span className="status-dot orange" /> INC-017 · open
+                <span className="status-dot orange" />{" "}
+                {snapshot.operations.incident.id} ·{" "}
+                {snapshot.operations.incident.status}
               </>
             ) : (
               "No confirmed incident"
@@ -446,10 +448,10 @@ export function App() {
               <strong>{s.time}</strong>
               <span>
                 {s.owner
-                  ? snapshot.households.find((p) => p.id === "daniel")
+                  ? snapshot.households.find((p) => p.id === s.person)
                       ?.promiseFulfilled
-                    ? "Completed / Aisha"
-                    : `${s.owner} / Daniel`
+                    ? `Completed / ${s.owner}`
+                    : `${s.owner} / ${snapshot.households.find((p) => p.id === s.person)?.name.split(" ")[0] || "Reserved"}`
                   : "Available"}
               </span>
             </div>
@@ -485,11 +487,15 @@ export function App() {
       <div className="signal">
         <span className={`status-dot ${pending ? "orange" : ""}`} />
         <code>
-          {snapshot.cutoff
-            ? "router.heartbeat_overdue"
-            : "Awaiting a source event"}
+          {decision?.trace?.triggerIds.length
+            ? snapshot.events.find(
+                (e) => e.id === decision.trace!.triggerIds[0],
+              )?.type
+            : snapshot.cutoff
+              ? "Context reassessment"
+              : "Awaiting a source event"}
         </code>
-        <time>{snapshot.cutoff ? "21:00" : "—"}</time>
+        <time>{decision ? formatTime(decision.time) : "—"}</time>
       </div>
       <div className="agent-path">
         <span>Ambient flag</span>
@@ -517,13 +523,13 @@ export function App() {
                 h.promise
                   ? h.promiseFulfilled
                     ? "Fulfilled independently"
-                    : "21:15 · retain"
+                    : `${formatTime(h.promise)} · retain`
                   : "None recorded",
               ],
               [
                 "Scope",
                 h.incident
-                  ? "INC-017 / confirmed"
+                  ? `${snapshot.operations.incident?.id || "Incident"} / confirmed`
                   : "No verified incident impact",
               ],
               [
@@ -538,8 +544,21 @@ export function App() {
           <div className="held-action">
             <span className="tag amber">held</span>
             <span>
-              {decision.held[0].title}
-              <small>{decision.held[0].reason}</small>
+              {
+                (
+                  decision.held.find((c) => c.title === "Repeat hub restart") ||
+                  decision.held[0]
+                ).title
+              }
+              <small>
+                {
+                  (
+                    decision.held.find(
+                      (c) => c.title === "Repeat hub restart",
+                    ) || decision.held[0]
+                  ).reason
+                }
+              </small>
             </span>
           </div>
         </>
@@ -553,8 +572,15 @@ export function App() {
           </p>
         </div>
       )}
-      <a className="text-link" href={lab("flow")}>
-        Inspect the decision flow <span>↗</span>
+      <a
+        className="text-link"
+        href={`?${new URLSearchParams({ ...Object.fromEntries(params), panel: "arbiter" })}`}
+        onClick={(event) => {
+          event.preventDefault();
+          openPanel("arbiter");
+        }}
+      >
+        Inspect proposals & evidence <span>↗</span>
       </a>
     </Panel>
   );
@@ -816,7 +842,7 @@ export function App() {
         id="workspace"
         className={
           focused
-            ? `focused-workspace${panel === "customer" ? " customer-focus" : panel === "phone" ? " phone-focus" : ""}`
+            ? `focused-workspace${panel === "customer" ? " customer-focus" : panel === "phone" ? " phone-focus" : panel === "arbiter" ? " arbiter-focus" : ""}`
             : "account-workspace"
         }
       >

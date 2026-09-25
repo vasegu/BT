@@ -18,6 +18,7 @@ Press **Play**. The same missing heartbeat produces three different policy decis
 
 - Five panels read one persisted session snapshot. Each opens its own full-page section with one **Back to account** action; sibling navigation and customer switching stay on the account overview. Opening a section pauses replay and preserves the customer, session and historical cutoff.
 - **Customer memory** brings the lab atlas, original-space cosine retrieval, annotated matches, current customer readout and clickable source timeline into one desktop screen. The atlas groups 42 example memories into five computed cosine-space clusters, with group filters, six nearest matches, drag rotation, zoom and source inspection. It uses saved synthetic lab contexts; the readout and timeline use the current session. It remains a single section with one return control.
+- **Arbiter** opens a connected technical workspace: source activity, memory changes, nine domain proposals, eligibility gates, policy priority factors, decision history and the committed execution trace. Select a proposal to trace its inputs; select a previous run to inspect exactly what was known then. Source records and the persisted decision JSON remain one click away. The compact account panel continues to show the current answer.
 - **Source records** opens the event ledger. Click a record to inspect IDs, source, occurred/received time and payload.
 - The numbered replay positions are read-only historical snapshots. **New session** preserves the previous session and starts an isolated one. Its URL is the return point.
 - The **Visual lab** contains the semantic atlas, decision flow and memory timeline. These are clearly labelled independent studies, not a live view of the app session's records. A link returns to the same app session.
@@ -35,6 +36,16 @@ Stop the dev processes before starting the production server on the same port. T
 ### What is real in this slice
 
 React UI, SQLite writes, transactional jobs, idempotency, deterministic arbitration, session isolation, source-time projection, action/receipt persistence and local MiniLM vector computation. Eve adds live OpenAI Responses chat and GPT-Live voice, grounded in the same scoped server snapshot. Engine tests cover separate household decisions, retries, historical causality, retained promises and restart recovery.
+
+### Arbiter: evidence to execution
+
+The worker evaluates domain proposals against the same customer and operations snapshot. Hard gates determine eligibility before explicit policy factors rank the remaining proposals. The displayed 0–100 values are **policy priority units**, not model confidence or calibrated probabilities. The domain labels identify deterministic proposal evaluators in one worker, not independent live model agents.
+
+A fresh case or affected-service incident can overturn a remembered routine for the same person. Incident membership and callback availability project from their source payloads. Restoration, fulfilment of a human promise and customer confirmation remain separate observations. New faults reset current recovery state without erasing previous decisions.
+
+Each new decision persists its trigger, proposal checks and specific evidence IDs, selected and rejected alternatives, projected memory changes, prior decision link and execution stages. Message commits and simulated delivery receipts are linked to the decision in the same transaction. Duplicate prevention and contact-authority holds appear in the execution strip. Historical runs are read-only; older decisions without a trace retain a concise fallback.
+
+Callback capacity is checked from the rota, but this slice does not reserve new appointments. Retrieval and predictive forecasts do not yet drive arbitration; their lab studies remain separate. The workbench exposes actual deterministic behaviour and source provenance, without claiming live autonomous agents or external delivery.
 
 ### Eve: live chat and voice
 

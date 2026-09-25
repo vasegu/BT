@@ -1,5 +1,6 @@
 import { DatabaseSync } from "node:sqlite";
 import { randomUUID } from "node:crypto";
+import { arbitrate, serviceMessage } from "./arbiter.ts";
 import type {
   Snapshot,
   SourceEvent,
@@ -75,11 +76,16 @@ function project(
     switch (e.type) {
       case "contact.authority_recorded":
         h.contactAllowed =
-          e.payload.allowed === true && e.payload.purpose === "service";
+          e.payload.allowed === true &&
+          e.payload.purpose === "service" &&
+          e.payload.channel === "in_app" &&
+          e.payload.role === "account_holder";
         break;
       case "case.opened":
         h.caseStatus = "open";
-        h.owner = String(e.payload.owner);
+        h.restored = false;
+        h.confirmed = false;
+        h.owner = typeof e.payload.owner === "string" ? e.payload.owner : null;
         h.serviceState = "Repeated drops reported";
         break;
       case "diagnostic.completed":
@@ -107,8 +113,11 @@ function project(
         h.restored = true;
         break;
       case "incident.confirmed":
-        h.incident = (e.payload.affected as string[]).includes(person.id);
-        if (h.incident) h.serviceState = "Confirmed incident · INC-017";
+        h.incident =
+          Array.isArray(e.payload.affected) &&
+          e.payload.affected.includes(person.id);
+        if (h.incident)
+          h.serviceState = `Confirmed incident · ${String(e.payload.incidentId)}`;
         break;
       case "service.restored_observed":
         h.restored = true;
@@ -122,126 +131,48 @@ function project(
   }
   return h;
 }
-function assess(h: Household, revision: number, time: string): Decision {
-  const base = {
-    id: randomUUID(),
-    person: h.id,
-    revision,
-    time,
-    evidenceIds: h.evidence.map((e) => e.id),
-    policyVersion: "bt-context-v1.1",
-    held: [
-      {
-        title: "Repeat hub restart",
-        reason: h.restartTried
-          ? "Earlier restart did not resolve the issue."
-          : "The current evidence does not justify this instruction.",
-        wake: "A fresh diagnostic establishes a useful local test.",
-      },
-      {
-        title: "New product offer",
-        reason: "No product mandate from this service signal.",
-        wake: "Service obligations clear and relevant stated intent is recorded.",
-      },
-    ],
+
+function projectOperations(events: SourceEvent[]): Snapshot["operations"] {
+  const incident = events.filter((e) => e.type === "incident.confirmed").at(-1);
+  const capacity = events
+    .filter((e) => e.type === "capacity.recorded")
+    .at(-1)?.payload;
+  // Read the previous seed shape too, so existing local sessions remain usable.
+  const slots =
+    capacity && Array.isArray(capacity.slots)
+      ? (capacity.slots as Snapshot["operations"]["slots"])
+      : capacity
+        ? [
+            {
+              time: "21:15",
+              owner: String(capacity.owner),
+              person: capacity.held as PersonId,
+            },
+            ...(capacity.available
+              ? [
+                  {
+                    time: String(capacity.available),
+                    owner: null,
+                    person: null,
+                  },
+                ]
+              : []),
+          ]
+        : [];
+  return {
+    incident: incident
+      ? {
+          id: String(incident.payload.incidentId),
+          affected: Array.isArray(incident.payload.affected)
+            ? incident.payload.affected.filter((id): id is PersonId =>
+                people.some((p) => p.id === id),
+              )
+            : [],
+          status: "Open · service restoration tracked separately",
+        }
+      : null,
+    slots,
   };
-  if (h.confirmed)
-    return {
-      ...base,
-      domain: "recovery",
-      disposition: "complete",
-      title: "Recovery confirmed",
-      reason:
-        "Daniel confirmed the connection works. The kept callback and diagnostic history remain in memory.",
-    };
-  if (h.id === "maya")
-    return {
-      ...base,
-      domain: "observation",
-      disposition: h.restored ? "suppress" : "watch",
-      title: h.restored ? "Quiet watch completed" : "Watch until 21:10",
-      reason: h.restored
-        ? "A fresh heartbeat ended the watch. No customer interruption was needed."
-        : `The missing heartbeat matches the stated overnight habit. No open case or promise. ${h.evidence.some((e) => e.type === "incident.confirmed") ? "This service is outside INC-017." : "No incident membership is established."}`,
-    };
-  if (h.restored)
-    return {
-      ...base,
-      domain: "recovery",
-      disposition: h.promiseFulfilled ? "investigate" : "merge",
-      title: h.promiseFulfilled
-        ? "Await customer confirmation"
-        : "Keep the 21:15 callback",
-      reason: h.promiseFulfilled
-        ? "Aisha completed the callback. Technical restoration and customer confirmation remain separate observations."
-        : "The line recovered, but Aisha still owes the promised call. Restoration cannot fulfil that obligation.",
-    };
-  if (h.incident)
-    return {
-      ...base,
-      domain: "network",
-      disposition: "merge",
-      title: "Coordinate the shared incident",
-      reason:
-        h.id === "daniel"
-          ? "INC-017 explicitly includes this service. Link the existing case; retain Aisha and the 21:15 callback."
-          : "INC-017 explicitly includes this service. Coordinate the activation investigation without assuming delivery proves first use.",
-    };
-  return h.id === "daniel"
-    ? {
-        ...base,
-        domain: "recovery",
-        disposition: "investigate",
-        title: "Continue the recovery plan",
-        reason:
-          "Restart already tried. Keep the existing case, Aisha and the 21:15 callback together.",
-      }
-    : {
-        ...base,
-        domain: "activation",
-        disposition: "investigate",
-        title: "Check activation status",
-        reason:
-          "Equipment is delivered. Activation and first use are unconfirmed. Check provisioning before setup advice.",
-      };
-}
-function message(
-  h: Household,
-  d: Decision,
-): { key: string; title: string; body: string } | null {
-  if (h.id === "maya" || !h.contactAllowed) return null;
-  if (h.confirmed)
-    return {
-      key: "confirmed",
-      title: "Thanks for confirming, Daniel",
-      body: "Your connection is working again and your case is now closed. Your history is here if you need us.",
-    };
-  if (h.restored)
-    return {
-      key: "restored",
-      title: "Your connection is back",
-      body: "We can see your line has recovered. Aisha will still call at 21:15, as promised.",
-    };
-  if (h.incident)
-    return {
-      key: "incident",
-      title: "We’ve linked this to a network issue",
-      body:
-        h.id === "daniel"
-          ? "A confirmed network issue affects your service. Aisha is still looking after your case and will call at 21:15. There’s no need to restart your hub again."
-          : "A confirmed network issue affects your service. Your activation team is checking it alongside your order. We’ll keep your case updated.",
-    };
-  return h.id === "daniel"
-    ? {
-        key: "recovery",
-        title: "We’re keeping track of this",
-        body: "We have your earlier checks, Daniel. Aisha is still looking after your case and will call at 21:15. You won’t need to start again.",
-      }
-    : {
-        key: "activation",
-        title: "Let’s get your connection started",
-        body: "Your hub has arrived. We’re checking your activation before asking you to try any setup steps. Your activation team has the case.",
-      };
 }
 
 export class Engine {
@@ -386,7 +317,12 @@ export class Engine {
           subject: "shared",
           source: "rota_simulator",
           description: "21:15 held for Aisha / Daniel; 21:30 available.",
-          payload: { held: "daniel", owner: "Aisha", available: "21:30" },
+          payload: {
+            slots: [
+              { time: "21:15", owner: "Aisha", person: "daniel" },
+              { time: "21:30", owner: null, person: null },
+            ],
+          },
           occurredAt: "2026-09-25T19:45:00Z",
         },
       ];
@@ -524,21 +460,61 @@ export class Engine {
             | undefined;
           if (!job) return;
           const snapshot = this.snapshot(job.session_id, job.revision);
+          const before = this.snapshot(job.session_id, job.revision - 1);
           for (const h of snapshot.households) {
-            const d = assess(h, job.revision, clocks[job.revision]);
+            const d = arbitrate(
+              h,
+              before.households.find((p) => p.id === h.id)!,
+              snapshot,
+            );
             this.db
               .prepare("INSERT OR IGNORE INTO decisions VALUES(?,?,?,?,?)")
               .run(d.id, job.session_id, h.id, job.revision, JSON.stringify(d));
-            const proposed = message(h, d);
-            if (
-              proposed &&
-              h.contactAllowed &&
-              !this.db
-                .prepare(
-                  "SELECT id FROM actions WHERE session_id=? AND person=? AND logical_key=?",
-                )
-                .get(job.session_id, h.id, proposed.key)
-            ) {
+            const proposed = serviceMessage(h, d);
+            const priorAction = proposed
+              ? (this.db
+                  .prepare(
+                    "SELECT id FROM actions WHERE session_id=? AND person=? AND logical_key=?",
+                  )
+                  .get(job.session_id, h.id, proposed.key) as
+                  | { id: string }
+                  | undefined)
+              : undefined;
+            d.trace!.execution.push(
+              {
+                stage: "Context read",
+                status: "passed",
+                detail: `Revision ${job.revision}; occurred and received timestamps bounded by ${clocks[job.revision]}.`,
+              },
+              {
+                stage: "Policy evaluated",
+                status: "passed",
+                detail: `${d.trace!.candidates.length} proposals; hard eligibility gates applied before priority ranking.`,
+              },
+              {
+                stage: "Contact authority",
+                status: h.contactAllowed ? "passed" : "held",
+                detail: h.contactAllowed
+                  ? "Service / in-app authority verified from the source record."
+                  : "No permitted service contact; outbound action withheld.",
+              },
+            );
+            if (!proposed)
+              d.trace!.execution.push({
+                stage: "Channel held",
+                status: "held",
+                detail: h.contactAllowed
+                  ? "Internal observation only; no customer message proposed."
+                  : "No message committed without contact authority.",
+              });
+            else if (priorAction)
+              d.trace!.execution.push({
+                stage: "Duplicate prevented",
+                status: "deduplicated",
+                detail: `Logical action ${proposed.key} already exists in this session.`,
+                actionId: priorAction.id,
+              });
+            if (proposed && h.contactAllowed && !priorAction) {
               const actionId = randomUUID(),
                 receiptId = randomUUID();
               const action: DemoAction = {
@@ -554,6 +530,23 @@ export class Engine {
                 receiptId,
                 provenance: "demo_action",
               };
+              d.trace!.execution.push(
+                {
+                  stage: "Action committed",
+                  status: "committed",
+                  detail:
+                    "Decision and in-app action committed in one SQLite transaction.",
+                  actionId,
+                },
+                {
+                  stage: "Demo delivery",
+                  status: "committed",
+                  detail:
+                    "Simulated in-app delivery receipt; no external send.",
+                  actionId,
+                  receiptId,
+                },
+              );
               this.db
                 .prepare("INSERT INTO actions VALUES(?,?,?,?,?,?,?)")
                 .run(
@@ -574,6 +567,9 @@ export class Engine {
                   new Date().toISOString(),
                 );
             }
+            this.db
+              .prepare("UPDATE decisions SET data=? WHERE id=?")
+              .run(JSON.stringify(d), d.id);
           }
           this.db
             .prepare(
@@ -649,19 +645,7 @@ export class Engine {
       events,
       decisions,
       actions,
-      operations: {
-        incident: events.some((e) => e.type === "incident.confirmed")
-          ? {
-              id: "INC-017",
-              affected: ["daniel", "sam"],
-              status: "Open · service restoration tracked separately",
-            }
-          : null,
-        slots: [
-          { time: "21:15", owner: "Aisha", person: "daniel" },
-          { time: "21:30", owner: null, person: null },
-        ],
-      },
+      operations: projectOperations(events),
       nextStep: at < session.revision ? null : (steps[session.step] ?? null),
     };
   }

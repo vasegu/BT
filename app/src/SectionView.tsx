@@ -1,3 +1,4 @@
+import { ArbiterWorkbench } from "./ArbiterWorkbench";
 import { CustomerMemory } from "./CustomerMemory";
 import type { ReactNode } from "react";
 import type {
@@ -162,7 +163,7 @@ export function SectionView({
           </div>
           <div className="section-metrics">
             <Field label="Incident">
-              {snapshot.operations.incident ? "INC-017" : "Unconfirmed"}
+              {snapshot.operations.incident?.id || "Unconfirmed"}
             </Field>
             <Field label="Services in scope">
               {snapshot.operations.incident
@@ -171,7 +172,8 @@ export function SectionView({
             </Field>
             <Field label="Unallocated slots">
               {String(
-                snapshot.operations.slots.filter((s) => !s.person).length,
+                snapshot.operations.slots.filter((s) => !s.person && !s.owner)
+                  .length,
               ).padStart(2, "0")}
             </Field>
           </div>
@@ -180,9 +182,7 @@ export function SectionView({
           <div className="scope-origin">
             <span className="eyebrow">AFFECTED-SERVICE REGISTER</span>
             <h3>
-              {snapshot.operations.incident
-                ? "INC-017"
-                : "No confirmed incident"}
+              {snapshot.operations.incident?.id || "No confirmed incident"}
             </h3>
             <p>
               {snapshot.operations.incident?.status ||
@@ -225,11 +225,13 @@ export function SectionView({
                   <time>{s.time}</time>
                   <span>
                     <strong>
-                      {s.owner ? `${s.owner} / Daniel` : "Available"}
+                      {s.owner
+                        ? `${s.owner} / ${snapshot.households.find((p) => p.id === s.person)?.name.split(" ")[0] || "Reserved"}`
+                        : "Available"}
                     </strong>
                     <small>
                       {s.owner
-                        ? snapshot.households.find((p) => p.id === "daniel")
+                        ? snapshot.households.find((p) => p.id === s.person)
                             ?.promiseFulfilled
                           ? "Callback completed; historical allocation retained"
                           : "Reserved for the existing promise"
@@ -250,170 +252,13 @@ export function SectionView({
     );
   if (panel === "arbiter")
     return (
-      <div className="full-section arbiter-section">
-        <div className="section-banner">
-          <div>
-            <span className="eyebrow">
-              {decision
-                ? `${decision.policyVersion} / rule-derived`
-                : "Waiting for a source event"}
-            </span>
-            <h2>{decision?.title || "The next event wakes the arbiter."}</h2>
-            <p>
-              {decision?.reason ||
-                "Return to the account and run the scenario. The signal will be evaluated against both memories."}
-            </p>
-          </div>
-          <div className="section-metrics">
-            <Field label="Disposition">
-              {decision?.disposition || "Awaiting"}
-            </Field>
-            <Field label="Evidence">
-              {decision?.evidenceIds.length || 0} records
-            </Field>
-            <Field label="Domain">{decision?.domain || "—"}</Field>
-          </div>
-        </div>
-        <div className="runtime-flow">
-          <svg
-            viewBox="0 0 1280 310"
-            role="img"
-            aria-label="Original ambient flag combined with current customer and operational memory; the arbiter selects a path and holds incompatible actions"
-          >
-            <defs>
-              <pattern
-                id="runtime-dots"
-                width="18"
-                height="18"
-                patternUnits="userSpaceOnUse"
-              >
-                <circle cx="1" cy="1" r=".5" fill="#665175" opacity=".45" />
-              </pattern>
-            </defs>
-            <rect width="1280" height="310" fill="url(#runtime-dots)" />
-            <g className="runtime-wires">
-              <path d="M240 155C275 155 265 87 305 87M240 155C275 155 265 235 305 235M525 87C575 87 575 155 620 155M525 235C575 235 575 155 620 155M850 155C900 155 900 88 950 88" />
-              <path
-                className="held-wire"
-                d="M850 155C900 155 900 235 950 235"
-              />
-            </g>
-            <g className="runtime-node" transform="translate(40 118)">
-              <rect width="200" height="75" rx="6" />
-              <text x="15" y="23" className="kicker">
-                01 / ORIGINAL AMBIENT FLAG
-              </text>
-              <text x="15" y="48">
-                {snapshot.cutoff
-                  ? "Heartbeat overdue"
-                  : "Awaiting source event"}
-              </text>
-            </g>
-            <g className="runtime-node" transform="translate(305 48)">
-              <rect width="220" height="78" rx="6" />
-              <text x="15" y="23" className="kicker">
-                02 / CUSTOMER MEMORY
-              </text>
-              <text x="15" y="48">
-                {personal.length} records ·{" "}
-                {h.promise ? "promise retained" : "personal context"}
-              </text>
-            </g>
-            <g className="runtime-node" transform="translate(305 196)">
-              <rect width="220" height="78" rx="6" />
-              <text x="15" y="23" className="kicker">
-                02 / OPERATIONAL MEMORY
-              </text>
-              <text x="15" y="48">
-                {snapshot.operations.incident
-                  ? h.incident
-                    ? "INC-017 · in scope"
-                    : "INC-017 · outside scope"
-                  : "No confirmed incident"}
-              </text>
-            </g>
-            <g className="runtime-node key-node" transform="translate(620 107)">
-              <rect width="230" height="96" rx="6" />
-              <text x="16" y="24" className="kicker">
-                03 / ARBITER
-              </text>
-              <text x="16" y="50">
-                {decision?.domain || "Wider context"}
-              </text>
-              <text x="16" y="74" className="kicker">
-                {decision?.disposition.toUpperCase() || "NO MANDATE YET"}
-              </text>
-            </g>
-            <g className="runtime-node" transform="translate(950 48)">
-              <rect width="277" height="78" rx="6" />
-              <text x="16" y="24" className="kicker">
-                04 / SELECTED PATH
-              </text>
-              <text x="16" y="49">
-                {decision?.title || "Await evidence"}
-              </text>
-            </g>
-            <g
-              className="runtime-node held-node"
-              transform="translate(950 196)"
-            >
-              <rect width="277" height="78" rx="6" />
-              <text x="16" y="24" className="kicker">
-                HELD ALTERNATIVES
-              </text>
-              <text x="16" y="49">
-                {decision
-                  ? "Repeat restart / product offer"
-                  : "No assessment yet"}
-              </text>
-            </g>
-          </svg>
-          <div className="runtime-flow-foot">
-            <span>TRACE / {decision ? short(decision.id) : "NOT STARTED"}</span>
-            <span>CURRENT SESSION RECORDS · NO LIVE MODEL INFERENCE</span>
-          </div>
-        </div>
-        <div className="section-columns">
-          <Block title="Why alternatives are held" note="WITH WAKE CONDITIONS">
-            {decision?.held.map((c) => (
-              <div className="full-held" key={c.title}>
-                <span className="tag amber">HOLD</span>
-                <div>
-                  <h3>{c.title}</h3>
-                  <p>{c.reason}</p>
-                  <small>Wake when: {c.wake}</small>
-                </div>
-              </div>
-            )) || (
-              <p className="section-footnote">
-                No decision has been recorded at this cutoff.
-              </p>
-            )}
-          </Block>
-          <Block title="Decision contract" note="PERSISTED">
-            <div className="full-fields">
-              <Field label="Customer">{h.name}</Field>
-              <Field label="Obligation">
-                {h.promise
-                  ? h.promiseFulfilled
-                    ? "Fulfilled independently"
-                    : "Retain 21:15 callback"
-                  : "None recorded"}
-              </Field>
-              <Field label="Contact authority">
-                {h.contactAllowed
-                  ? "Verified / service / in-app"
-                  : "Not established · no send"}
-              </Field>
-              <Field label="Action boundary">
-                {h.id === "maya"
-                  ? "Watch without customer contact"
-                  : "In-app demo update only"}
-              </Field>
-            </div>
-          </Block>
-        </div>
-      </div>
+      <ArbiterWorkbench
+        key={h.id}
+        h={h}
+        snapshot={snapshot}
+        decision={decision}
+        inspect={inspect}
+      />
     );
   if (panel === "actions")
     return (
