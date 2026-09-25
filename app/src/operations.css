@@ -1,24 +1,24 @@
-.operations-focus.focused-workspace {
+:is(.operations-focus, .actions-focus).focused-workspace {
   padding: 12px 22px 0;
 }
-.focused-workspace.operations-focus .workspace-intro {
+.focused-workspace:is(.operations-focus, .actions-focus) .workspace-intro {
   display: inline-flex;
   margin: 0 22px 10px 0;
   vertical-align: middle;
 }
-.operations-focus .workspace-intro .eyebrow {
+:is(.operations-focus, .actions-focus) .workspace-intro .eyebrow {
   display: none;
 }
-.focused-workspace.operations-focus .workspace-intro h1 {
+.focused-workspace:is(.operations-focus, .actions-focus) .workspace-intro h1 {
   font-size: 20px;
 }
-.operations-focus .focused-context {
+:is(.operations-focus, .actions-focus) .focused-context {
   display: inline-flex;
   vertical-align: middle;
   margin: 0 0 9px;
   gap: 14px;
 }
-.focused-workspace.operations-focus footer {
+.focused-workspace:is(.operations-focus, .actions-focus) footer {
   margin-top: 8px;
   padding: 6px 0;
 }
@@ -622,7 +622,7 @@
   .om-layout {
     grid-template-columns: 180px minmax(370px, 1fr) 270px;
   }
-  .operations-focus.focused-workspace {
+  :is(.operations-focus, .actions-focus).focused-workspace {
     padding-inline: 14px;
   }
   .om-summary {
@@ -696,11 +696,11 @@
   .operational-memory {
     height: auto;
   }
-  .focused-workspace.operations-focus .workspace-intro {
+  .focused-workspace:is(.operations-focus, .actions-focus) .workspace-intro {
     display: block;
     margin: 0 0 7px;
   }
-  .operations-focus .focused-context {
+  :is(.operations-focus, .actions-focus) .focused-context {
     flex-wrap: wrap;
     gap: 6px 12px;
   }
@@ -747,5 +747,570 @@
   }
   .om-bandit p {
     font-size: 8px;
+  }
+}
+
+/* Operational memory owns shared conditions; action evaluation has its own page. */
+.ops-state .om-replay {
+  margin-left: auto;
+}
+.ops-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(310px, 1fr);
+  grid-template-rows: minmax(300px, 1.5fr) minmax(185px, 1fr);
+  gap: 10px;
+  flex: 1;
+  min-height: 0;
+}
+.ops-register {
+  padding: 16px 18px 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+}
+.ops-register h3 {
+  font-size: 24px;
+  font-weight: 500;
+  margin: 4px 0;
+  letter-spacing: -0.6px;
+}
+.ops-register p {
+  color: var(--muted);
+  line-height: 1.5;
+  margin: 0;
+}
+.ops-count {
+  text-align: right;
+  flex-shrink: 0;
+}
+.ops-count strong {
+  display: block;
+  font: 28px var(--mono);
+  color: var(--brand);
+}
+.ops-count small {
+  font: 8px var(--mono);
+  color: var(--muted);
+}
+.ops-network-map {
+  padding: 0 16px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 0;
+}
+.ops-network-map svg {
+  width: 100%;
+  max-height: 70px;
+  flex: 0 1 70px;
+}
+.ops-services {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.ops-services button {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 10px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.ops-services button[aria-pressed="true"] {
+  border-color: #b9a2d7;
+  background: #f7f4fb;
+}
+.ops-services strong {
+  font-size: 14px;
+  font-weight: 550;
+}
+.ops-services .eyebrow {
+  font-size: 8px;
+  overflow-wrap: anywhere;
+}
+.ops-services small {
+  color: var(--muted);
+  font-size: 9px;
+}
+.ops-membership {
+  font: 9px var(--mono);
+  color: var(--muted);
+}
+.ops-membership.inside {
+  color: var(--brand);
+}
+.ops-boundary {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin: 10px 16px 2px;
+}
+.ops-boundary > span {
+  font: 26px var(--mono);
+  color: var(--brand);
+}
+.ops-boundary p {
+  font-size: 10px;
+  color: var(--muted);
+  line-height: 1.5;
+  margin: 0;
+}
+.ops-boundary strong {
+  display: block;
+  color: var(--ink);
+  font-weight: 500;
+}
+.ops-network .om-json {
+  margin: 8px 16px;
+  padding-block: 7px;
+}
+.ops-constraints {
+  margin: 10px 0 0;
+  padding-left: 14px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.ops-constraints li + li {
+  margin-top: 8px;
+}
+.ops-source-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10px;
+}
+.ops-source-table th {
+  text-align: left;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font: 8px var(--mono);
+  font-weight: 400;
+}
+.ops-source-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+  font: 9px var(--mono);
+  white-space: nowrap;
+}
+.ops-source-table td:first-child {
+  white-space: normal;
+}
+.ops-source-table button {
+  text-align: left;
+  background: none;
+  border: 0;
+  padding: 0;
+  border-radius: 0;
+}
+.ops-source-table code {
+  color: var(--brand);
+  font-size: 9px;
+}
+.ops-source-table button span {
+  display: block;
+  font: 10px/1.5 var(--sans);
+  color: var(--muted);
+  margin-top: 4px;
+}
+.ops-service-detail h3 {
+  font-size: 13px;
+  margin: 6px 0;
+  overflow-wrap: anywhere;
+}
+.ao-ledger-row {
+  display: block;
+  padding: 14px;
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: none;
+  border-radius: 0;
+  text-align: left;
+}
+.ao-ledger-row strong,
+.ao-ledger-row > span,
+.ao-ledger-row code,
+.ao-ledger-row small {
+  display: block;
+}
+.ao-ledger-row strong {
+  font-size: 11px;
+  line-height: 1.5;
+  margin: 5px 0;
+}
+.ao-ledger-row > span:not(.eyebrow) {
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+.ao-ledger-row code {
+  font: 8px/1.7 var(--mono);
+  color: var(--faint);
+  margin-top: 8px;
+}
+.ao-ledger-row small {
+  font: 8px var(--mono);
+  color: var(--brand);
+  margin-top: 6px;
+}
+.ao-ledger-row:hover {
+  background: var(--canvas);
+}
+@media (max-width: 900px) {
+  .ops-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+  }
+  .ops-network {
+    min-height: 380px;
+  }
+  .ops-source-table {
+    min-width: 480px;
+  }
+  .ops-network-map {
+    min-height: 160px;
+  }
+  .ops-service-detail,
+  .ops-capacity {
+    max-height: 450px;
+  }
+}
+@media (min-width: 901px) and (max-height: 780px) {
+  .ops-grid {
+    grid-template-rows: minmax(290px, 1.5fr) minmax(175px, 1fr);
+  }
+  .ops-register {
+    padding-top: 10px;
+  }
+  .ops-register h3 {
+    font-size: 20px;
+  }
+  .ops-network-map svg {
+    max-height: 46px;
+  }
+  .ops-services button {
+    padding: 8px;
+    gap: 4px;
+  }
+  .ops-boundary p {
+    font-size: 9px;
+  }
+  .ops-register p {
+    font-size: 10px;
+  }
+}
+
+.bs-view-controls {
+  display: flex;
+  gap: 3px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 2px;
+}
+.bs-view-controls button {
+  font: 9px var(--sans);
+  color: var(--muted);
+  background: none;
+  border: 0;
+  padding: 5px 7px;
+  border-radius: 3px;
+}
+.bs-view-controls button[aria-pressed="true"] {
+  color: var(--brand);
+  background: var(--brand-soft);
+}
+.bs-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 13px 0;
+  font: 9px var(--mono);
+  color: var(--muted);
+}
+.bs-toolbar b {
+  color: var(--ink);
+  font-weight: 500;
+}
+.bs-toolbar label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font: 9px var(--sans);
+}
+.bs-toolbar select {
+  font: 9px var(--sans);
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 3px;
+  color: var(--ink);
+}
+.bs-plot-wrap {
+  flex: 1;
+  display: flex;
+  min-height: 150px;
+}
+.bs-plot {
+  width: 100%;
+  min-height: 0;
+}
+.bs-axis {
+  font: 8px var(--mono);
+  fill: #96909f;
+}
+.bs-cluster-label {
+  font: 8px var(--mono);
+  letter-spacing: 0.5px;
+}
+.bs-point-label {
+  font: 9px var(--mono);
+  fill: #5b5367;
+  paint-order: stroke;
+  stroke: #fbfafc;
+  stroke-width: 3px;
+}
+.bs-point {
+  cursor: pointer;
+}
+.bs-point:focus {
+  outline: none;
+}
+.bs-point:focus-visible > circle:first-of-type {
+  stroke: var(--brand);
+  stroke-width: 1.5px;
+  stroke-dasharray: 2 2;
+}
+.bs-legend {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 0 13px 6px;
+  font: 8px var(--mono);
+  color: var(--muted);
+}
+.bs-legend span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.bs-legend i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+.bs-inspector .om-inspector-title {
+  border-left-color: var(--brand);
+}
+.bs-inspector .om-context-block {
+  padding-block: 12px;
+}
+.bs-inspector .om-context-block > code {
+  font: 9px var(--mono);
+  color: var(--muted);
+}
+.bs-receipt {
+  padding: 8px;
+  background: var(--canvas);
+  margin-top: 8px;
+}
+.bs-receipt strong,
+.bs-receipt code {
+  display: block;
+  font-size: 9px;
+  line-height: 1.6;
+}
+.bs-receipt code {
+  color: var(--muted);
+}
+.bs-neighbour {
+  display: flex;
+  gap: 6px;
+  justify-content: space-between;
+  align-items: center;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  width: 100%;
+  padding: 9px 0;
+  border-radius: 0;
+  text-align: left;
+}
+.bs-neighbour strong {
+  font: 10px var(--sans);
+  text-transform: capitalize;
+  display: block;
+}
+.bs-neighbour small {
+  color: var(--muted);
+  font-size: 9px;
+  margin-top: 3px;
+  display: block;
+}
+.bs-neighbour code {
+  color: var(--brand);
+  font-size: 9px;
+  white-space: nowrap;
+}
+.bs-input {
+  margin: 12px;
+  font-size: 10px;
+  color: var(--muted);
+}
+.bs-input summary {
+  color: var(--brand);
+  cursor: pointer;
+}
+.bs-input p {
+  font: 9px/1.7 var(--mono);
+  overflow-wrap: anywhere;
+}
+.bs-input code {
+  font-size: 8px;
+}
+.action-outcomes .om-chart-panel {
+  flex: 2;
+  min-height: 295px;
+}
+.action-outcomes .om-feedback {
+  flex: 1;
+  min-height: 195px;
+}
+@media (min-width: 901px) and (max-height: 780px) {
+  .action-outcomes .om-chart-panel {
+    min-height: 277px;
+  }
+  .action-outcomes .om-feedback {
+    min-height: 195px;
+  }
+  .bs-toolbar {
+    padding-top: 4px;
+  }
+  .bs-legend {
+    font-size: 7px;
+  }
+}
+.bs-axis {
+  font-size: 9px;
+}
+.bs-cluster-label {
+  font-size: 9px;
+  letter-spacing: 0;
+}
+.bs-point-label {
+  font-size: 10px;
+  text-transform: capitalize;
+}
+.action-outcomes .om-feedback {
+  min-height: 226px;
+}
+@media (min-width: 901px) and (max-height: 780px) {
+  .action-outcomes .om-feedback {
+    min-height: 195px;
+  }
+}
+.bs-plot-wrap {
+  position: relative;
+  min-height: 130px;
+}
+.bs-plot {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+}
+@media (min-width: 901px) and (max-height: 780px) {
+  .action-outcomes .om-chart-panel {
+    min-height: 280px;
+    flex: 1;
+  }
+  .action-outcomes .om-feedback {
+    min-height: 0;
+    flex: 0 0 174px;
+  }
+  .action-outcomes .om-feedback-rows > button {
+    padding-block: 4px;
+  }
+  .action-outcomes .om-bandit p {
+    font-size: 8px;
+  }
+  .action-outcomes .om-bandit {
+    padding-block: 5px;
+  }
+}
+@media (min-width: 901px) and (max-height: 780px) {
+  .action-outcomes .om-feedback-rows {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .action-outcomes .om-feedback-rows > button {
+    align-items: flex-start;
+    padding: 8px;
+    border-right: 1px solid var(--line);
+  }
+  .action-outcomes .om-feedback-rows .om-initial {
+    display: none;
+  }
+  .action-outcomes .om-feedback-rows strong small {
+    display: block;
+    padding: 3px 0 0;
+  }
+  .action-outcomes .om-feedback-rows button span span {
+    font-size: 9px;
+    line-height: 1.4;
+  }
+}
+@media (min-width: 901px) and (min-height: 781px) {
+  .action-outcomes .om-feedback {
+    min-height: 242px;
+  }
+}
+@media (max-width: 900px) {
+  .action-outcomes .om-chart-panel {
+    min-height: 390px;
+    flex: none;
+  }
+  .action-outcomes .bs-plot-wrap {
+    min-height: 215px;
+  }
+  .action-outcomes .om-feedback {
+    flex: none;
+    min-height: 0;
+  }
+  .action-outcomes .om-feedback-rows {
+    flex: none;
+    overflow: visible;
+  }
+}
+.ops-network-body {
+  display: flex;
+  flex-direction: column;
+}
+.ops-network-body .ops-register,
+.ops-network-body .ops-boundary,
+.ops-network-body .om-json {
+  flex-shrink: 0;
+}
+.ops-network-body .ops-network-map {
+  min-height: 150px;
+}
+.ops-network-body .ops-network-map svg {
+  flex: 0 0 45px;
+  min-height: 45px;
+}
+@media (min-width: 901px) and (max-height: 780px) {
+  .ops-grid {
+    grid-template-rows: minmax(0, 1.65fr) minmax(0, 1fr);
+  }
+  .ops-network-body .ops-network-map {
+    min-height: 134px;
+  }
+  .ops-network-body .ops-network-map svg {
+    flex-basis: 38px;
+    min-height: 38px;
   }
 }

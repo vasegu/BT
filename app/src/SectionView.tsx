@@ -1,3 +1,4 @@
+import { ActionOutcomes } from "./ActionOutcomes";
 import { OperationalMemory } from "./OperationalMemory";
 import { ArbiterWorkbench } from "./ArbiterWorkbench";
 import { CustomerMemory } from "./CustomerMemory";
@@ -25,102 +26,6 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
     </div>
   );
 }
-function Block({
-  title,
-  note,
-  children,
-}: {
-  title: string;
-  note?: string;
-  children: ReactNode;
-}) {
-  return (
-    <section className="section-block">
-      <header>
-        <h2>{title}</h2>
-        {note && <span>{note}</span>}
-      </header>
-      <div className="section-block-body">{children}</div>
-    </section>
-  );
-}
-function Records({
-  events,
-  inspect,
-}: {
-  events: SourceEvent[];
-  inspect: (e: SourceEvent) => void;
-}) {
-  return (
-    <div className="full-records">
-      {events.map((e) => (
-        <button key={e.id} onClick={() => inspect(e)}>
-          <time>
-            {time(e.occurredAt)}
-            <small>
-              {new Date(e.occurredAt).toLocaleDateString("en-GB", {
-                day: "2-digit",
-                month: "short",
-                timeZone: "Europe/London",
-              })}
-            </small>
-          </time>
-          <span className="record-spine">
-            <i />
-          </span>
-          <span>
-            <code>{e.type}</code>
-            <strong>{e.description}</strong>
-            <small>
-              {e.source} · {short(e.id)}
-            </small>
-          </span>
-          <span>↗</span>
-        </button>
-      ))}
-    </div>
-  );
-}
-function Outcomes({ h }: { h: Household }) {
-  return (
-    <div className="outcome-cards">
-      {[
-        [
-          "01",
-          "Technical restoration",
-          h.restored,
-          "A fresh service observation",
-        ],
-        [
-          "02",
-          "Callback fulfilled",
-          h.promiseFulfilled,
-          h.promise ? "A kept commitment" : "No callback obligation",
-        ],
-        [
-          "03",
-          "Customer confirmation",
-          h.confirmed,
-          "A statement from the customer",
-        ],
-      ].map(([id, label, yes, detail]) => (
-        <div key={String(id)} className={yes ? "is-observed" : ""}>
-          <span>{id}</span>
-          <h3>{label}</h3>
-          <strong>
-            {yes
-              ? "Observed"
-              : id === "02" && !h.promise
-                ? "Not applicable"
-                : "Not observed"}
-          </strong>
-          <p>{detail}</p>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 export function SectionView({
   panel,
   h,
@@ -140,7 +45,6 @@ export function SectionView({
   phone: ReactNode;
   inspect: (e: SourceEvent) => void;
 }) {
-  const personal = h.evidence.filter((e) => e.subject === h.id);
   if (panel === "customer")
     return (
       <CustomerMemory
@@ -173,95 +77,13 @@ export function SectionView({
     );
   if (panel === "actions")
     return (
-      <div className="full-section actions-section">
-        <div className="section-banner">
-          <div>
-            <span className="eyebrow">
-              Committed actions → subsequent observations
-            </span>
-            <h2>Follow-through has a record.</h2>
-            <p>
-              A delivery receipt, a working line and a kept promise are separate
-              facts.
-            </p>
-          </div>
-          <div className="section-metrics">
-            <Field label="Actions">
-              {actions.length.toString().padStart(2, "0")}
-            </Field>
-            <Field label="Receipts">
-              {actions
-                .filter((a) => a.receiptId)
-                .length.toString()
-                .padStart(2, "0")}
-            </Field>
-            <Field label="External effect">Simulated</Field>
-          </div>
-        </div>
-        <Outcomes h={h} />
-        <Block title="Action and receipt ledger" note="PERSISTED / IDEMPOTENT">
-          <div className="full-action-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>Scenario time</th>
-                  <th>Customer-facing action</th>
-                  <th>Decision → action → receipt</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {actions.map((a) => (
-                  <tr key={a.id}>
-                    <td>
-                      <time>{time(a.time)}</time>
-                    </td>
-                    <td>
-                      <strong>{a.title}</strong>
-                      <p>{a.body}</p>
-                    </td>
-                    <td>
-                      <code>
-                        {short(a.decisionId)} → {short(a.id)} →{" "}
-                        {a.receiptId ? short(a.receiptId) : "pending"}
-                      </code>
-                    </td>
-                    <td>
-                      <span className="tag">demo delivered</span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {!actions.length && (
-              <p className="full-empty">
-                {h.id === "maya"
-                  ? "No customer action was committed. The quiet watch remains in the decision record."
-                  : "No action has been committed at this cutoff."}
-              </p>
-            )}
-          </div>
-        </Block>
-        <Block
-          title="Outcome evidence"
-          note="OBSERVATIONS, NOT ASSUMED SUCCESS"
-        >
-          <Records
-            events={personal.filter((e) =>
-              [
-                "service.restored_observed",
-                "router.heartbeat_received",
-                "promise.fulfilled",
-                "customer.confirmed_working",
-              ].includes(e.type),
-            )}
-            inspect={inspect}
-          />
-          {!h.restored && !h.promiseFulfilled && !h.confirmed && (
-            <p className="full-empty">No qualifying outcome observation yet.</p>
-          )}
-        </Block>
-      </div>
+      <ActionOutcomes
+        key={h.id}
+        h={h}
+        snapshot={snapshot}
+        inspect={inspect}
+        onCutoff={onCutoff}
+      />
     );
   return (
     <div className="full-section channel-section">

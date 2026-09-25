@@ -1,8 +1,8 @@
-# Operational memory: did the plan work?
+# Actions & outcomes: did the plan work?
 
-The expanded Operations view now follows operating context → action and evidence map → proof inspector → memory for the next decision. The overview keeps a concise verified/expected count and a link into the detail.
+The outcome workspace lives in **Actions & outcomes**. It follows action → expectation → observation → memory for the next decision. Operational memory separately owns shared incident scope, capacity, commitments and source freshness. This corrects the earlier placement of verification under Operations.
 
-Jio references: `AgentHealthDash.jsx` (linked action selection and concrete inspection), `FlywheelView.jsx`, arbiter `selector.py`, `outcome_checker.py`, `urgency.py`. We use their traceable action/verification structure. This replay contains five expectations, so the visual is a time/evidence map over those records, not a decorative embedding cloud or estimated density. The Customer Memory atlas remains the separate semantic lab.
+Jio references: `AgentHealthDash.jsx` (linked action selection and concrete inspection), `FlywheelView.jsx`, arbiter `selector.py`, `outcome_checker.py`, `urgency.py`. We use their traceable action/verification structure and linked behaviour-space inspection. The evidence timeline contains five actual expectations. Actions & outcomes also has a Hodoscope-style map of the replay’s stored decision runs, described in [the behaviour-space note](2026-09-25-behaviour-space.md). Customer Memory remains the separate customer-history atlas.
 
 Mark’s narrative §3.4 asks whether the plan worked and whether its result returns to memory. This implementation answers a bounded version for the three quiet-router cases:
 
@@ -28,7 +28,7 @@ Verification currently runs on replay events, not a wall-clock deadline schedule
 
 ## Validation
 
-- Unit/integration suite: 37 tests pass, including delivery-vs-benefit, separate proof obligations, late-arriving records, historical isolation, durable reopening, scoped model input, wrong-person/wrong-promise records, repeated observations and replacement-case isolation and newer shared evidence overriding an earlier heartbeat.
+- Unit/integration suite: 41 tests pass, including delivery-vs-benefit, separate proof obligations, late-arriving records, historical isolation, durable reopening, scoped model input, wrong-person/wrong-promise records, repeated observations and replacement-case isolation and newer shared evidence overriding an earlier heartbeat.
 - Fresh live Jev replay: `a3d0a506-abb7-4c39-923e-dbd48394a9ba`; 15 successful evaluations over five revisions. Initial requests contain no outcome memory; subsequent requests contain 3 Daniel / 1 Sam / 1 Maya contracts with the current check states.
 - Independent review identified latest-observation, replacement-scope and failed-model-read issues; all corrected. A follow-up review found cross-source recency masking; the checker now compares personal and shared negative evidence in one timeline.
 - Browser verification: desktop fit, keyboard path selection, source inspection, historical replay, filters and JSON contract dialog. Production build and semantic lab verification pass.

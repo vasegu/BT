@@ -2,6 +2,7 @@ import { createServer } from "node:http";
 import { readFileSync, existsSync, statSync, mkdirSync } from "node:fs";
 import { resolve, dirname, extname, sep } from "node:path";
 import { fileURLToPath } from "node:url";
+import { behaviourSpace } from "./behaviour.ts";
 import { Engine, DomainError } from "./engine.ts";
 import { assessmentConfig, evaluateJev } from "./assessment.ts";
 import {
@@ -74,6 +75,27 @@ const server = createServer(async (req, res) => {
             textModel: config.textModel,
             voiceModel: "gpt-live-1",
           });
+        }
+        if (url.pathname === "/api/behaviour-space") {
+          const id = url.searchParams.get("session");
+          if (!id) throw new DomainError("Session is required");
+          const snapshot = engine.snapshot(
+            id,
+            url.searchParams.has("at")
+              ? Number(url.searchParams.get("at"))
+              : undefined,
+          );
+          try {
+            return send(
+              200,
+              await behaviourSpace(snapshot, (at) => engine.snapshot(id, at)),
+            );
+          } catch {
+            throw new DomainError(
+              "The local behaviour encoder or projection runtime is unavailable. The action and outcome ledger is still available.",
+              503,
+            );
+          }
         }
         if (url.pathname === "/api/snapshot") {
           const id = url.searchParams.get("session");

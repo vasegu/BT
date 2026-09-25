@@ -458,30 +458,8 @@ export function App() {
           ))}
         </div>
       </Section>
-      <Section title="Did the plan work?" note="verification ledger">
-        <div className="outcome-row">
-          <span>Evidence-backed targets</span>
-          <b>
-            {
-              snapshot.operations.outcomes.filter(
-                (o) => o.person === person && o.check.status === "met",
-              ).length
-            }{" "}
-            /{" "}
-            {
-              snapshot.operations.outcomes.filter((o) => o.person === person)
-                .length
-            }{" "}
-            verified
-          </b>
-        </div>
-        <p className="source-foot">
-          Delivery, restored service and customer confirmation are separate
-          observations.
-        </p>
-      </Section>
       <button className="text-link" onClick={() => openPanel("operations")}>
-        Trace expectation → outcome <span>↗</span>
+        Inspect shared context & source freshness <span>↗</span>
       </button>
     </Panel>
   );
@@ -636,29 +614,28 @@ export function App() {
             : "No actions yet."}
         </div>
       )}
-      <Section title="Separate outcome observations">
-        <div className="outcome-row">
-          <span>Technical restoration</span>
-          <b className={h.restored ? "observed" : ""}>
-            {h.restored ? "observed" : "unobserved"}
-          </b>
-        </div>
-        <div className="outcome-row">
-          <span>Callback obligation</span>
-          <b className={h.promiseFulfilled ? "observed" : ""}>
-            {h.promise
-              ? h.promiseFulfilled
-                ? "fulfilled"
-                : "outstanding"
-              : "none"}
-          </b>
-        </div>
-        <div className="outcome-row">
-          <span>Customer confirmation</span>
-          <b className={h.confirmed ? "observed" : ""}>
-            {h.confirmed ? "observed" : "unobserved"}
-          </b>
-        </div>
+      <Section title="Expected change → observed evidence">
+        {snapshot.operations.outcomes
+          .filter((o) => o.person === person)
+          .map((o) => (
+            <div className="outcome-row" key={o.id}>
+              <span>{o.title}</span>
+              <b className={o.check.status === "met" ? "observed" : ""}>
+                {o.check.status === "met"
+                  ? "verified"
+                  : o.check.status === "contradicted"
+                    ? "reassess"
+                    : o.check.status === "unverified"
+                      ? "proof overdue"
+                      : "awaiting proof"}
+              </b>
+            </div>
+          ))}
+        {!snapshot.operations.outcomes.some((o) => o.person === person) && (
+          <p className="source-foot">
+            Verification begins with the first committed plan.
+          </p>
+        )}
       </Section>
       {actions.at(-1) && (
         <details className="raw-record">
@@ -668,9 +645,9 @@ export function App() {
           <pre>{JSON.stringify(actions.at(-1), null, 2)}</pre>
         </details>
       )}
-      <a className="text-link" href={lab("memory")}>
-        Explore memory over time <span>↗</span>
-      </a>
+      <button className="text-link" onClick={() => openPanel("actions")}>
+        Trace actions, expectations & outcomes <span>↗</span>
+      </button>
     </Panel>
   );
   return (
@@ -859,7 +836,7 @@ export function App() {
         id="workspace"
         className={
           focused
-            ? `focused-workspace${panel === "customer" ? " customer-focus" : panel === "phone" ? " phone-focus" : panel === "arbiter" ? " arbiter-focus" : panel === "operations" ? " operations-focus" : ""}`
+            ? `focused-workspace${panel === "customer" ? " customer-focus" : panel === "phone" ? " phone-focus" : panel === "arbiter" ? " arbiter-focus" : panel === "operations" ? " operations-focus" : panel === "actions" ? " actions-focus" : ""}`
             : "account-workspace"
         }
       >
