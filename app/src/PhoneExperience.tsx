@@ -313,31 +313,36 @@ export function PhoneExperience({
                 </>
               )}
             </div>
-            <nav className="phone-tabs" aria-label="My BT navigation">
-              {tabs.map((tab) => (
-                <button
-                  key={tab}
-                  className={page === tab ? "active" : ""}
-                  aria-current={page === tab ? "page" : undefined}
-                  onClick={() => open(tab)}
-                  aria-label={tab === "Help" ? "Help — talk to Eve" : tab}
-                >
-                  <PhoneIcon
-                    kind={
-                      tab.toLowerCase() as
-                        | "home"
-                        | "services"
-                        | "help"
-                        | "account"
-                    }
-                  />
-                  <small>{tab}</small>
-                </button>
-              ))}
-            </nav>
+            <div className="phone-bottom">
+              <nav className="phone-tabs" aria-label="My BT navigation">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab}
+                    className={page === tab ? "active" : ""}
+                    aria-current={page === tab ? "page" : undefined}
+                    onClick={() => open(tab)}
+                    aria-label={tab === "Help" ? "Help — talk to Eve" : tab}
+                  >
+                    <PhoneIcon
+                      kind={
+                        tab.toLowerCase() as
+                          | "home"
+                          | "services"
+                          | "help"
+                          | "account"
+                      }
+                    />
+                    <small>{tab}</small>
+                  </button>
+                ))}
+              </nav>
+              <div className="home-indicator" aria-hidden="true" />
+            </div>
           </>
         )}
-        <div className="home-indicator" aria-hidden="true" />
+        {page === "Help" && (
+          <div className="home-indicator" aria-hidden="true" />
+        )}
       </div>
       <p className="phone-caption">
         {page === "Help"

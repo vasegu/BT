@@ -246,13 +246,18 @@
   color: #a193ab;
   line-height: 1.7;
 }
+.phone-native .phone-bottom {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  background: #fff;
+}
 .phone-native .phone-tabs {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   padding: 7px 13px 0;
   border-top: 1px solid #ebe5f0;
-  background: #ffffffd9;
-  backdrop-filter: blur(20px);
+  background: transparent;
 }
 .phone-native .phone-tabs > button {
   display: flex;
