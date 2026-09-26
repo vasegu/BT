@@ -11,7 +11,7 @@ const time = (iso: string) =>
 const eventNames: Record<string, string> = {
   "contact.authority_recorded": "Authority",
   "case.opened": "Case opened",
-  "diagnostic.completed": "Restart tried",
+  "diagnostic.completed": "Diagnostic",
   "promise.created": "Promise made",
   "order.delivered": "Hub delivered",
   "preference.stated": "Habit stated",
@@ -43,7 +43,7 @@ export function CustomerMemory({
           ["Maya told us", h.habit || "No habit recorded", "preference.stated"],
           [
             "History shows",
-            `${events.find((e) => e.type === "pattern.recorded")?.payload.sampleSize ?? "No"} overnight gaps followed by recovery`,
+            h.memory?.items.find(m=>m.kind==='pattern')?.text || `${events.find((e) => e.type === "pattern.recorded")?.payload.sampleSize ?? "No"} overnight gaps followed by recovery`,
             "pattern.recorded",
           ],
           ["Latest signal", h.serviceState, events.at(-1)?.type],
@@ -79,6 +79,7 @@ export function CustomerMemory({
     <div className="customer-memory">
       <div className="km-upper">
         <MemoryAtlas
+          sourceUrl={h.memory ? `/api/memory-space?session=${snapshot.session.id}&person=${h.id}&at=${snapshot.cutoff}` : undefined}
           person={h.id}
           name={h.name.split(" ")[0]}
           incident={Boolean(snapshot.operations.incident)}
@@ -133,13 +134,13 @@ export function CustomerMemory({
             </p>
             <span className="km-decision-tag">
               {decision
-                ? `${decision.disposition} / rule-derived`
+                ? `${decision.disposition} / ${decision.trace?.assessment ? decision.trace.assessment.effective === "model" ? "Jev + policy" : "policy hold" : "rule-derived"}`
                 : "No decision yet"}
             </span>
           </div>
+          {h.linkedServices && h.linkedServices.length>1 && <p className="km-provenance">Explicit account links: {h.linkedServices.map(s=>`${s.product} · ${s.state}`).join(" / ")}. Product health is evaluated separately.</p>}
           <p className="km-provenance">
-            Atlas: saved example context. Readout: synthetic session records.
-            History summary is authored; similarity is not confidence.
+            {h.memory ? "Supabase source records → evidence-linked memory → real MiniLM embeddings. Synthetic histories; similarity is not confidence." : "Atlas: saved example context. Readout: synthetic session records. History summary is authored; similarity is not confidence."}
           </p>
         </aside>
       </div>

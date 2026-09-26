@@ -1,0 +1,7 @@
+.git
+.superpowers
+**/.env*
+**/node_modules
+app/.data
+app/dist
+supabase/.temp

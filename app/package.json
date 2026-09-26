@@ -15,12 +15,16 @@
   },
   "dependencies": {
     "@huggingface/transformers": "^3.8.1",
+    "@vercel/functions": "^3.9.9",
+    "d3-contour": "^4.0.2",
+    "ml-matrix": "^6.15.0",
     "postgres": "^3.4.7",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "voice-glow": "^0.2.1"
   },
   "devDependencies": {
+    "@types/d3-contour": "^3.0.6",
     "@types/node": "26.6.2",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",

@@ -291,3 +291,32 @@ test("a newer scoped incident overrides both an older personal fault and an inte
     e.close();
   }
 });
+
+test("an unrelated service failure cannot contradict broadband recovery", async () => {
+  const { verifyOutcome } = await import("../server/outcomes.ts");
+  const e = new Engine(":memory:");
+  try {
+    const { id } = e.createSession();
+    await step(e, id, "heartbeat");
+    await step(e, id, "incident");
+    const s = await step(e, id, "restore");
+    const outcome = episode(s, "daniel", "service");
+    const anchor = s.events.find((x) => x.id === outcome.scopeId)!;
+    anchor.serviceId = "broadband";
+    for (const event of s.events)
+      if (event.subject === "daniel") event.serviceId = "broadband";
+    s.events.push({
+      ...anchor,
+      id: "mobile-fault",
+      serviceId: "mobile",
+      type: "service.failure_observed",
+      payload: { lineTest: "failed" },
+      occurredAt: s.clock,
+      receivedAt: s.clock,
+      revision: s.cutoff,
+    });
+    assert.equal(verifyOutcome(outcome, s).status, "met");
+  } finally {
+    e.close();
+  }
+});

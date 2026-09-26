@@ -9,6 +9,7 @@ export type EvalMap = {
     repeat: number;
     model_choice: string;
     governed_choice: string;
+    cluster?: string;
   }[];
   groups: { person: string; paths: { level: number; path: string }[] }[];
   diffs: Record<
@@ -27,20 +28,24 @@ const colors: Record<string, string> = {
   gamer: "#5514b4",
   paraphrase: "#47837f",
   upsell: "#ad7850",
+  cluster_0: "#7552a5", cluster_1: "#47837f", cluster_2: "#aa8352",
+  recovery: "#7552a5", incident: "#6c7ea0", activation: "#aa8352", watch: "#47837f", restoration: "#8c718d", confirmation: "#647f83", defer: "#a06554",
 };
 export function EvalActionMap({
   map,
   selected,
   select,
   variant,
+  recorded = false,
 }: {
   map: EvalMap;
   selected?: string;
   select: (id: string) => void;
   variant: string;
+  recorded?: boolean;
 }) {
   const [density, setDensity] = useState("groups"),
-    [colour, setColour] = useState("person");
+    [colour, setColour] = useState(recorded ? "cluster" : "person");
   const diffKey = variant === "baseline" ? "gamer" : variant,
     diff = map.diffs[diffKey];
   const stacks = new Map<string, typeof map.points>();
@@ -52,16 +57,17 @@ export function EvalActionMap({
     <div className="eh-observe">
       <div className="eh-vertical">
         <span>01 · OBSERVE</span>
-        <strong>Action map</strong>
-        <small>Hodoscope · 384D</small>
+        <strong>{recorded ? "Behaviour map" : "Action map"}</strong>
+        <small>{map.projection.startsWith("Hodoscope") ? "Hodoscope" : "Behaviour atlas"} · 384D</small>
       </div>
       <div className="eh-map-body">
         <div className="eh-controls">
           <label>
             Colour
             <select value={colour} onChange={(e) => setColour(e.target.value)}>
+              {recorded && <option value="cluster">Behaviour clusters</option>}
               <option value="person">By household</option>
-              <option value="variant">By intervention</option>
+              <option value="variant">{recorded ? "Action family" : "By intervention"}</option>
             </select>
           </label>
           <label>
@@ -70,20 +76,18 @@ export function EvalActionMap({
               value={density}
               onChange={(e) => setDensity(e.target.value)}
             >
-              <option value="groups">Household contours</option>
-              <option value="diff">Variant − control</option>
+              <option value="groups">{recorded ? "Cluster contours" : "Household contours"}</option>
+              {!recorded && <option value="diff">Variant − control</option>}
               <option value="off">Off</option>
             </select>
           </label>
           <details>
             <summary>How to read this</summary>
             <p>
-              Each point is a real eval action. Position comes from Hodoscope
-              PCA over local action-summary embeddings. Identical actions
-              overlap; select a stack to cycle through runs.
+              Each point is a recorded input–response pair. Position comes from Hodoscope PCA over response-summary embeddings. {recorded ? "Actual wording and delivery differences remain in the embedding, even when the plan is identical." : "This controlled suite has categorical outputs only."} Identical behaviour overlaps; select a stack to cycle through runs.
             </p>
             <p>
-              Contours are Gaussian KDE at 10–88% of each household's peak.
+              Contours are descriptive Gaussian KDE at 10–88% of each group's peak.
               Difference layers compare the selected variant with its control
               using the same bandwidth. These small-sample densities are
               descriptive, not a significance test.
@@ -170,7 +174,7 @@ export function EvalActionMap({
                       ))}
                     </g>
                   ))}
-                {density === "diff" &&
+                {recorded ? "Behaviour clusters are computed from recorded response vectors. Exact inputs and wording stay attached to each point; separation is a review cue, not a failure verdict." : density === "diff" &&
                   diff?.paths.map((p) => (
                     <path
                       key={p.level}
@@ -200,7 +204,7 @@ export function EvalActionMap({
               const keys = [
                 ...new Set(
                   stack.map((p) =>
-                    colour === "person" ? p.person : p.variant,
+                    colour === "cluster" ? p.cluster! : colour === "person" ? p.person : p.variant,
                   ),
                 ),
               ];
@@ -210,7 +214,7 @@ export function EvalActionMap({
                   role="button"
                   tabIndex={0}
                   aria-pressed={chosen}
-                  aria-label={`${p.person}, ${stack.length} overlapping action runs, ${p.governed_choice}; select to cycle`}
+                  aria-label={`${p.person}, ${stack.length} overlapping ${recorded ? "behaviour" : "action"} runs, ${p.governed_choice}; select to cycle`}
                   className="eh-point"
                   onClick={pick}
                   onKeyDown={(e) => {
@@ -239,7 +243,7 @@ export function EvalActionMap({
                     cx={x}
                     cy={y}
                     r="4"
-                    fill={colors[colour === "person" ? p.person : p.variant]}
+                    fill={colors[colour === "cluster" ? p.cluster! : colour === "person" ? p.person : p.variant]}
                   />
                   {chosen && (
                     <circle
@@ -251,10 +255,10 @@ export function EvalActionMap({
                       fill="none"
                     />
                   )}
-                  <text x={x + 22} y={y - 4} className="eh-point-label">
+                  <text x={x + 22} y={y - 4} className="eh-point-label" opacity={recorded && !chosen ? 0 : 1}>
                     {p.person} · ×{stack.length}
                   </text>
-                  <text x={x + 22} y={y + 11} className="ce-axis">
+                  <text x={x + 22} y={y + 11} className="ce-axis" opacity={recorded && !chosen ? 0 : 1}>
                     {p.governed_choice}
                   </text>
                 </g>
@@ -266,21 +270,13 @@ export function EvalActionMap({
           </svg>
         </div>
         <div className="eh-legend">
-          {(colour === "person"
-            ? ["daniel", "sam", "maya"]
-            : ["baseline", "gamer", "paraphrase", "upsell"]
-          ).map((k) => (
-            <span key={k}>
-              <i style={{ background: colors[k] }} />
-              {k}
-            </span>
-          ))}
+          {[...new Set(map.points.map(p => colour === "cluster" ? p.cluster! : colour === "person" ? p.person : p.variant))].map(k => <span key={k}><i style={{background:colors[k] || "#8a8294"}}/>{k.replace("cluster_", "Cluster ")}</span>)}
           <code>
             {map.points.length} real runs · {stacks.size} distinct positions
           </code>
         </div>
         <p className="om-chart-note">
-          {density === "diff"
+          {recorded ? "Behaviour clusters are computed from recorded response vectors. Exact inputs and wording stay attached to each point; separation is a review cue, not a failure verdict." : density === "diff"
             ? diff?.peak < 0.000001
               ? "No action-density difference detected. Variant and control actions occupy the same regions."
               : `Density difference: ${diffKey} minus control. Probability shifts are checked separately.`

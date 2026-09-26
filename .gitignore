@@ -6,3 +6,4 @@ supabase/.temp/
 .superpowers/
 .env*
 !.env.example
+.vercel

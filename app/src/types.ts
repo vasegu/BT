@@ -6,6 +6,7 @@ export type Step =
   | "callback"
   | "confirm";
 export type SourceEvent = {
+  serviceId?: string | null;
   id: string;
   sessionId: string;
   revision: number;
@@ -18,6 +19,8 @@ export type SourceEvent = {
   payload: Record<string, unknown>;
 };
 export type Household = {
+  linkedServices?: {reference:string;product:string;state:string}[];
+  memory?: { hash: string; items: import('../server/memory.ts').MemoryItem[] };
   id: PersonId;
   name: string;
   serviceId: string;
@@ -135,6 +138,7 @@ export type DemoAction = {
   provenance: "demo_action";
 };
 export type Snapshot = {
+  storage?: 'sqlite' | 'supabase';
   session: {
     id: string;
     seedVersion: string;

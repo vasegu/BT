@@ -37,11 +37,13 @@ export function MemoryAtlas({
   name,
   incident,
   hasSignal,
+  sourceUrl,
 }: {
   person: PersonId;
   name: string;
   incident: boolean;
   hasSignal: boolean;
+  sourceUrl?: string;
 }) {
   const [space, setSpace] = useState<Space | null>(null),
     [error, setError] = useState(false),
@@ -63,7 +65,7 @@ export function MemoryAtlas({
   useEffect(() => {
     const controller = new AbortController();
     setError(false);
-    fetch("/reference/design/lab/space.json", { signal: controller.signal })
+    fetch(sourceUrl || "/reference/design/lab/space.json", { signal: controller.signal })
       .then((r) => {
         if (!r.ok) throw new Error("Unavailable");
         return r.json();
@@ -84,8 +86,8 @@ export function MemoryAtlas({
         if (e.name !== "AbortError") setError(true);
       });
     return () => controller.abort();
-  }, [attempt]);
-  const query = hasSignal
+  }, [attempt, sourceUrl]);
+  const query = sourceUrl ? space?.queries[0] : hasSignal
     ? space?.queries.find(
         (q) => q.id === `${person}-${incident ? "incident" : "base"}`,
       )
@@ -215,7 +217,7 @@ export function MemoryAtlas({
       {space ? (
         <>
           <p className="km-atlas-intro">
-            {space.episodes.length} example episodes. Colour groups related histories.
+            {space.episodes.length} {sourceUrl ? "sourced memories from this relationship. Colour groups similar episode text." : "example episodes. Colour groups related histories."}
           </p>
           <div
             className="km-clusters"
@@ -576,7 +578,7 @@ export function MemoryAtlas({
             <p>{chosen?.title}</p>
             <div className="km-vector-row">
               <span className="km-retrieval-note">
-                {query ? "Retrieved from the saved scenario · inspect the evidence →" : "Example library · customer retrieval starts with a signal"}
+                {sourceUrl ? "Scoped by account, service and known-at time · read original evidence →" : query ? "Retrieved from the saved scenario · inspect the evidence →" : "Example library · customer retrieval starts with a signal"}
               </span>
               <button onClick={() => dialog.current?.showModal()}>
                 Read memory ↗
@@ -585,7 +587,7 @@ export function MemoryAtlas({
           </div>
           <dialog ref={dialog} className="evidence-dialog km-memory-dialog">
             <header>
-              <span className="eyebrow">Example episode / {chosen?.id}</span>
+              <span className="eyebrow">{sourceUrl ? "Sourced memory" : "Example episode"} / {chosen?.id}</span>
               <button
                 onClick={() => dialog.current?.close()}
                 aria-label="Close memory details"
@@ -595,7 +597,7 @@ export function MemoryAtlas({
             </header>
             <h2>{chosen?.title}</h2>
             <p>
-              {chosenGroup?.label} · computed group, editorial label.{" "}
+              {chosenGroup?.label} · computed from episode vectors.{" "}
               {similarity === undefined
                 ? ""
                 : `Cosine similarity to the saved customer context: ${similarity.toFixed(4)}.`}
@@ -615,8 +617,7 @@ export function MemoryAtlas({
               ))}
             </div>
             <p className="km-detail-note">
-              Three formulations of one authored synthetic episode, collapsed to
-              one point. Groups use spherical k-means on the 384D mean vectors.
+              {sourceUrl ? "Each point is one sourced memory from this household. PCA geometry and cosine grouping use its actual 384D vector." : "Three formulations of one authored synthetic episode, collapsed to one point. Groups use spherical k-means on the 384D mean vectors."}
               Tinted regions are visual guides; groups overlap. Similarity
               does not establish customer facts or authorise action.
             </p>

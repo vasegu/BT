@@ -51,6 +51,9 @@ export function arbitrate(
     "router.heartbeat_received",
     "service.restored_observed",
   );
+  const failure = latest('service.failure_observed');
+  const recovery = latest('service.restored_observed');
+  const contraryTest = !!failure && (!recovery || Date.parse(failure.occurredAt) > Date.parse(recovery.occurredAt));
   const candidates: Proposal[] = [];
   function propose(
     id: string,
@@ -107,6 +110,9 @@ export function arbitrate(
           : "No customer confirmation has been recorded.",
         "customer.confirmed_working",
       ),
+      gate('no_unresolved_test','No contradictory fresh test',!contraryTest,
+        contraryTest ? 'The customer reply differs from the latest failed line test. Reconcile them before closing the case.' : 'No newer contradictory service test.',
+        'service.failure_observed','service.restored_observed'),
     ],
     refs("customer.confirmed_working", "promise.fulfilled"),
   );
@@ -144,7 +150,7 @@ export function arbitrate(
       gate(
         "open",
         "Recovery still pending",
-        !h.confirmed && (open || !!h.promise || h.incident),
+        (!h.confirmed || contraryTest) && (open || !!h.promise || h.incident),
         "Technical recovery, the callback and customer confirmation are evaluated independently.",
         "incident.confirmed",
         "case.opened",
@@ -186,7 +192,7 @@ export function arbitrate(
       gate(
         "unresolved",
         "Service not yet restored",
-        !h.restored && !h.confirmed,
+        !h.restored && (!h.confirmed || contraryTest),
         h.restored
           ? "A later recovery observation supersedes incident-only guidance."
           : "No later restoration observation.",
@@ -216,7 +222,7 @@ export function arbitrate(
       gate(
         "care",
         "Current care need",
-        !quiet && !delivered && !h.restored && !h.confirmed,
+        !quiet && !delivered && !h.restored && (!h.confirmed || contraryTest),
         quiet
           ? "Stated habit has no contrary case or incident evidence."
           : delivered
@@ -256,7 +262,7 @@ export function arbitrate(
       gate(
         "delivery",
         "Delivered, first use unknown",
-        delivered && !h.restored && !h.confirmed,
+        delivered && !h.restored && (!h.confirmed || contraryTest),
         delivered
           ? "Delivery is recorded; successful first use is absent."
           : "No pending delivered order in this context.",

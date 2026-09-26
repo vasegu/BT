@@ -121,3 +121,7 @@ The first implementation is the event-to-outcome loop described above. Follow th
 For the visual review, the unmodified UI from Jio commit `621fa991` (9 July 2026, immediately before Studio became the default view) is extracted to `/tmp/bt-jio-july-621fa991/ui` and served at `http://127.0.0.1:5182/`. It already contains a Studio shortcut. It is a UI-only historical preview: API/WebSocket targets point to an unused local port, so backend-dependent panels are offline. No Docker or production services are started. The current Jio checkout is not changed.
 
 The user confirmed this July screen as the fidelity reference: tidy technical records, compact typography and realistic panel structure. The BT review adapts those qualities into two memory panels, the central phone, an arbiter panel and an action trace. Each expands to a full-page breakdown. Duplicated controls and merged Studio sections are excluded. The earlier April reference remains typography provenance; July `621fa991` is the confirmed visual benchmark.
+
+## Hosted household data
+
+See [BT data foundation](docs/BT-DATA-FOUNDATION.md) for the Supabase schemas, reproducible three-household dataset, memory provenance, worker guarantees, migration controls and verification commands. Existing SQLite sessions remain available with `BT_STORAGE=sqlite`.

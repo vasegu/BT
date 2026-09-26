@@ -9,6 +9,13 @@ export type BehaviourRun = {
   disposition: string;
   reason: string;
   input: string;
+  expression: {
+    channel: string;
+    provenance: string;
+    summary: string;
+    messages: { id: string; title: string; body: string; time: string }[];
+    modifiers: { label: string; value: string; basis: string; evidenceIds: string[] }[];
+  };
   facts: Record<string, unknown>;
   contextParts: Record<string, string>;
   promptHash: string | null;

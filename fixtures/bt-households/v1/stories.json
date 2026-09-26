@@ -1,23 +1,44 @@
 {
-  "datasetVersion": "bt-households-v1",
+  "datasetVersion": "bt-households-v1.1",
   "seed": 260926,
   "timeZone": "Europe/London",
   "scenarioStart": "2026-09-25T19:45:00Z",
   "historyStart": "2026-03-27T00:00:00Z",
   "households": [
-    {"alias":"daniel","name":"Daniel Reed","orderedAt":"2025-10-01T09:00:00Z","activatedAt":"2025-10-08T09:00:00Z","caseRef":"DR-2041","owner":"Aisha","story":"Established service. A previous Wi-Fi issue was resolved in May. This week's connection drops persist after a restart. Aisha owns the new case and promises a 21:15 callback. Line restoration, that callback and Daniel's confirmation are independent observations."},
-    {"alias":"sam","name":"Sam Morgan","orderedAt":"2026-09-18T10:00:00Z","activatedAt":null,"orderRef":"ORD-SAM-31","story":"A new order progresses through acceptance, dispatch and delivery. Delivery on 22 September does not establish provisioning, activation or first use. Sam's setup question remains with the activation team. An explicitly scoped network incident later changes the investigation."},
-    {"alias":"maya","name":"Maya Patel","orderedAt":"2025-05-01T09:00:00Z","activatedAt":"2025-05-08T09:00:00Z","story":"A stated overnight switch-off preference is supported by dated observation windows. The recent 28-window sample contains 26 observed returns and two incomplete windows. The current 21:10 return is unusually early; it is not the predicted overnight return time. A fresh complaint or scoped fault must supersede the routine."}
+    {
+      "alias": "daniel",
+      "name": "Daniel Reed",
+      "orderedAt": "2025-10-01T09:00:00Z",
+      "activatedAt": "2025-10-08T09:00:00Z",
+      "caseRef": "DR-2041",
+      "owner": "Aisha",
+      "story": "Established service. A previous Wi-Fi issue was resolved in May. This week's connection drops persist after a restart. Aisha owns the new case and promises a 21:15 callback. Line restoration, that callback and Daniel's confirmation are independent observations."
+    },
+    {
+      "alias": "sam",
+      "name": "Sam Morgan",
+      "orderedAt": "2026-09-18T10:00:00Z",
+      "activatedAt": null,
+      "orderRef": "ORD-SAM-31",
+      "story": "A new order progresses through acceptance, dispatch and delivery. Delivery on 22 September does not establish provisioning, activation or first use. Sam's setup question remains with the activation team. An explicitly scoped network incident later changes the investigation."
+    },
+    {
+      "alias": "maya",
+      "name": "Maya Patel",
+      "orderedAt": "2025-05-01T09:00:00Z",
+      "activatedAt": "2025-05-08T09:00:00Z",
+      "story": "A stated overnight switch-off preference is supported by dated observation windows. The recent 28-window sample contains 26 observed returns and two incomplete windows. The current 21:10 return is unusually early; it is not the predicted overnight return time. A fresh complaint or scoped fault must supersede the routine."
+    }
   ],
   "variants": {
-    "canonical":"The existing five-step presentation, with separate source evidence behind every claim.",
-    "late-diagnostic":"Daniel's earlier failed diagnostic becomes known only after the incident; earlier context must not include it.",
-    "duplicate-delivery":"The order adapter redelivers Sam's identical delivery event under the same source key.",
-    "corrected-scope":"A subsequent scope correction adds Maya's service; earlier views retain the earlier membership.",
-    "revoked-contact":"Daniel withdraws in-app service contact permission before the quiet-router signal.",
-    "slot-conflict":"Two independent reservations contend for the same callback slot; one must lose atomically.",
-    "unmet-promise":"Aisha's callback is not observed by its due time; restoration cannot fulfil it.",
-    "gamer-claim":"Daniel adds an unverified gaming self-description; support obligations and commercial authority do not change.",
-    "recurrent-failure":"A fresh failed line test arrives after apparent restoration; the latest observation must win."
+    "canonical": "The existing five-step presentation, with separate source evidence behind every claim.",
+    "late-diagnostic": "Daniel's earlier failed diagnostic becomes known only after the incident; earlier context must not include it.",
+    "duplicate-delivery": "The order adapter redelivers Sam's identical delivery event under the same source key.",
+    "corrected-scope": "A subsequent scope correction adds Maya's service; earlier views retain the earlier membership.",
+    "revoked-contact": "Daniel withdraws in-app service contact permission before the quiet-router signal.",
+    "slot-conflict": "Two independent reservations contend for the same callback slot; one must lose atomically.",
+    "unmet-promise": "Aisha's callback is not observed by its due time; restoration cannot fulfil it.",
+    "gamer-claim": "Daniel adds an unverified gaming self-description; support obligations and commercial authority do not change.",
+    "recurrent-failure": "A fresh failed line test arrives after apparent restoration; the latest observation must win."
   }
 }

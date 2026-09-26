@@ -1,9 +1,22 @@
+import { waitUntil } from "@vercel/functions";
+import { hosted, requestOriginAllowed } from "./hosting.ts";
+import type { IncomingMessage, ServerResponse } from "node:http";
+import { DatabaseSync } from "node:sqlite";
+import { parseEnv } from "node:util";
+import { memoryAtlas } from "./memory-atlas.ts";
+import { PostgresRepository } from "./postgres-repository.ts";
+import { database } from "./database.ts";
 import { createServer } from "node:http";
 import { readFileSync, existsSync, statSync, mkdirSync } from "node:fs";
 import { resolve, dirname, extname, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ContextEvals, summariseEvaluation } from "./context-evals.ts";
-import { buildHodoscope, explorerPath, explorerStatus } from "./hodoscope-export.ts";
+import {
+  buildHodoscope,
+  explorerPath,
+  explorerStatus,
+} from "./hodoscope-export.ts";
+import { agentReview, reviewExplorerPath } from "./agent-review.ts";
 import { behaviourSpace } from "./behaviour.ts";
 import { Engine, DomainError } from "./engine.ts";
 import { assessmentConfig, evaluateJev } from "./assessment.ts";
@@ -17,22 +30,51 @@ import {
 } from "./eve.ts";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const port = Number(process.env.BT_PORT || 5186);
-const dbPath = process.env.BT_DB_PATH || resolve(root, ".data/bt.sqlite");
+const dataRoot = hosted ? "/tmp/bt" : resolve(root, ".data");
+const dbPath = process.env.BT_DB_PATH || resolve(dataRoot, "bt.sqlite");
 mkdirSync(dirname(dbPath), { recursive: true });
-const engine = new Engine(dbPath);
-const contextEvals = new ContextEvals(engine.db);
+const localDatabaseConfig = existsSync(resolve(root, ".env.database.local"))
+  ? parseEnv(readFileSync(resolve(root, ".env.database.local"), "utf8"))
+  : {};
+const storage = hosted
+  ? "supabase"
+  : process.env.BT_STORAGE || localDatabaseConfig.BT_STORAGE || "sqlite";
+const engine =
+  storage === "supabase"
+    ? new PostgresRepository(database())
+    : new Engine(dbPath);
+const evalDb =
+  engine instanceof Engine
+    ? engine.db
+    : new DatabaseSync(resolve(dataRoot, "hosted-evals.sqlite"));
+const contextEvals = new ContextEvals(evalDb);
 const getEveConfig = () => eveConfig(resolve(root, ".env.local"));
 let eveRequests = 0;
-const worker = setInterval(() => {
+export async function runWorker(sessionId?: string) {
   const config = assessmentConfig(resolve(root, ".env.local"));
-  void engine
-    .processJobs(
-      config.key ? (request) => evaluateJev(request, config) : undefined,
-    )
-    .catch(() =>
-      console.error("Arbiter worker could not complete a local job."),
+  await engine.processJobs(
+    config.key && process.env.BT_ARBITER_MODE !== "rules"
+      ? (request) => evaluateJev(request, config)
+      : undefined,
+    sessionId,
+  );
+}
+const worker =
+  hosted || process.env.BT_DISABLE_WORKER === "1"
+    ? undefined
+    : setInterval(() => {
+        void runWorker().catch(() =>
+          console.error("Arbiter worker could not complete a job."),
+        );
+      }, 350);
+function scheduleWorker(sessionId: string) {
+  if (hosted && process.env.BT_DISABLE_WORKER !== "1")
+    waitUntil(
+      runWorker(sessionId).catch(() =>
+        console.error("Hosted worker failed; durable job retained."),
+      ),
     );
-}, 350);
+}
 const types: Record<string, string> = {
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
@@ -44,7 +86,7 @@ const types: Record<string, string> = {
   ".svg": "image/svg+xml",
   ".txt": "text/plain; charset=utf-8",
 };
-const server = createServer(async (req, res) => {
+export async function handler(req: IncomingMessage, res: ServerResponse) {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("Referrer-Policy", "same-origin");
   const send = (status: number, data: unknown) => {
@@ -56,18 +98,24 @@ const server = createServer(async (req, res) => {
   };
   try {
     const host = req.headers.host || "";
-    if (!/^(127\.0\.0\.1|localhost):\d+$/.test(host))
+    if (!hosted && !/^(127\.0\.0\.1|localhost):\d+$/.test(host))
       throw new DomainError("Localhost access only", 403);
     const url = new URL(req.url || "/", `http://${host}`);
     if (url.pathname.startsWith("/api/")) {
       if (req.method === "GET") {
         if (url.pathname === "/api/health")
           return send(200, {
-            store: "sqlite",
-            arbiter: assessmentConfig(resolve(root, ".env.local")).key
-              ? "jev_configured"
-              : "rules",
-            worker: "running",
+            store: storage,
+            arbiter:
+              process.env.BT_ARBITER_MODE !== "rules" &&
+              assessmentConfig(resolve(root, ".env.local")).key
+                ? "jev_configured"
+                : "rules",
+            worker: hosted
+              ? "request_backed"
+              : process.env.BT_DISABLE_WORKER === "1"
+                ? "disabled"
+                : "running",
             model: getEveConfig().key ? "eve_configured" : "not_connected",
             externalActions: "simulated",
           });
@@ -85,7 +133,7 @@ const server = createServer(async (req, res) => {
         ) {
           const id = url.searchParams.get("session");
           if (!id) throw new DomainError("Session is required");
-          const snapshot = engine.snapshot(
+          const snapshot = await engine.snapshot(
             id,
             url.searchParams.has("at")
               ? Number(url.searchParams.get("at"))
@@ -123,19 +171,57 @@ const server = createServer(async (req, res) => {
                 : null,
           });
         }
+        if (
+          url.pathname === "/api/agent-review" ||
+          url.pathname === "/api/agent-review/explorer"
+        ) {
+          const id = url.searchParams.get("session");
+          if (!id) throw new DomainError("Session is required");
+          const snapshot = await engine.snapshot(
+            id,
+            url.searchParams.has("at")
+              ? Number(url.searchParams.get("at"))
+              : undefined,
+          );
+          const history = await Promise.all(
+            Array.from({ length: snapshot.cutoff + 1 }, (_, at) =>
+              engine.snapshot(id, at),
+            ),
+          );
+          const review = await agentReview(snapshot, (at) => history[at]);
+          if (url.pathname.endsWith("/explorer")) {
+            const path = reviewExplorerPath(review.fingerprint);
+            if (!review.map || !existsSync(path))
+              throw new DomainError(
+                "Not enough recorded runs for an explorer.",
+                409,
+              );
+            res.writeHead(200, {
+              "Content-Type": "text/html; charset=utf-8",
+              "Cache-Control": "no-store",
+            });
+            return res.end(readFileSync(path));
+          }
+          return send(200, review);
+        }
         if (url.pathname === "/api/behaviour-space") {
           const id = url.searchParams.get("session");
           if (!id) throw new DomainError("Session is required");
-          const snapshot = engine.snapshot(
+          const snapshot = await engine.snapshot(
             id,
             url.searchParams.has("at")
               ? Number(url.searchParams.get("at"))
               : undefined,
           );
           try {
+            const history = await Promise.all(
+              Array.from({ length: snapshot.cutoff + 1 }, (_, at) =>
+                engine.snapshot(id, at),
+              ),
+            );
             return send(
               200,
-              await behaviourSpace(snapshot, (at) => engine.snapshot(id, at)),
+              await behaviourSpace(snapshot, (at) => history[at]),
             );
           } catch {
             throw new DomainError(
@@ -144,12 +230,48 @@ const server = createServer(async (req, res) => {
             );
           }
         }
+        if (
+          url.pathname === "/api/memory-space" &&
+          engine instanceof PostgresRepository
+        ) {
+          const id = url.searchParams.get("session");
+          if (!id) throw new DomainError("Session required");
+          const snap = await engine.snapshot(
+            id,
+            Number(url.searchParams.get("at")),
+          );
+          const c = (await engine.contexts(id, snap.cutoff)).find(
+            (c) => c.household.id === url.searchParams.get("person"),
+          );
+          if (!c) throw new DomainError("Customer not found", 404);
+          return send(200, await memoryAtlas(c, snap.events));
+        }
+        if (
+          url.pathname === "/api/data-context" &&
+          engine instanceof PostgresRepository
+        ) {
+          const id = url.searchParams.get("session");
+          if (!id) throw new DomainError("Session required");
+          const snap = await engine.snapshot(
+            id,
+            url.searchParams.has("at")
+              ? Number(url.searchParams.get("at"))
+              : undefined,
+          );
+          const contexts = await engine.contexts(id, snap.cutoff);
+          return send(200, {
+            store: storage,
+            contexts,
+            sourceCount: snap.events.length,
+          });
+        }
         if (url.pathname === "/api/snapshot") {
           const id = url.searchParams.get("session");
           if (!id) throw new DomainError("Session is required");
+          scheduleWorker(id);
           return send(
             200,
-            engine.snapshot(
+            await engine.snapshot(
               id,
               url.searchParams.has("at")
                 ? Number(url.searchParams.get("at"))
@@ -162,15 +284,7 @@ const server = createServer(async (req, res) => {
       if (req.method !== "POST")
         throw new DomainError("Method not allowed", 405);
       const origin = req.headers.origin;
-      if (
-        origin &&
-        ![
-          "http://127.0.0.1:5185",
-          "http://localhost:5185",
-          `http://127.0.0.1:${port}`,
-          `http://localhost:${port}`,
-        ].includes(origin)
-      )
+      if (!requestOriginAllowed(origin, host, hosted, port))
         throw new DomainError("Cross-origin mutation rejected", 403);
       if (
         req.headers["sec-fetch-site"] === "cross-site" ||
@@ -203,7 +317,7 @@ const server = createServer(async (req, res) => {
       ) {
         const input = parseEveRequest(value);
         const context = eveContext(
-          engine.snapshot(input.sessionId, input.at),
+          await engine.snapshot(input.sessionId, input.at),
           input.person,
         );
         if (url.pathname === "/api/eve/context")
@@ -240,6 +354,21 @@ const server = createServer(async (req, res) => {
                   fetch,
                   cancel.signal,
                 );
+          if (
+            url.pathname === "/api/eve/chat" &&
+            engine instanceof PostgresRepository &&
+            "text" in result
+          ) {
+            await engine.saveConversation(
+              input.sessionId,
+              input.person,
+              context.revision,
+              [
+                input.messages.at(-1)!,
+                { role: "assistant", content: result.text as string },
+              ],
+            );
+          }
           if (!res.destroyed) return send(200, result);
           return;
         } finally {
@@ -248,6 +377,11 @@ const server = createServer(async (req, res) => {
         }
       }
       if (url.pathname === "/api/context-evals") {
+        if (hosted)
+          throw new DomainError(
+            "Controlled evaluation batches run in the local presenter; their SQLite/Python artefacts are not durable on Vercel.",
+            503,
+          );
         if (typeof value.sessionId !== "string")
           throw new DomainError("Session is required");
         const config = assessmentConfig(resolve(root, ".env.local"));
@@ -256,7 +390,7 @@ const server = createServer(async (req, res) => {
             "Configure the AI Gateway key before running a model evaluation.",
             503,
           );
-        const snapshot = engine.snapshot(value.sessionId, 1);
+        const snapshot = await engine.snapshot(value.sessionId, 1);
         const suite = contextEvals.start(snapshot, (request) =>
           evaluateJev(request, config),
         );
@@ -280,7 +414,14 @@ const server = createServer(async (req, res) => {
         });
       }
       if (url.pathname === "/api/scenarios")
-        return send(201, engine.createSession());
+        return send(
+          201,
+          await (engine instanceof PostgresRepository
+            ? engine.createSession(
+                typeof value.variant === "string" ? value.variant : undefined,
+              )
+            : engine.createSession()),
+        );
       if (url.pathname === "/api/events") {
         if (
           typeof value.sessionId !== "string" ||
@@ -291,15 +432,14 @@ const server = createServer(async (req, res) => {
           throw new DomainError(
             "sessionId, step, idempotencyKey and revision are required",
           );
-        return send(
-          202,
-          engine.advance(
-            value.sessionId,
-            value.step,
-            value.idempotencyKey,
-            value.revision,
-          ),
+        const advanced = await engine.advance(
+          value.sessionId,
+          value.step,
+          value.idempotencyKey,
+          value.revision,
         );
+        scheduleWorker(value.sessionId);
+        return send(202, advanced);
       }
       throw new DomainError("Endpoint not found", 404);
     }
@@ -338,21 +478,25 @@ const server = createServer(async (req, res) => {
     console.error(error);
     send(500, {
       error:
-        "The local runtime could not complete this request. Your persisted session is retained.",
+        "The runtime could not complete this request. Your persisted session is retained.",
     });
   }
-});
-server.listen(port, "127.0.0.1", () =>
-  console.log(
-    `BT runtime http://127.0.0.1:${port} · SQLite + worker · external actions simulated`,
-  ),
-);
-const close = () => {
-  clearInterval(worker);
-  server.close(() => {
-    engine.close();
-    process.exit(0);
-  });
-};
-process.on("SIGINT", close);
-process.on("SIGTERM", close);
+}
+if (!hosted) {
+  const server = createServer(handler);
+  server.listen(port, "127.0.0.1", () =>
+    console.log(
+      `BT runtime http://127.0.0.1:${port} · ${storage} + worker · external actions simulated`,
+    ),
+  );
+  const close = () => {
+    clearInterval(worker);
+    server.close(async () => {
+      await engine.close();
+      if (engine instanceof PostgresRepository) evalDb.close();
+      process.exit(0);
+    });
+  };
+  process.on("SIGINT", close);
+  process.on("SIGTERM", close);
+}

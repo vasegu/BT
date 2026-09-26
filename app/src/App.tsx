@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
+import { AgentReview } from "./AgentReview";
 import { SectionView } from "./SectionView";
 import { PhoneExperience } from "./PhoneExperience";
 import type { Snapshot, PersonId, SourceEvent, Step } from "./types";
@@ -180,13 +181,16 @@ export function App() {
       : null
   ) as PanelId | null;
   const records = params.get("view") === "records";
-  const focused = Boolean(panel || records);
+  const review = params.get("view") === "agent-review";
+  const focused = Boolean(panel || records || review);
   const cutoff = params.has("at") ? Number(params.get("at")) : undefined;
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
     [playing, setPlaying] = useState(false),
     [inspected, setInspected] = useState<SourceEvent | null>(null);
+  const [sourceFilter,setSourceFilter]=useState("");
+  const [sourceLimit,setSourceLimit]=useState(100);
   const created = useRef(false),
     request = useRef(0),
     dialog = useRef<HTMLDialogElement>(null),
@@ -241,10 +245,13 @@ export function App() {
   }, [sessionId]);
   useEffect(() => {
     setSnapshot(null);
-    void refresh();
-    const poll = setInterval(() => void refresh(), 1000);
+    let stopped=false;
+    let timer:ReturnType<typeof setTimeout>;
+    const poll=async()=>{await refresh();if(!stopped)timer=setTimeout(poll,1000);};
+    void poll();
     return () => {
-      clearInterval(poll);
+      stopped=true;
+      clearTimeout(timer);
       request.current++;
     };
   }, [refresh]);
@@ -304,7 +311,7 @@ export function App() {
   }, [playing, snapshot?.session.step, snapshot?.pendingJobs, busy, advance]);
   const openPanel = (id: PanelId | null) => {
     setPlaying(false);
-    change({ panel: id, view: null });
+    change({ panel: id, view: null, eval: null, study: null });
   };
   const inspect = (e: SourceEvent) => setInspected(e);
   const h = snapshot?.households.find((h) => h.id === person);
@@ -666,10 +673,10 @@ export function App() {
           <>
             <span className="focus-heading">
               ACCOUNT /{" "}
-              {records ? "SOURCE RECORDS" : panelNames[panel!].toUpperCase()}
+              {review ? "AGENT REVIEW" : records ? "SOURCE RECORDS" : panelNames[panel!].toUpperCase()}
             </span>
-            <button className="focus-back" onClick={() => openPanel(null)}>
-              ← Back to account
+            <button className="focus-back" onClick={() => openPanel(review ? "actions" : null)}>
+              {review ? "← Back to actions" : "← Back to account"}
             </button>
           </>
         ) : (
@@ -688,12 +695,13 @@ export function App() {
             >
               Source records
             </button>
+            <button onClick={()=>{setPlaying(false);change({view:"agent-review",panel:null,eval:null});}}>Agent review</button>
             <a href={lab("atlas")}>Visual lab ↗</a>
           </nav>
         )}
         <span className="runtime-badge">
           <i className={error ? "offline" : ""} />
-          {error ? "Connection issue" : "Local runtime"}
+          {error ? "Connection issue" : snapshot?.storage === "supabase" ? "Supabase · local server" : "Local runtime"}
         </span>
         {!focused && (
           <a className="review-link" href="/reference/design/review.html">
@@ -836,21 +844,21 @@ export function App() {
         id="workspace"
         className={
           focused
-            ? `focused-workspace${panel === "customer" ? " customer-focus" : panel === "phone" ? " phone-focus" : panel === "arbiter" ? " arbiter-focus" : panel === "operations" ? " operations-focus" : panel === "actions" ? " actions-focus" : ""}`
+            ? `focused-workspace${panel === "customer" ? " customer-focus" : panel === "phone" ? " phone-focus" : panel === "arbiter" ? " arbiter-focus" : panel === "operations" ? " operations-focus" : panel === "actions" || review ? " actions-focus" : ""}`
             : "account-workspace"
         }
       >
         <div className="workspace-intro">
           <div>
             <p className="eyebrow">
-              {records
+              {review ? "Evaluation / recorded behaviour" : records
                 ? "Evidence / append-only source ledger"
                 : panel
                   ? "Account / " + panelNames[panel]
                   : "One signal · three different contexts"}
             </p>
             <h1>
-              {records
+              {review ? "Agent review" : records
                 ? "Read the records behind the experience."
                 : panel
                   ? panel === "customer"
@@ -862,8 +870,8 @@ export function App() {
         </div>
         {focused ? (
           <div className="focused-context">
-            <strong>{names[person]}</strong>
-            <code>{h?.serviceId || "Loading service…"}</code>
+            <strong>{review ? "Replay corpus" : names[person]}</strong>
+            <code>{review ? "Three households · completed runs" : h?.serviceId || "Loading service…"}</code>
             <span>
               {snapshot
                 ? `${formatTime(snapshot.clock)} · ${snapshot.historical ? "Historical snapshot" : "Current snapshot"} · rev ${snapshot.cutoff}`
@@ -920,8 +928,10 @@ export function App() {
         {!snapshot || !h ? (
           <div className="loading">
             <Glyph />
-            <p>Loading the local data model…</p>
+            <p>Loading the data model…</p>
           </div>
+        ) : review ? (
+          <AgentReview snapshot={snapshot} controlled={params.get("study") === "controls"}/>
         ) : records ? (
           <section className="ledger">
             <header>
@@ -931,6 +941,7 @@ export function App() {
                 {formatTime(snapshot.clock)}
               </span>
             </header>
+            <label style={{display:"flex",gap:12,padding:"10px 16px",alignItems:"center"}}>Filter records <input aria-label="Filter source records" placeholder="Person, source or event type" value={sourceFilter} onChange={e=>{setSourceFilter(e.target.value);setSourceLimit(100);}} /> <button onClick={()=>setSourceLimit(n=>n+100)}>Show 100 more</button></label>
             <div className="ledger-scroll">
               <table>
                 <thead>
@@ -942,11 +953,11 @@ export function App() {
                   </tr>
                 </thead>
                 <tbody>
-                  {[...snapshot.events].reverse().map((e) => (
+                  {[...snapshot.events].reverse().filter(e=>`${e.subject} ${e.type} ${e.description} ${e.source}`.toLowerCase().includes(sourceFilter.toLowerCase())).slice(0,sourceLimit).map((e) => (
                     <tr key={e.id}>
                       <td>
                         {formatTime(e.occurredAt)}
-                        <small>received {formatTime(e.receivedAt)}</small>
+                        <small>{new Date(e.occurredAt).toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"})} · known {formatTime(e.receivedAt)}</small>
                       </td>
                       <td>
                         {e.subject === "shared"
@@ -1006,7 +1017,7 @@ export function App() {
             · demo actions
           </span>
           <span>
-            SQLite + server worker <b>·</b> Eve / OpenAI on demand
+            {snapshot?.storage === "supabase" ? "Supabase" : "SQLite"} + server worker <b>·</b> Eve / OpenAI on demand
           </span>
         </footer>
       </main>

@@ -1,3 +1,4 @@
+import { expressionPairs } from "../src/expression-pairs.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { Engine } from "../server/engine.ts";
@@ -199,4 +200,32 @@ test("sensitivity measures action distributions independently of factual similar
   } finally {
     e.close();
   }
+});
+
+test("recorded expressions distinguish wording inside one action without inventing generated tone", async () => {
+  const e = new Engine(":memory:");
+  try {
+    const { id } = e.createSession();
+    e.advance(id, "heartbeat", "one", 0); await e.processJobs();
+    e.advance(id, "incident", "two", 1); await e.processJobs();
+    const s = e.snapshot(id), runs = behaviourRuns(s, at => e.snapshot(id, at));
+    const daniel = runs.find(r => r.person === "daniel" && r.revision === 2)!;
+    const sam = runs.find(r => r.person === "sam" && r.revision === 2)!;
+    assert.equal(daniel.selectedAction, sam.selectedAction);
+    const expressions=expressionPairs(runs);
+    assert.ok(expressions.some(p=>[p.a,p.b].includes(daniel.id)&&[p.a,p.b].includes(sam.id)));
+    assert.ok(expressions.every(p=>p.actionShift===null));
+    assert.match(daniel.expression.messages[0].body, /will still call/);
+    assert.doesNotMatch(sam.expression.messages[0].body, /will still call/);
+    assert.notEqual(daniel.expression.summary, sam.expression.summary);
+    assert.match(daniel.expression.provenance, /template/);
+    const old = daniel.expression.summary;
+    s.actions.find(a => a.decisionId === daniel.id)!.body = "Buy a gaming package instead.";
+    const mutated = behaviourRuns(s, at => e.snapshot(id, at)).find(r => r.id === daniel.id)!;
+    assert.notEqual(mutated.expression.summary, old, "Changing actual wording must change the behaviour embedding input");
+    assert.equal(mutated.input, daniel.input, "Output changes must not contaminate input geometry");
+    const watch = runs.find(r => r.person === "maya")!;
+    assert.equal(watch.expression.messages.length, 0);
+    assert.equal(watch.expression.channel, "No customer contact");
+  } finally { e.close(); }
 });

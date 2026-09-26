@@ -20,14 +20,14 @@ import type {
   OutcomeCheck,
 } from "../src/types.ts";
 
-const steps: Step[] = [
+export const steps: Step[] = [
   "heartbeat",
   "incident",
   "restore",
   "callback",
   "confirm",
 ];
-const clocks = [
+export const clocks = [
   "2026-09-25T19:45:00Z",
   "2026-09-25T20:00:00Z",
   "2026-09-25T20:03:00Z",
@@ -57,7 +57,7 @@ export class DomainError extends Error {
   }
 }
 
-function project(
+export function project(
   person: { id: PersonId; name: string },
   events: SourceEvent[],
 ): Household {
@@ -98,7 +98,7 @@ function project(
         h.serviceState = "Repeated drops reported";
         break;
       case "diagnostic.completed":
-        h.restartTried = true;
+        if (e.payload.test === "restart") h.restartTried = true;
         break;
       case "promise.created":
         h.promise = String(e.payload.dueAt);
@@ -122,11 +122,18 @@ function project(
         h.owner = "Activation team";
         h.caseStatus = "open";
         break;
+      case "activation.confirmed":
+        h.activation = "Activation confirmed";
+        break;
+      case "case.closed":
+        h.caseStatus = "none"; h.owner = null;
+        break;
       case "preference.stated":
         h.habit = String(e.payload.statement);
         break;
       case "router.heartbeat_overdue":
         h.serviceState = "Heartbeat overdue · cause unknown";
+        h.restored = false; h.confirmed = false;
         break;
       case "router.heartbeat_received":
         h.serviceState = "Heartbeat observed";
@@ -152,14 +159,14 @@ function project(
         break;
       case "customer.confirmed_working":
         h.confirmed = true;
-        h.caseStatus = "closed";
+        if (h.restored) h.caseStatus = "closed";
         break;
     }
   }
   return h;
 }
 
-function projectOperations(
+export function projectOperations(
   events: SourceEvent[],
 ): Omit<Snapshot["operations"], "outcomes"> {
   const incident = events.filter((e) => e.type === "incident.confirmed").at(-1);

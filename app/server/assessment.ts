@@ -106,6 +106,7 @@ export function buildAssessmentRequest(
       clock: s.clock,
       revision: s.cutoff,
       facts,
+      memory: h.memory ? { contextHash: h.memory.hash, episodes: h.memory.items.map(m=>({id:m.id,epistemic:m.epistemic,text:redact(m.text),evidenceIds:m.evidenceIds,availableFrom:m.availableFrom,derivationVersion:m.derivationVersion,contentHash:m.contentHash})) } : null,
       records,
       candidates,
       recentActions,

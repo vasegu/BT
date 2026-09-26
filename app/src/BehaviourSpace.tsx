@@ -1,3 +1,4 @@
+import { expressionPairs } from "./expression-pairs";
 import { useEffect, useState } from "react";
 import type { BehaviourSpaceData, ContextContrast } from "./behaviour-types";
 import type { Snapshot, SourceEvent } from "./types";
@@ -15,7 +16,7 @@ export const outcomeLabels = {
   unknown: "No verification contract",
 };
 type Run = BehaviourSpaceData["runs"][number];
-const actionNames: Record<string, string> = {
+export const actionNames: Record<string, string> = {
   confirmation: "Confirm recovery",
   restoration: "Recovery follow-up",
   incident: "Explain incident",
@@ -105,18 +106,15 @@ export function ContextContrasts({
   filter: string;
   compare: (a: string, b: string) => void;
 }) {
-  const [mode, setMode] = useState<"signal" | "time">(
-    reference?.person === selected?.person ? "time" : "signal",
-  );
-  const visible = data.contrasts.filter((c) => {
+  const [mode, setMode] = useState<"signal" | "time" | "action">("action");
+  const visible = (mode === "action" ? expressionPairs(data.runs) : data.contrasts).filter((c) => {
     const a = data.runs.find((r) => r.id === c.a)!,
       b = data.runs.find((r) => r.id === c.b)!;
     return (
       (filter === "all" || (a.person === filter && b.person === filter)) &&
-      (mode === "signal"
-        ? a.revision === b.revision && !c.samePerson
-        : c.samePerson) &&
-      c.actionShift > 0.005
+      (mode === "action"
+        ? a.selectedAction === b.selectedAction && a.expression.messages.length > 0 && b.expression.messages.length > 0 && a.expression.summary !== b.expression.summary
+        : (mode === "signal" ? a.revision === b.revision && !c.samePerson : c.samePerson) && (c.actionShift ?? 0) > 0.005)
     );
   });
   return (
@@ -128,8 +126,9 @@ export function ContextContrasts({
           <br />
           Different response.
         </h3>
-        <p>Look for a large action shift in a close semantic neighbourhood.</p>
+        <p>Context can change the plan, or how the same plan is expressed.</p>
         <div className="cs-switch" aria-label="Compare contexts">
+          <button aria-pressed={mode === "action"} onClick={() => setMode("action")}>Within an action</button>
           <button
             aria-pressed={mode === "signal"}
             onClick={() => setMode("signal")}
@@ -173,14 +172,14 @@ export function ContextContrasts({
             </strong>
             <span className="cs-pair-metrics">
               <span>
-                <b>{c.similarity.toFixed(3)}</b> similarity
+                <b>{c.similarity?.toFixed(3) ?? "Actual"}</b> {mode === "action" ? "wording" : "similarity"}
               </span>
               <span>
-                <b>{c.actionShift.toFixed(2)}</b> shift
+                <b>{c.actionShift?.toFixed(2) ?? "Same"}</b> {mode === "action" ? "action" : "shift"}
               </span>
             </span>
             <span className={`cs-prompt-note ${c.samePrompt ? "stable" : ""}`}>
-              {c.samePrompt ? "Same question payload" : "Prompt also changed"}
+              {mode === "action" ? "Recorded expression comparison · no probability claim" : c.samePrompt ? "Same question payload" : "Prompt also changed"}
             </span>
           </button>
         );
@@ -193,10 +192,9 @@ export function ContextContrasts({
         </p>
       )}
       <div className="om-context-block cs-method">
-        <span className="eyebrow">Ranking, not a causal claim</span>
+        <span className="eyebrow">Recorded contrasts</span>
         <p>
-          Cosine similarity × distribution shift. These are review candidates in
-          this replay, not proven anomalies. Both runs must use the same model.
+          The same plan can carry different commitments and wording. Compare the source context and actual response; a difference alone is not a failure.
         </p>
       </div>
     </div>
@@ -515,24 +513,38 @@ export function BehaviourSpace({
         </svg>
       </div>
       <div className="cs-governed">
-        <span className="eyebrow">03 / GOVERNED ACTION · B</span>
+        <span className="eyebrow">03 / ACTION + EXPRESSION · B</span>
         <strong>{actionName(selected.selectedAction)}</strong>
         <span>
           {selected.modelChoice &&
           selected.modelChoice !== selected.selectedAction
             ? `Model preferred ${actionName(selected.modelChoice)}; policy held.`
-            : selected.assessment}
+            : `${selected.expression.channel} · ${selected.expression.modifiers[0].value}`}
         </span>
       </div>
       <p className="om-chart-note">
         {contrast
           ? `Context cosine ${contrast.similarity.toFixed(3)} · distribution shift ${contrast.actionShift.toFixed(2)} / 1. `
           : ""}
-        The fan shows categorical choices, not an action embedding. This
-        compares recorded runs; it does not isolate a cause.
+        The fan shows the plan; tone, commitments and exact wording are compared in the response inspector. No probability is invented for those modifiers.
       </p>
     </>
   );
+}
+
+export function ActionExpression({ run, reference }: { run: Run; reference?: Run }) {
+  return <div className="om-context-block cs-expression">
+    <span className="eyebrow">Inside the action / how it is expressed</span>
+    <p>{reference?.selectedAction === run.selectedAction ? "Same plan. Context changes the delivery." : "Selecting a plan is only part of the response."}</p>
+    <table><thead><tr><th>Modifier</th>{reference && <th>A · {reference.person}</th>}<th>B · {run.person}</th></tr></thead><tbody>
+      {run.expression.modifiers.map((m,i)=><tr key={m.label}><th title={m.basis}>{m.label}</th>{reference && <td>{reference.expression.modifiers[i]?.value || "—"}</td>}<td>{m.value}</td></tr>)}
+    </tbody></table>
+    <details open={!!reference && reference.selectedAction === run.selectedAction}>
+      <summary>Exact recorded wording · A / B</summary>
+      {[reference,run].filter(Boolean).map((r,i)=><div className="cs-wording" key={r!.id}><code>{i === 0 && reference ? "A" : "B"} / {r!.person} / {time(r!.time)}</code>{r!.expression.messages.length ? r!.expression.messages.map(m=><blockquote key={m.id}><strong>{m.title}</strong><p>{m.body}</p></blockquote>) : <p>No new message was committed in this run.</p>}</div>)}
+    </details>
+    <small>{run.expression.provenance}. The model chooses the plan; this version does not generate free-form tone.</small>
+  </div>;
 }
 
 export function BehaviourInspector({
@@ -565,6 +577,7 @@ export function BehaviourInspector({
         <h3>{run.title}</h3>
         <span className="om-status">{run.assessment}</span>
       </div>
+      <ActionExpression run={run} reference={reference} />
       {contrast && reference && (
         <>
           <div className="om-context-block cs-reading">

@@ -2,6 +2,7 @@
 import sys
 import json
 import numpy as np
+dimensions = 3 if "--3d" in sys.argv else 2
 vectors = np.asarray(json.load(sys.stdin), dtype=np.float64)
 if not len(vectors):
     print(json.dumps(dict(points=[], variance=[0, 0], clusters=0, uniqueInputs=0)))
@@ -15,16 +16,16 @@ vectors = vectors / norms
 unique, inverse = np.unique(np.round(vectors, 8), axis=0, return_inverse=True)
 centered = unique - unique.mean(axis=0)
 _, singular, basis = np.linalg.svd(centered, full_matrices=False)
-axes = basis[:2].copy()
+axes = basis[:dimensions].copy()
 for axis in axes:
     if axis[np.abs(axis).argmax()] < 0:
         axis *= -1
 positions = centered @ axes.T
-if positions.shape[1] < 2:
-    positions = np.pad(positions, ((0, 0), (0, 2 - positions.shape[1])))
-variance = np.zeros(2)
+if positions.shape[1] < dimensions:
+    positions = np.pad(positions, ((0, 0), (0, dimensions - positions.shape[1])))
+variance = np.zeros(dimensions)
 if (singular**2).sum() > 1e-14:
-    variance[:len(axes)] = singular[:2]**2 / (singular**2).sum()
+    variance[:len(axes)] = singular[:dimensions]**2 / (singular**2).sum()
 # Deterministic farthest-first cosine centres; up to three groups in this small replay.
 k = min(3, len(unique))
 centers = [unique[0]]

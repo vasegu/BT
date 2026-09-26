@@ -18,7 +18,7 @@ data = json.loads(source.read_text())
 rows = data["summaries"]
 analysis = source.with_name("evaluation.hodoscope.json")
 write_analysis_json(analysis, rows,
-    fields={"model": "typesafe-ai/jev", "eval": "bt-context-invariance-v1", "summary_method": "deterministic typed actions", "synthetic": True},
+    fields={"model": "typesafe-ai/jev", "eval": data.get("mode", "bt-context-invariance-v1"), "summary_method": "deterministic recorded behaviour", "synthetic": True},
     source=data["suiteId"], embedding_model="Xenova/all-MiniLM-L6-v2", embedding_dimensionality=384)
 
 # Use the real Hodoscope projection. No labels, jitter or invented action samples.
@@ -44,19 +44,21 @@ def paths(z, levels):
         if parts: result.append({"level":float(level), "path":"".join(parts)})
     plt.close(fig)
     return result
-people = sorted({r["metadata"]["person"] for r in rows})
+group_key = data.get("groupBy", "person")
+people = sorted({r["metadata"][group_key] for r in rows})
 groups = []
 for person in people:
-    d = density([i for i,r in enumerate(rows) if r["metadata"]["person"] == person])
+    d = density([i for i,r in enumerate(rows) if r["metadata"][group_key] == person])
     groups.append({"person":person,"paths":paths(d / d.max(), [.1,.22,.38,.55,.72,.88])})
-base = density([i for i,r in enumerate(rows) if r["metadata"]["variant"] == "baseline"])
 diffs = {}
-for variant in ["gamer", "paraphrase", "upsell"]:
-    delta = density([i for i,r in enumerate(rows) if r["metadata"]["variant"] == variant]) - base
-    scale = max(float(base.max()), 1e-12)
-    delta = delta / scale
-    peak = float(np.abs(delta).max())
-    diffs[variant] = {"peak":peak,"paths":paths(delta,[-.75,-.4,-.15,.15,.4,.75]) if peak > .15 else []}
+if data.get("mode") != "recorded":
+    base = density([i for i,r in enumerate(rows) if r["metadata"]["variant"] == "baseline"])
+    for variant in ["gamer", "paraphrase", "upsell"]:
+        delta = density([i for i,r in enumerate(rows) if r["metadata"]["variant"] == variant]) - base
+        scale = max(float(base.max()), 1e-12)
+        delta = delta / scale
+        peak = float(np.abs(delta).max())
+        diffs[variant] = {"peak":peak,"paths":paths(delta,[-.75,-.4,-.15,.15,.4,.75]) if peak > .15 else []}
 points = [{"id":r["trajectory_id"],"position":((xy[i]-lo)/(hi-lo)).tolist(),"summary":r["summary"],**r["metadata"]} for i,r in enumerate(rows)]
 source.with_name("projection.json").write_text(json.dumps({"points":points,"groups":groups,"diffs":diffs,"bandwidth":float(bandwidth),"projection":"Hodoscope 0.2.4 · PCA", "dimensions":384}))
-viz((str(analysis),), group_by="variant", proj=["pca"], output_file=str(output))
+viz((str(analysis),), group_by=data.get("nativeGroupBy", "variant"), proj=["pca"], output_file=str(output))

@@ -63,23 +63,18 @@ export function buildHodoscope(suite: ContextEval): Promise<void> {
     }
     const input = resolve(dir, "input.json");
     writeFileSync(input, JSON.stringify({ summaries, suiteId: suite.id }));
-    await new Promise<void>((ok, fail) =>
-      execFile(
-        python,
-        [
-          resolve(root, "server/render-hodoscope.py"),
-          input,
-          explorerPath(suite),
-        ],
-        { timeout: 120000, maxBuffer: 1_000_000 },
-        (error) =>
-          error
-            ? fail(new Error("Hodoscope visualisation could not be generated"))
-            : ok(),
-      ),
-    );
+    await renderHodoscope(input, explorerPath(suite));
     recordStatus("ready");
   })().catch((error) => { recordStatus("unavailable"); throw error; }).finally(() => builds.delete(suite.id));
   builds.set(suite.id, work);
   return work;
+}
+
+export function renderHodoscope(input: string, output: string): Promise<void> {
+  return new Promise((ok, fail) => execFile(
+    resolve(root, ".data/hodoscope-venv/bin/python"),
+    [resolve(root, "server/render-hodoscope.py"), input, output],
+    { timeout: 120000, maxBuffer: 1_000_000 },
+    error => error ? fail(new Error("Local Hodoscope export unavailable; check the isolated Python runtime.")) : ok(),
+  ));
 }

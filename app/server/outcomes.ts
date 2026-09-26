@@ -140,11 +140,16 @@ export function verifyOutcome(
   const fresh = s.events.filter(
     (e) =>
       e.revision <= s.cutoff &&
-      e.occurredAt >= c.createdAt &&
-      e.occurredAt <= s.clock &&
-      e.receivedAt <= s.clock,
+      Date.parse(e.occurredAt) >= Date.parse(c.createdAt) &&
+      Date.parse(e.occurredAt) <= Date.parse(s.clock) &&
+      Date.parse(e.receivedAt) <= Date.parse(s.clock),
   );
-  const own = fresh.filter((e) => e.subject === c.person);
+  const anchor = s.events.find((e) => e.id === c.scopeId);
+  const own = fresh.filter(
+    (e) =>
+      e.subject === c.person &&
+      (!anchor?.serviceId || e.serviceId === anchor.serviceId),
+  );
   const matches = (e: SourceEvent) =>
     e.type === c.expectedEvent &&
     (c.goal === "service"
@@ -154,7 +159,7 @@ export function verifyOutcome(
         : c.goal === "activation"
           ? e.payload.successful === true
           : c.goal === "watch"
-            ? e.payload.status === "received"
+            ? e.payload.status === undefined || e.payload.status === "received"
             : typeof e.payload.statement === "string" &&
               !!e.payload.statement.trim());
   // A fresh case or replacement promise breaks the old scope: it cannot fulfil it.
@@ -170,13 +175,15 @@ export function verifyOutcome(
             : e.type === "router.heartbeat_overdue"),
   );
   const inScope = (e: SourceEvent) =>
-    !replacement || e.occurredAt < replacement.occurredAt;
+    !replacement ||
+    Date.parse(e.occurredAt) < Date.parse(replacement.occurredAt);
   const positive = own.filter((e) => matches(e) && inScope(e)).at(-1);
   const negative = fresh
     .filter(
       (e) =>
         inScope(e) &&
-        (e.subject === c.person
+        (e.subject === c.person &&
+        (!anchor?.serviceId || e.serviceId === anchor.serviceId)
           ? c.goal === "service"
             ? e.type === "service.failure_observed"
             : c.goal === "callback"
@@ -196,7 +203,9 @@ export function verifyOutcome(
     )
     .at(-1);
   const observation =
-    positive && (!negative || positive.occurredAt > negative.occurredAt)
+    positive &&
+    (!negative ||
+      Date.parse(positive.occurredAt) > Date.parse(negative.occurredAt))
       ? positive
       : negative || replacement;
   const met = !!observation && observation === positive;

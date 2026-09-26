@@ -2,12 +2,32 @@ import { createHash } from "node:crypto";
 import { execFile } from "node:child_process";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import type { Snapshot } from "../src/types.ts";
+import type { Snapshot, Decision, Household } from "../src/types.ts";
 import type {
   BehaviourRun,
   BehaviourSpaceData,
   ContextContrast,
 } from "../src/behaviour-types.ts";
+
+// Describe the recorded execution. This annotates authored message templates; it is not a tone classifier.
+function expressionFor(d: Decision, h: Household, snapshot: Snapshot): BehaviourRun["expression"] {
+  const messages = snapshot.actions.filter(a => a.decisionId === d.id)
+    .map(({ id, title, body, time }) => ({ id, title, body, time }));
+  const text = messages.map(m => `${m.title}. ${m.body}`).join(" ");
+  const selected = d.trace?.selectedId || d.domain;
+  const tone = !messages.length ? "No new wording" : ({ recovery: "Reassuring continuity", incident: "Factual reassurance", activation: "Supportive guidance", restoration: "Positive, awaiting confirmation", confirmation: "Appreciative closure" }[selected] || "Service-focused");
+  const evidence = (types: string[]) => h.evidence.filter(e => types.includes(e.type)).map(e => e.id);
+  const modifiers = [
+    { label: "Tone brief", value: tone, basis: "Authored template intent, not a model-measured score", evidenceIds: [] as string[] },
+    { label: "Contact", value: messages.length ? "In-app · service update" : "No customer contact", basis: messages.length ? "Persisted action and simulated receipt" : d.reason, evidenceIds: evidence(["contact.authority_recorded"]) },
+    { label: "Commitment", value: /will still call/.test(text) ? "Keep the promised callback" : "No new callback promise in this response", basis: /will still call/.test(text) ? "The recorded wording retains the existing time and owner" : "Read the recorded response, not a reconstructed message", evidenceIds: evidence(["promise.created", "promise.fulfilled"]) },
+    { label: "Prior context", value: /earlier restart/.test(text) ? "Do not repeat the failed restart" : /earlier information|start again/.test(text) ? "Carry the previous conversation forward" : /activation/.test(text) ? "Delivery is not first use" : /everything is working/.test(text) ? "Ask for customer confirmation" : /case is now closed/.test(text) ? "Acknowledge confirmed recovery" : "No additional customer wording", basis: "Content present in the persisted response", evidenceIds: evidence(["diagnostic.completed", "activation.delivered", "customer.confirmed_working", "service.restored_observed"]) },
+  ];
+  let summary = `Plan: ${selected}. Contact: ${messages.length ? "in-app service update" : "none"}. Delivery: ${d.trace?.execution?.at(-1)?.status || d.disposition}. ${messages.length ? `Tone brief: ${tone}. Recorded wording: ${text}` : `Internal decision: ${d.reason}`}`;
+  for (const person of snapshot.households) summary = summary.replaceAll(person.name, "Customer").replaceAll(person.name.split(" ")[0], "Customer").replaceAll(person.serviceId, "service");
+  if (h.owner) summary = summary.replaceAll(h.owner, "Existing owner");
+  return { channel: messages.length ? "In-app" : "No customer contact", provenance: "Authored templates · recorded execution · interpretive tone brief", summary, messages, modifiers };
+}
 
 // Geometry uses input facts only. Actions, prompt identity and later outcomes remain separate.
 export function behaviourRuns(
@@ -74,6 +94,7 @@ export function behaviourRuns(
       disposition: d.disposition,
       reason: d.reason,
       input,
+      expression: expressionFor(d, h, snapshot),
       facts,
       contextParts: Object.fromEntries(
         [
@@ -207,94 +228,11 @@ export function contextContrasts(
   return pairs.sort((a, b) => b.rank - a.rank || b.similarity - a.similarity);
 }
 
-type Projection = {
-  points: {
-    position: number[];
-    cluster: number;
-    neighbours: { index: number; similarity: number }[];
-  }[];
-  variance: number[];
-  clusters: number;
-  uniqueInputs: number;
-};
-const here = dirname(fileURLToPath(import.meta.url));
-export function projectVectors(vectors: number[][]): Promise<Projection> {
-  return new Promise((resolveResult, reject) => {
-    const child = execFile(
-      "python3",
-      [resolve(here, "project-behaviour.py")],
-      { timeout: 15000, maxBuffer: 2_000_000 },
-      (error, stdout) => {
-        if (error)
-          return reject(
-            new Error("Local behaviour projection is unavailable."),
-          );
-        try {
-          resolveResult(JSON.parse(stdout));
-        } catch {
-          reject(new Error("Invalid local projection."));
-        }
-      },
-    );
-    child.stdin?.on("error", () => {});
-    child.stdin?.end(JSON.stringify(vectors));
-  });
-}
+export { projectVectors } from './projection.ts';
+import { projectVectors } from './projection.ts';
 
-type Encoder = (
-  input: string,
-  options: { pooling: string; normalize: boolean },
-) => Promise<{ data: Iterable<number> }>;
-let encoder: Promise<Encoder> | undefined;
-const vectors = new Map<string, Promise<number[]>>();
-const model = "Xenova/all-MiniLM-L6-v2";
-function localEncoder() {
-  if (!encoder)
-    encoder = (async () => {
-      const runtime =
-        process.env.BT_EMBED_RUNTIME ||
-        resolve(
-          here,
-          "../../../SohoHouse/app/node_modules/@xenova/transformers",
-        );
-      const { pipeline, env } = await import(
-        pathToFileURL(resolve(runtime, "src/transformers.js")).href
-      );
-      env.allowRemoteModels = false;
-      env.cacheDir = resolve(runtime, ".cache");
-      return (await pipeline("feature-extraction", model, {
-        quantized: true,
-      })) as Encoder;
-    })().catch((error) => {
-      encoder = undefined;
-      throw error;
-    });
-  return encoder;
-}
-export async function embed(input: string) {
-  const key = createHash("sha256").update(input).digest("hex");
-  if (!vectors.has(key)) {
-    if (vectors.size >= 128) vectors.delete(vectors.keys().next().value!);
-    vectors.set(
-      key,
-      (async () => {
-        const encode = await localEncoder();
-        const result = await encode(input, {
-          pooling: "mean",
-          normalize: true,
-        });
-        const vector = Array.from(result.data);
-        if (vector.length !== 384 || vector.some((v) => !Number.isFinite(v)))
-          throw new Error("Invalid local embedding.");
-        return vector;
-      })().catch((error) => {
-        vectors.delete(key);
-        throw error;
-      }),
-    );
-  }
-  return vectors.get(key)!;
-}
+export { embed } from "./encoder.ts";
+import { embed, encoderModel as model } from "./encoder.ts";
 export async function behaviourSpace(
   snapshot: Snapshot,
   at: (revision: number) => Snapshot,
