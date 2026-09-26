@@ -42,3 +42,7 @@ test('identical delivery is idempotent but conflicting source keys and orphan fu
 test('valid records retain a later known-at time without pretending timely receipt',()=>{
   const f=fixture(); f.events=[event({knownAt:'2026-09-26T00:00:00Z'})]; assert.deepEqual(validateFixture(f),[]);
 });
+
+test('timestamp order compares instants, not ISO formatting',()=>{
+ const f=fixture(); f.events=[event({occurredAt:'2026-09-25T11:00:00+01:00',knownAt:'2026-09-25T10:00:00.000Z'})]; assert.deepEqual(validateFixture(f),[]);
+});

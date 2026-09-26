@@ -40,9 +40,9 @@ export function validateFixture(fixture: HouseholdFixture): ValidationIssue[] {
       for(const [field,target] of Object.entries(foreignKeys[table]||{}))
         if(row[field]!=null&&!exists(target,row[field]))issue(row.id,'foreign_key',`${field} does not reference ${target}`);
       for(const [start,end] of [['ordered_at','activated_at'],['ordered_at','delivered_at'],['opened_at','closed_at'],['created_at','fulfilled_at'],['created_at','due_at'],['valid_from','valid_to'],['starts_at','ends_at']])
-        if(row[start]!=null&&row[end]!=null&&(!date(row[start])||!date(row[end])||String(row[start])>String(row[end])))issue(row.id,'lifecycle',`${end} must follow ${start}`);
+        if(row[start]!=null&&row[end]!=null&&(!date(row[start])||!date(row[end])||Date.parse(String(row[start]))>Date.parse(String(row[end]))))issue(row.id,'lifecycle',`${end} must follow ${start}`);
       if(table==='customer.contact_permissions'&&row.allowed===true) {
-        const role=fixture.tables['customer.account_roles']?.find(r=>r.person_id===row.person_id&&r.account_id===row.account_id&&['account_holder','authorised_contact'].includes(String(r.role))&&String(r.valid_from)<=String(row.valid_from)&&(r.valid_to==null||String(r.valid_to)>String(row.valid_from)));
+        const role=fixture.tables['customer.account_roles']?.find(r=>r.person_id===row.person_id&&r.account_id===row.account_id&&['account_holder','authorised_contact'].includes(String(r.role))&&Date.parse(String(r.valid_from))<=Date.parse(String(row.valid_from))&&(r.valid_to==null||Date.parse(String(r.valid_to))>Date.parse(String(row.valid_from))));
         if(!role)issue(row.id,'authority','Permission requires an effective account role, not household membership');
       }
       if(table==='customer.services') {
@@ -53,12 +53,12 @@ export function validateFixture(fixture: HouseholdFixture): ValidationIssue[] {
   }
   const seen=new Map<string,string>(), events=new Map(fixture.events.map(e=>[e.id,e]));
   for(const e of fixture.events) {
-    if(!date(e.occurredAt)||!date(e.knownAt)||e.knownAt<e.occurredAt)issue(e.id,'time','knownAt must follow occurredAt');
+    if(!date(e.occurredAt)||!date(e.knownAt)||Date.parse(e.knownAt)<Date.parse(e.occurredAt))issue(e.id,'time','knownAt must follow occurredAt');
     for(const [id,table] of [[e.personId,'customer.people'],[e.serviceId,'customer.services'],[e.caseId,'operations.cases'],[e.source,'ingestion.sources']] as const)
       if(id&&!exists(table,id))issue(e.id,'foreign_key',`Unknown ${table} reference`);
     const key=`${e.source}/${e.sourceEventId}`, body=JSON.stringify(e);
     if(seen.has(key)&&seen.get(key)!==body)issue(e.id,'source_conflict','Source key has conflicting content'); seen.set(key,body);
-    if(e.supersedesId&&(!events.has(e.supersedesId)||events.get(e.supersedesId)!.knownAt>e.knownAt))issue(e.id,'correction','Correction requires an already available event');
+    if(e.supersedesId&&(!events.has(e.supersedesId)||Date.parse(events.get(e.supersedesId)!.knownAt)>Date.parse(e.knownAt)))issue(e.id,'correction','Correction requires an already available event');
     if(e.type==='pattern.recorded'&&(!Array.isArray(e.payload.evidenceIds)||!e.payload.evidenceIds.length||e.payload.evidenceIds.some(id=>!events.has(String(id)))))issue(e.id,'unsupported_pattern','Pattern must reference its observations');
     if(e.type==='promise.fulfilled'&&!exists('operations.promises',e.payload.promiseId))issue(e.id,'foreign_key','Fulfilment requires the original promise');
   }

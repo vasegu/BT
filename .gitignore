@@ -2,6 +2,7 @@
 node_modules/
 app/dist/
 app/.data/
+supabase/.temp/
 .superpowers/
 .env*
 !.env.example
