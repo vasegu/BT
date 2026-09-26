@@ -37,3 +37,61 @@ test(
     }
   },
 );
+
+test(
+  "interrupted assessments survive a later Eve exchange without another provider call",
+  { skip: process.env.BT_HOSTED_TESTS !== "1", timeout: 240000 },
+  async () => {
+    const { buildAssessmentRequest, emptyAssessment } = await import(
+      "../server/assessment.ts"
+    );
+    const { arbitrate } = await import("../server/arbiter.ts");
+    const { enrichContext } = await import("../server/memory-repository.ts");
+    const db = database(),
+      repo = new PostgresRepository(db);
+    try {
+      const session = await repo.createSession();
+      await repo.advance(session.id, "heartbeat", "interrupted-test", 0);
+      const job = await repo.claim(session.id);
+      const [current, before, contexts] = await Promise.all([
+        repo.snapshot(session.id, 1),
+        repo.snapshot(session.id, 0),
+        repo.contexts(session.id, 1),
+      ]);
+      for (const c of contexts) {
+        await enrichContext(c, db);
+        const h = current.households.find((h) => h.id === c.household.id)!;
+        const req = buildAssessmentRequest(
+          h,
+          current,
+          arbitrate(h, before.households.find((p) => p.id === h.id)!, current),
+        );
+        await db`insert into runtime.assessments(session_id,job_id,person_id,state,context_hash,context,request,data) values(${session.id},${job.id},${c.personId},'started',${c.hash},${db.json(c as any)},${db.json(req as any)},${db.json(emptyAssessment(req) as any)})`;
+      }
+      await repo.saveConversation(session.id, "daniel", 1, [
+        { role: "user", content: "Can you remind me who owns my callback?" },
+        {
+          role: "assistant",
+          content: "The stored promise remains with Aisha.",
+        },
+      ]);
+      await db`update runtime.jobs set lease_until=now()-interval '1 second' where session_id=${session.id}`;
+      let calls = 0;
+      await repo.processJobs(async (req) => {
+        calls++;
+        return emptyAssessment(req);
+      }, session.id);
+      const [jobState] =
+        await db`select state,error from runtime.jobs where session_id=${session.id}`;
+      assert.equal(jobState.state, "complete", jobState.error);
+      assert.equal(
+        calls,
+        0,
+        "a durable started attempt must never be billed again",
+      );
+      assert.equal((await repo.snapshot(session.id)).decisions.length, 3);
+    } finally {
+      await repo.close();
+    }
+  },
+);

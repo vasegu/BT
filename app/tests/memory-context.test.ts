@@ -97,3 +97,86 @@ test("corrections only supersede when known; fresh failure remains unresolved de
     "Delivered · activation unconfirmed",
   );
 });
+
+test("late permission withdrawal does not rewrite an earlier authorised context", () => {
+  const f = generateHistory({ variant: "revoked-contact" });
+  f.events.find((e) => e.sourceEventId === "daniel-withdrawal")!.knownAt =
+    "2026-09-25T20:12:00Z";
+  assert.equal(
+    ctx("daniel", "2026-09-25T20:00:00Z", f).household.contactAllowed,
+    true,
+  );
+  assert.equal(
+    ctx("daniel", "2026-09-25T20:12:00Z", f).household.contactAllowed,
+    false,
+  );
+});
+test("incident membership for a second product cannot affect broadband", async () => {
+  const { stableId } = await import("../../scripts/generate-bt-history.ts");
+  const { validateFixture } = await import("../server/data-model.ts");
+  const f = generateHistory(),
+    original = f.events.find((e) => e.type === "incident.confirmed")!;
+  const mobile = f.tables["customer.services"].find(
+    (s) => s.reference === "svc_maya_mobile",
+  )!;
+  const incident = {
+    ...original,
+    id: stableId("test-mobile-incident-event"),
+    sourceEventId: "test-mobile-incident",
+    payload: { incidentId: "INC-MOBILE", affected: ["maya"] },
+    occurredAt: "2026-09-25T20:04:00Z",
+    knownAt: "2026-09-25T20:04:00Z",
+  };
+  f.events.push(incident);
+  const row = {
+    ...f.tables["operations.incidents"][0],
+    id: stableId("test-mobile-incident"),
+    reference: "INC-MOBILE",
+    source_event_id: incident.id,
+    opened_at: incident.occurredAt,
+  };
+  f.tables["operations.incidents"].push(row);
+  f.tables["operations.incident_services"].push({
+    id: stableId("test-mobile-membership"),
+    incident_id: row.id,
+    service_id: mobile.id,
+    membership: "affected",
+    valid_from: incident.occurredAt,
+    valid_to: null,
+    source_event_id: incident.id,
+  });
+  assert.deepEqual(validateFixture(f), []);
+  assert.equal(
+    ctx("maya", "2026-09-25T20:06:00Z", f).household.incident,
+    false,
+  );
+  assert.equal(
+    buildContext({
+      fixture: f,
+      sessionId: "one",
+      personId: person("maya"),
+      serviceId: String(mobile.id),
+      cutoff: "2026-09-25T20:06:00Z",
+      purpose: "service",
+    }).household.incident,
+    true,
+  );
+});
+test("future conversation records cannot change the frozen historical context hash", () => {
+  const f = generateHistory(),
+    before = ctx("daniel", undefined, f);
+  const source = f.events.find(
+    (e) => e.personId === person("daniel") && e.type === "conversation.message",
+  )!;
+  f.events.push({
+    ...source,
+    id: "future-eve-test",
+    sourceEventId: "future-eve-test",
+    occurredAt: "2026-09-26T20:00:00Z",
+    knownAt: "2026-09-26T20:00:00Z",
+    description: "Future Eve conversation",
+  });
+  const after = ctx("daniel", undefined, f);
+  assert.deepEqual(after.evidence, before.evidence);
+  assert.equal(after.hash, before.hash);
+});

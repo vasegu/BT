@@ -7,6 +7,7 @@ export type Step =
   | "confirm";
 export type SourceEvent = {
   serviceId?: string | null;
+  affectedServiceIds?: string[];
   id: string;
   sessionId: string;
   revision: number;

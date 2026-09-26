@@ -197,6 +197,20 @@ export class PostgresRepository {
       source: String(sources.get(e.source)),
       description: e.description,
       payload: e.payload,
+      ...(e.type === "incident.confirmed"
+        ? {
+            affectedServiceIds: contexts
+              .filter((c) =>
+                c.evidence.some(
+                  (x) =>
+                    x.id === e.id &&
+                    Array.isArray(x.payload.affected) &&
+                    x.payload.affected.includes(c.household.id),
+                ),
+              )
+              .map((c) => c.serviceId),
+          }
+        : {}),
     }));
     return {
       storage: "supabase",
@@ -251,9 +265,7 @@ export class PostgresRepository {
     });
     return this.session(id);
   }
-  async claim(
-    sessionId?: string,
-  ): Promise<{
+  async claim(sessionId?: string): Promise<{
     id: string;
     session_id: string;
     revision: number;

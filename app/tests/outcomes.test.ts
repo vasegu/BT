@@ -320,3 +320,28 @@ test("an unrelated service failure cannot contradict broadband recovery", async 
     e.close();
   }
 });
+
+test("a shared incident on another service cannot contradict a broadband watch", async () => {
+  const { verifyOutcome } = await import("../server/outcomes.ts");
+  const e = new Engine(":memory:");
+  try {
+    const { id } = e.createSession();
+    const s = await step(e, id, "heartbeat");
+    const watch = episode(s, "maya", "watch");
+    const anchor = s.events.find((x) => x.id === watch.scopeId)!;
+    anchor.serviceId = "broadband";
+    s.events.push({
+      ...anchor,
+      id: "mobile-incident",
+      subject: "shared",
+      type: "incident.confirmed",
+      payload: { affected: ["maya"] },
+      affectedServiceIds: ["mobile"],
+    } as any);
+    assert.equal(verifyOutcome(watch, s).status, "waiting");
+    (s.events.at(-1) as any).affectedServiceIds = ["broadband"];
+    assert.equal(verifyOutcome(watch, s).status, "contradicted");
+  } finally {
+    e.close();
+  }
+});

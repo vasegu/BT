@@ -256,7 +256,7 @@ export function MemoryAtlas({
                 ? "6 closest in 384D"
                 : group
                   ? `${visible.length} memories in this group`
-                  : "5 computed groups · select to isolate"}
+                  : `${space.clusters.length} computed groups · select to isolate`}
             </span>
             <button onClick={reset} aria-label="Reset memory atlas">
               ↺ Reset

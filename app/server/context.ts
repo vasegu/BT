@@ -57,6 +57,25 @@ export function buildContext(input: {
   const alias = String(person.alias) as PersonId;
   const available = availableEvents(fixture.events, cutoff);
   const knownIds = new Set(available.map((e) => e.id));
+  const observedIds = new Set(
+    fixture.events
+      .filter(
+        (e) =>
+          Date.parse(e.occurredAt) <= Date.parse(cutoff) &&
+          Date.parse(e.knownAt) <= Date.parse(cutoff),
+      )
+      .map((e) => e.id),
+  );
+  // Interval ends caused by a not-yet-known replacement cannot alter past state.
+  const effectiveKnown = (row: Row, peers: Row[]) =>
+    effective(row) ||
+    (Date.parse(String(row.valid_from)) <= Date.parse(cutoff) &&
+      row.valid_to !== null &&
+      peers.some(
+        (next) =>
+          next.valid_from === row.valid_to &&
+          !observedIds.has(String(next.source_event_id)),
+      ));
   const scoped = available.filter(
     (e) =>
       (e.personId === personId && e.serviceId === serviceId) ||
@@ -106,11 +125,35 @@ export function buildContext(input: {
     description: e.description,
     payload: e.payload,
   }));
-  for (const e of evidence.filter((e) => e.type === "incident.confirmed")) {
-    const hasRegisteredService = fixture.tables[
-      "operations.incident_services"
-    ]?.some((r) => r.service_id === serviceId);
-    if (!hasRegisteredService) e.payload = { ...e.payload, affected: [] };
+  for (let i = evidence.length - 1; i >= 0; i--) {
+    const e = evidence[i];
+    if (e.type !== "incident.confirmed") continue;
+    const incident = fixture.tables["operations.incidents"].find(
+      (r) => r.reference === e.payload.incidentId,
+    );
+    const peers = fixture.tables["operations.incident_services"].filter(
+      (r) => r.incident_id === incident?.id && r.service_id === serviceId,
+    );
+    const membership = peers
+      .filter(
+        (r) =>
+          observedIds.has(String(r.source_event_id)) &&
+          effectiveKnown(r, peers),
+      )
+      .sort(
+        (a, b) =>
+          Date.parse(String(a.valid_from)) - Date.parse(String(b.valid_from)),
+      )
+      .at(-1);
+    if (!membership) {
+      evidence.splice(i, 1);
+      continue;
+    }
+    const affected = Array.isArray(e.payload.affected)
+      ? e.payload.affected.filter((id) => id !== alias)
+      : [];
+    if (membership.membership === "affected") affected.push(alias);
+    e.payload = { ...e.payload, affected };
   }
   const household = project({ id: alias, name: String(person.name) }, evidence);
   household.linkedServices = fixture.tables["customer.services"]
@@ -135,17 +178,25 @@ export function buildContext(input: {
     household.caseStatus = "none";
     household.owner = null;
   }
-  household.contactAllowed =
-    fixture.tables["customer.contact_permissions"]?.some(
+  const permissions = fixture.tables["customer.contact_permissions"].filter(
+    (p) =>
+      p.person_id === personId &&
+      p.account_id === service.account_id &&
+      p.purpose === purpose &&
+      p.channel === "in_app",
+  );
+  const permission = permissions
+    .filter(
       (p) =>
-        p.person_id === personId &&
-        p.account_id === service.account_id &&
-        p.purpose === purpose &&
-        p.channel === "in_app" &&
-        p.allowed === true &&
-        effective(p) &&
-        knownIds.has(String(p.source_event_id)),
-    ) ?? false;
+        observedIds.has(String(p.source_event_id)) &&
+        effectiveKnown(p, permissions),
+    )
+    .sort(
+      (a, b) =>
+        Date.parse(String(a.valid_from)) - Date.parse(String(b.valid_from)),
+    )
+    .at(-1);
+  household.contactAllowed = permission?.allowed === true;
   const failure = evidence
     .filter((e) => e.type === "service.failure_observed")
     .at(-1);
@@ -171,7 +222,12 @@ export function buildContext(input: {
   const retrieval = {
     admitted: memories.map((m) => m.id),
     rejected: fixture.events
-      .filter((e) => e.personId === personId && !knownIds.has(e.id))
+      .filter(
+        (e) =>
+          e.personId === personId &&
+          observedIds.has(e.id) &&
+          !knownIds.has(e.id),
+      )
       .map((e) => ({ id: e.id, reason: "Not yet available or superseded" })),
     method:
       "Authority, service and both timestamps filtered; structured memory. Semantic ranking recorded separately when available.",

@@ -1,10 +1,23 @@
 {
-  "$schema":"https://openapi.vercel.sh/vercel.json",
-  "framework":null,
-  "installCommand":"npm --prefix app ci",
-  "buildCommand":"node scripts/setup-bt-encoder.mjs && npm --prefix app run build",
-  "outputDirectory":"app/dist",
-  "regions":["lhr1"],
-  "functions":{"api/index.ts":{"maxDuration":300,"memory":2048,"includeFiles":"{fixtures/bt-households/**,app/.data/models/**}","excludeFiles":"{app/.env*,app/.data/*.sqlite*,app/.data/hodoscope-venv/**}"}},
-  "rewrites":[{"source":"/api/:path*","destination":"/api"},{"source":"/((?!assets/|lab/).*)","destination":"/index.html"}]
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "npm --prefix app ci",
+  "buildCommand": "node scripts/setup-bt-encoder.mjs && npm --prefix app run build && node scripts/prepare-vercel-static.mjs",
+  "outputDirectory": "app/dist",
+  "regions": [
+    "lhr1"
+  ],
+  "functions": {
+    "api/index.mjs": {
+      "maxDuration": 300,
+      "includeFiles": "{app/server/**,app/src/*.ts,scripts/*.ts,fixtures/bt-households/**,app/.data/models/**}",
+      "excludeFiles": "{app/.env*,app/.data/*.sqlite*,app/.data/hodoscope-venv/**}"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "/api"
+    }
+  ]
 }

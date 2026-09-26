@@ -198,6 +198,8 @@ export function verifyOutcome(
           : c.goal === "watch" &&
             e.subject === "shared" &&
             e.type === "incident.confirmed" &&
+            (!anchor?.serviceId ||
+              e.affectedServiceIds?.includes(anchor.serviceId)) &&
             Array.isArray(e.payload.affected) &&
             e.payload.affected.includes(c.person)),
     )

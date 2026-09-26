@@ -701,7 +701,7 @@ export function App() {
         )}
         <span className="runtime-badge">
           <i className={error ? "offline" : ""} />
-          {error ? "Connection issue" : snapshot?.storage === "supabase" ? "Supabase · local server" : "Local runtime"}
+          {error ? "Connection issue" : snapshot?.storage === "supabase" ? "Supabase runtime" : "Local runtime"}
         </span>
         {!focused && (
           <a className="review-link" href="/reference/design/review.html">

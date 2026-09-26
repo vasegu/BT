@@ -39,6 +39,9 @@ const localDatabaseConfig = existsSync(resolve(root, ".env.database.local"))
 const storage = hosted
   ? "supabase"
   : process.env.BT_STORAGE || localDatabaseConfig.BT_STORAGE || "sqlite";
+const workerDisabled =
+  process.env.BT_DISABLE_WORKER === "1" ||
+  localDatabaseConfig.BT_DISABLE_WORKER === "1";
 const engine =
   storage === "supabase"
     ? new PostgresRepository(database())
@@ -60,7 +63,7 @@ export async function runWorker(sessionId?: string) {
   );
 }
 const worker =
-  hosted || process.env.BT_DISABLE_WORKER === "1"
+  hosted || workerDisabled
     ? undefined
     : setInterval(() => {
         void runWorker().catch(() =>
@@ -68,7 +71,7 @@ const worker =
         );
       }, 350);
 function scheduleWorker(sessionId: string) {
-  if (hosted && process.env.BT_DISABLE_WORKER !== "1")
+  if (hosted && !workerDisabled)
     waitUntil(
       runWorker(sessionId).catch(() =>
         console.error("Hosted worker failed; durable job retained."),
@@ -113,7 +116,7 @@ export async function handler(req: IncomingMessage, res: ServerResponse) {
                 : "rules",
             worker: hosted
               ? "request_backed"
-              : process.env.BT_DISABLE_WORKER === "1"
+              : workerDisabled
                 ? "disabled"
                 : "running",
             model: getEveConfig().key ? "eve_configured" : "not_connected",
