@@ -96,7 +96,7 @@ export function project(
         h.restored = false;
         h.confirmed = false;
         h.owner = typeof e.payload.owner === "string" ? e.payload.owner : null;
-        h.serviceState = "Repeated drops reported";
+        h.serviceState = "Open service case";
         break;
       case "diagnostic.completed":
         if (e.payload.test === "restart") h.restartTried = true;
@@ -809,16 +809,16 @@ export class Engine {
       pendingJobs: Number(
         this.db
           .prepare(
-            "SELECT count(*) AS n FROM jobs WHERE session_id=? AND state='pending'",
+            "SELECT count(*) AS n FROM jobs WHERE session_id=? AND revision<=? AND state='pending'",
           )
-          .get(id)?.n ?? 0,
+          .get(id, at)?.n ?? 0,
       ),
       failedJobs: Number(
         this.db
           .prepare(
-            "SELECT count(*) AS n FROM jobs WHERE session_id=? AND state='failed'",
+            "SELECT count(*) AS n FROM jobs WHERE session_id=? AND revision<=? AND state='failed'",
           )
-          .get(id)?.n ?? 0,
+          .get(id, at)?.n ?? 0,
       ),
       households,
       events,

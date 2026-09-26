@@ -143,3 +143,9 @@ test("provisioning alone or a later failed test cannot be presented as successfu
 test("v1.1 remains reproducible after adding the v1.2 first-use checkpoint", () => {
   assert.equal(fixtureHash(generateHistory({datasetVersion:"bt-households-v1.1"})), "8a2f245942b0b6eb7a982b9d4441d5897f11d6f28ca20cecfaf13d347a4a2d76");
 });
+
+test('an activation case does not inherit the recovery persona’s reported line faults',()=>{
+ const sam=replay()[0].households.find(h=>h.id==='sam')!;
+ assert.equal(sam.serviceState,'Open service case');
+ assert.match(sam.activation,/unconfirmed/);
+});

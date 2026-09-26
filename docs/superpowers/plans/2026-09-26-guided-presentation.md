@@ -36,16 +36,20 @@
 **Interfaces:** `presentationBeats(snapshot: Snapshot): PresentationBeat[]`, `presentationCursor(beats, person, index)`, `householdOutcome(snapshot, person)`. Beat contains panel, household, title, detail, evidence IDs and optional before/after change. Null household/panel is the chapter comparison.
 - [ ] Add tests for equal household coverage, no future source references, pending-job gating, legacy unresolved Sam and independent Daniel proof states.
 - [ ] Run test; expect FAIL before implementation.
-- [ ] Derive cues and comparisons from actual current household/decision/action/outcome records. Include only relevant stages and an end comparison. Clamp invalid cursors to a valid beat.
+- [ ] Derive per-person cues and outcomes from actual current household/decision/action/outcome records. Include only relevant stages and an end comparison. Clamp invalid cursors to a valid beat.
 - [ ] Run tests; expect PASS.
 - [ ] Commit.
 
 ### Task 3: Guided UI and end-to-end verification
-**Files:** app/src/{App,Presentation}.tsx; app/src/presentation.css; docs presentation notes.
+**Files:** app/src/{App,GuidedPresentation}.tsx; app/src/presentation.css; docs presentation notes.
 **Interfaces:** Present/Explore query mode; `beat` cursor survives panel open/back. Task 2 derives the visual focus and cue.
-- [ ] Add compact Present/Explore controls, stable equal household rail, cue with Next/Back and inspectable evidence, focused panel styling, truthful three-way chapter comparison and decision receipt.
+- [ ] Add compact Present/Explore controls, stable equal household rail, cue with Next/Back and inspectable evidence, focused panel styling, truthful per-person final outcome and decision receipt.
 - [ ] Wire next chapter to existing advance once; disable while busy/pending/failed; leave Explore behavior available. Preserve historical navigation and deep-dive cursor. Arrow/Enter/Escape guard inputs, dialogs and focused views.
 - [ ] Run `npm --prefix app test`, `npm --prefix app run build`, `npm --prefix app run test:lab`; expect PASS.
 - [ ] Verify locally: all three paths; old and new dataset; deep-dive return; keyboard; first-use final proof; readable overview at normal desktop size.
 - [ ] Import/replay a dedicated v1.2 Supabase session; verify observed outcomes and no replay duplicates. Push and deploy to existing RX Vercel project under prior authorization.
 - [ ] One fresh final review, fix Important/Critical findings with regressions, commit and report.
+
+**Task 3 addition (user feedback):** Fix slow/unstable session loading before delivery. Reproduce startup/navigation, consolidate the fixture read, deduplicate requests, preserve already-loaded chapters, resume the last valid session on a plain root URL, and stop one-second full snapshots after work settles. Verify caching never crosses sessions or hides pending work after an advance. Investigate the local API exit and keep the supervised server running.
+
+**Persona clarification:** All Next/Back beats stay with the selected persona across scenario moments. Starting another persona begins their story at the first moment. Only the final outcome invites the next persona; no intermediate three-way comparison.

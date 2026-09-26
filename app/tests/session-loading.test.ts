@@ -1,0 +1,150 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { PostgresRepository } from "../server/postgres-repository.ts";
+import { generateHistory } from "../../scripts/generate-bt-history.ts";
+import {
+  readSnapshot,
+  cachedSnapshot,
+  invalidateSnapshot,
+} from "../src/snapshot-client.ts";
+
+test("cold fixture opens in one database request, concurrent readers share it", async () => {
+  const fixture = generateHistory();
+  let calls = 0;
+  const db = Object.assign(
+    async () => {
+      throw Error("Unexpected extra database read");
+    },
+    {
+      unsafe: async () => {
+        calls++;
+        return [{ fixture }];
+      },
+    },
+  );
+  const repo = new PostgresRepository(db as any);
+  const [a, b] = await Promise.all([repo.fixture("one"), repo.fixture("one")]);
+  assert.equal(a, b);
+  assert.equal(a.events.length, 2829);
+  assert.equal(calls, 1);
+});
+
+test("session reads deduplicate, preserve a loaded chapter, and invalidate after a write", async (t) => {
+  const original = globalThis.fetch;
+  t.after(() => {
+    globalThis.fetch = original;
+  });
+  let calls = 0;
+  let revision = 1;
+  globalThis.fetch = async () => {
+    calls++;
+    await new Promise((r) => setTimeout(r, 5));
+    return Response.json({
+      session: { id: "loading-test", revision },
+      cutoff: revision,
+      pendingJobs: 0,
+      failedJobs: 0,
+    });
+  };
+  const [a, b] = await Promise.all([
+    readSnapshot("loading-test", 1),
+    readSnapshot("loading-test", 1),
+  ]);
+  assert.equal(a, b);
+  assert.equal(calls, 1);
+  assert.equal(cachedSnapshot("loading-test", 1), a);
+  assert.equal(cachedSnapshot("another-session", 1), null);
+  await readSnapshot("loading-test", 1);
+  assert.equal(calls, 1);
+  invalidateSnapshot("loading-test");
+  revision = 2;
+  assert.equal((await readSnapshot("loading-test")).cutoff, 2);
+  assert.equal(calls, 2);
+});
+
+test("pending work is never treated as a settled cached response, and errors do not poison retries", async (t) => {
+  const original = globalThis.fetch;
+  t.after(() => {
+    globalThis.fetch = original;
+  });
+  let calls = 0;
+  globalThis.fetch = async () => {
+    calls++;
+    return calls === 1
+      ? Response.json({ error: "Temporary failure" }, { status: 503 })
+      : Response.json({
+          session: { id: "pending-test" },
+          cutoff: 1,
+          pendingJobs: calls === 2 ? 1 : 0,
+          failedJobs: 0,
+        });
+  };
+  await assert.rejects(readSnapshot("pending-test"), /Temporary failure/);
+  assert.equal((await readSnapshot("pending-test")).pendingJobs, 1);
+  assert.equal((await readSnapshot("pending-test")).pendingJobs, 0);
+  assert.equal(calls, 3);
+});
+
+test("a write cannot reuse an earlier in-flight read or let it overwrite the new cache", async (t) => {
+  const original = globalThis.fetch;
+  t.after(() => {
+    globalThis.fetch = original;
+  });
+  let finish!: (r: Response) => void;
+  let calls = 0;
+  globalThis.fetch = async () =>
+    ++calls === 1
+      ? new Promise((r) => {
+          finish = r;
+        })
+      : Response.json({
+          session: { id: "write-race" },
+          cutoff: 2,
+          pendingJobs: 0,
+        });
+  const old = readSnapshot("write-race");
+  invalidateSnapshot("write-race");
+  const next = readSnapshot("write-race");
+  finish(
+    Response.json({ session: { id: "write-race" }, cutoff: 1, pendingJobs: 0 }),
+  );
+  assert.equal((await next).cutoff, 2);
+  await old;
+  assert.equal(cachedSnapshot("write-race")?.cutoff, 2);
+});
+
+test("a later job does not put an already-recorded chapter back into pending", async () => {
+  const { Engine } = await import("../server/engine.ts");
+  const engine = new Engine(":memory:");
+  try {
+    const s = engine.createSession();
+    engine.advance(s.id, "heartbeat", "first", 0);
+    await engine.processJobs();
+    engine.advance(s.id, "incident", "next", 1);
+    assert.equal(engine.snapshot(s.id).pendingJobs, 1);
+    assert.equal(engine.snapshot(s.id, 1).pendingJobs, 0);
+  } finally {
+    engine.close();
+  }
+});
+
+test("shutdown waits for the active worker before closing its database connection", async () => {
+  let release!: (value: null) => void,
+    closed = false;
+  const repo = new PostgresRepository({
+    end: async () => {
+      closed = true;
+    },
+  } as any);
+  repo.claim = async () =>
+    new Promise((r) => {
+      release = r;
+    });
+  const running = repo.processJobs();
+  const closing = repo.close();
+  await Promise.resolve();
+  assert.equal(closed, false);
+  release(null);
+  await Promise.all([running, closing]);
+  assert.equal(closed, true);
+});

@@ -1,11 +1,34 @@
+import {
+  readSnapshot,
+  cachedSnapshot,
+  invalidateSnapshot,
+} from "./snapshot-client";
 import btLogo from "./assets/bt-logo.png";
-import { useCallback, useEffect, useRef, useState } from "react";
-import type { ReactNode } from "react";
+import {
+  cloneElement,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import type { ReactElement, ReactNode } from "react";
 import { AgentReview } from "./AgentReview";
 import { SectionView } from "./SectionView";
 import { PhoneExperience } from "./PhoneExperience";
 import type { Snapshot, PersonId, SourceEvent, Step } from "./types";
 
+import {
+  presentationBeats,
+  presentationCursor,
+  panelSnapshot,
+  chapterNames,
+} from "./presentation";
+import {
+  PresentationRail,
+  PresentationCue,
+  PresentationComparison,
+} from "./GuidedPresentation";
 const formatTime = (iso: string) =>
   new Intl.DateTimeFormat("en-GB", {
     timeZone: "Europe/London",
@@ -43,9 +66,12 @@ async function api<T>(path: string, body?: unknown): Promise<T> {
   );
   const value = await response.json();
   if (!response.ok)
-    throw Object.assign(new Error(value.error || `Request failed (${response.status})`), {
-      status: response.status,
-    });
+    throw Object.assign(
+      new Error(value.error || `Request failed (${response.status})`),
+      {
+        status: response.status,
+      },
+    );
   return value;
 }
 function useLocation() {
@@ -134,14 +160,20 @@ function Panel({
   children,
   panel,
   onOpen,
+  storyFocus = false,
+  storyHeld = false,
 }: {
+  storyFocus?: boolean;
+  storyHeld?: boolean;
   id: PanelId;
   children: ReactNode;
   panel: PanelId | null;
   onOpen: (id: PanelId | null) => void;
 }) {
   return (
-    <article className={`panel panel-${id}`}>
+    <article
+      className={`panel panel-${id}${storyFocus ? " is-story-focus" : ""}${storyHeld ? " is-story-next" : ""}`}
+    >
       <header>
         <div>
           <span className="panel-index">
@@ -165,6 +197,12 @@ function Panel({
           {panel ? "↙" : "↗"}
         </button>
       </header>
+      {storyHeld && (
+        <div className="panel-reveal-note">
+          <span>Previous chapter</span>
+          <span>Not yet revealed</span>
+        </div>
+      )}
       <div className="panel-body">{children}</div>
     </article>
   );
@@ -173,7 +211,7 @@ function Panel({
 export function App() {
   const [params, change] = useLocation();
   const sessionId = params.get("session");
-  const person = (
+  const requestedPerson = (
     Object.hasOwn(names, params.get("person") || "")
       ? params.get("person")
       : "daniel"
@@ -193,36 +231,84 @@ export function App() {
     [busy, setBusy] = useState(false),
     [playing, setPlaying] = useState(false),
     [inspected, setInspected] = useState<SourceEvent | null>(null);
-  const [sourceFilter,setSourceFilter]=useState("");
-  const [sourceLimit,setSourceLimit]=useState(100);
+  const presenting = params.get("mode") !== "explore";
+  const openingMoment = Boolean(sessionId && (!snapshot || snapshot.session.id !== sessionId || (cutoff !== undefined && snapshot.cutoff !== cutoff)));
+  const beats = useMemo(
+    () => (snapshot ? presentationBeats(snapshot, requestedPerson) : []),
+    [snapshot, requestedPerson],
+  );
+  const beatIndex = presentationCursor(
+    beats,
+    requestedPerson,
+    params.get("beat"),
+  );
+  const beat = beats[beatIndex];
+  const person = presenting && beat?.person ? beat.person : requestedPerson;
+  const [previousSnapshot, setPreviousSnapshot] = useState<Snapshot | null>(
+    null,
+  );
+  useEffect(() => {
+    if (!presenting || !snapshot?.cutoff) {
+      setPreviousSnapshot(null);
+      return;
+    }
+    let stopped = false;
+    const id = snapshot.session.id,
+      at = snapshot.cutoff - 1;
+    setPreviousSnapshot(cachedSnapshot(id, at));
+    void readSnapshot(id, at)
+      .then((value) => {
+        if (!stopped) setPreviousSnapshot(value);
+      })
+      .catch(() => {
+        if (!stopped) setPreviousSnapshot(null);
+      });
+    return () => {
+      stopped = true;
+    };
+  }, [presenting, snapshot?.session.id, snapshot?.cutoff]);
+  const [sourceFilter, setSourceFilter] = useState("");
+  const [sourceLimit, setSourceLimit] = useState(100);
   const created = useRef(false),
     request = useRef(0),
     dialog = useRef<HTMLDialogElement>(null),
     keyRef = useRef<{ session: string; step: Step; key: string } | null>(null);
-  const refresh = useCallback(async () => {
-    if (!sessionId) return;
-    const n = ++request.current;
-    try {
-      const next = await api<Snapshot>(
-        `/api/snapshot?session=${encodeURIComponent(sessionId)}${cutoff === undefined ? "" : `&at=${cutoff}`}`,
-      );
-      if (n === request.current) {
-        setSnapshot((old) =>
-          JSON.stringify(old) === JSON.stringify(next) ? old : next,
-        );
-        setError("");
-        setSessionUnavailable(false);
+  const refresh = useCallback(
+    async (fresh = false) => {
+      if (!sessionId) return;
+      const n = ++request.current;
+      try {
+        const next = await readSnapshot(sessionId, cutoff, fresh);
+        if (n === request.current) {
+          setSnapshot((old) =>
+            JSON.stringify(old) === JSON.stringify(next) ? old : next,
+          );
+          setError("");
+          setSessionUnavailable(false);
+          try {
+            localStorage.setItem("bt:last-session", sessionId);
+          } catch {}
+        }
+        return next.pendingJobs ? 2000 : 30000;
+      } catch (e) {
+        if (n === request.current) {
+          setError((e as Error).message);
+          const missing = (e as Error & { status?: number }).status === 404;
+          setSessionUnavailable(missing);
+          setPlaying(false);
+          if (missing) {
+            try {
+              if (localStorage.getItem("bt:last-session") === sessionId)
+                localStorage.removeItem("bt:last-session");
+            } catch {}
+            return false;
+          }
+        }
       }
-    } catch (e) {
-      if (n === request.current) {
-        setError((e as Error).message);
-        const missing = (e as Error & { status?: number }).status === 404;
-        setSessionUnavailable(missing);
-        setPlaying(false);
-        if (missing) return false;
-      }
-    }
-  }, [sessionId, cutoff]);
+      return 8000;
+    },
+    [sessionId, cutoff],
+  );
   const newSession = async () => {
     setPlaying(false);
     setBusy(true);
@@ -233,6 +319,8 @@ export function App() {
         {
           session: session.id,
           at: null,
+          beat: "0",
+          person: "daniel",
           view: null,
           eval: null,
           study: null,
@@ -252,22 +340,44 @@ export function App() {
   useEffect(() => {
     if (!sessionId && !created.current) {
       created.current = true;
-      void newSession();
+      let saved: string | null = null;
+      try {
+        saved = localStorage.getItem("bt:last-session");
+      } catch {}
+      if (saved) change({ session: saved }, true);
+      else void newSession();
     }
   }, [sessionId]);
   useEffect(() => {
-    setSnapshot(null);
+    setSnapshot(old => sessionId ? cachedSnapshot(sessionId, cutoff) || (old?.session.id===sessionId ? old : null) : null);
     setSessionUnavailable(false);
-    let stopped=false;
-    let timer:ReturnType<typeof setTimeout>;
-    const poll=async()=>{const retry=await refresh();if(!stopped && retry!==false)timer=setTimeout(poll,1000);};
-    void poll();
+    void refresh();
     return () => {
-      stopped=true;
-      clearTimeout(timer);
       request.current++;
     };
   }, [refresh]);
+  useEffect(() => {
+    if (!sessionId || sessionUnavailable) return;
+    let stopped = false;
+    let timer: ReturnType<typeof setTimeout>;
+    const poll = async () => {
+      const delay = document.hidden ? 30000 : await refresh(true);
+      if (!stopped && delay !== false) timer = setTimeout(poll, delay || 30000);
+    };
+    timer = setTimeout(poll, snapshot?.pendingJobs ? 2000 : 30000);
+    const resume = () => {
+      if (!document.hidden) {
+        clearTimeout(timer);
+        void poll();
+      }
+    };
+    document.addEventListener("visibilitychange", resume);
+    return () => {
+      stopped = true;
+      clearTimeout(timer);
+      document.removeEventListener("visibilitychange", resume);
+    };
+  }, [refresh, sessionUnavailable, Boolean(snapshot?.pendingJobs)]);
   useEffect(() => {
     setPlaying(false);
   }, [sessionId, cutoff, panel, records]);
@@ -305,7 +415,9 @@ export function App() {
         revision: snapshot.session.revision,
       });
       keyRef.current = null;
-      await refresh();
+      invalidateSnapshot(snapshot.session.id);
+      await refresh(true);
+      return true;
     } catch (e) {
       setError((e as Error).message);
       setPlaying(false);
@@ -314,362 +426,524 @@ export function App() {
     }
   }, [snapshot, busy, refresh]);
   useEffect(() => {
-    if (!playing || !snapshot || busy || snapshot.pendingJobs) return;
+    if (presenting || !playing || !snapshot || busy || snapshot.pendingJobs)
+      return;
     if (!snapshot.nextStep || snapshot.nextStep === "confirm") {
       setPlaying(false);
       return;
     }
     const timer = setTimeout(() => void advance(), 2200);
     return () => clearTimeout(timer);
-  }, [playing, snapshot?.session.step, snapshot?.pendingJobs, busy, advance]);
+  }, [
+    presenting,
+    playing,
+    snapshot?.session.step,
+    snapshot?.pendingJobs,
+    busy,
+    advance,
+  ]);
   const openPanel = (id: PanelId | null) => {
     setPlaying(false);
     change({ panel: id, view: null, eval: null, study: null });
   };
   const inspect = (e: SourceEvent) => setInspected(e);
-  const h = snapshot?.households.find((h) => h.id === person);
-  const decision = snapshot?.decisions
-    .filter((d) => d.person === person)
-    .at(-1);
-  const actions = snapshot?.actions.filter((a) => a.person === person) || [];
-  const pending = !!snapshot?.pendingJobs;
-  const current = !!snapshot && snapshot.session.id === sessionId;
-  const lab = (study: string) =>
-    `/reference/design/lab/?study=${study}&person=${person}&incident=${snapshot?.operations.incident ? 1 : 0}&session=${sessionId || ""}`;
-  const evidence = h?.evidence.filter((e) => e.subject === person) || [];
-  const relevantEvidence = evidence.filter(
-    (e) => e.type !== "contact.authority_recorded",
-  );
+  const goBeat = (index: number) => {
+    const next = beats[Math.max(0, Math.min(index, beats.length - 1))];
+    if (next) change({ beat: String(index), person: next.person || person });
+  };
+  const choosePerson = (next: PersonId) => {
+    change({ person: next, ...(presenting ? { beat: "0", at: "0" } : {}) });
+  };
+  const goChapter = (at: number) => {
+    setPlaying(false);
+    change({ at: String(at), beat: "0" });
+  };
+  const nextChapter = async () => {
+    if (
+      !snapshot ||
+      busy ||
+      snapshot.pendingJobs ||
+      snapshot.failedJobs ||
+      error
+    )
+      return;
+    if (snapshot.cutoff < snapshot.session.revision)
+      goChapter(snapshot.cutoff + 1);
+    else if (snapshot.nextStep) {
+      if (await advance()) change({ at: null, beat: "0" });
+    } else
+      choosePerson(
+        person === "daniel" ? "sam" : person === "sam" ? "maya" : "daniel",
+      );
+  };
+  const nextBeat = () => {
+    if (
+      !snapshot ||
+      busy ||
+      snapshot.pendingJobs ||
+      snapshot.failedJobs ||
+      error ||
+      beat?.kind === "waiting"
+    )
+      return;
+    if (beatIndex < beats.length - 1) goBeat(beatIndex + 1);
+    else void nextChapter();
+  };
+  const previousBeat = () => {
+    if (busy) return;
+    if (beatIndex > 0) goBeat(beatIndex - 1);
+    else if (snapshot && snapshot.cutoff > 0) goChapter(snapshot.cutoff - 1);
+  };
+  useEffect(() => {
+    if (!presenting || openingMoment) return;
+    const key = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement;
+      if (
+        event.altKey ||
+        event.metaKey ||
+        event.ctrlKey ||
+        target.closest(
+          'input,textarea,select,[contenteditable="true"],[role="textbox"],dialog,.eve-chat,.eve-voice',
+        ) ||
+        (target.closest("button,a") &&
+          !target.closest(".cue-controls,.story-rail")) ||
+        document.querySelector("dialog[open]")
+      )
+        return;
+      if (focused) {
+        if (event.key === "Escape") {
+          event.preventDefault();
+          openPanel(null);
+        }
+        return;
+      }
+      if (event.key === "ArrowRight") {
+        event.preventDefault();
+        nextBeat();
+      }
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        previousBeat();
+      }
+      if (event.key === "Enter" && !target.closest("button,a") && beat?.panel) {
+        event.preventDefault();
+        openPanel(beat.panel);
+      }
+    };
+    window.addEventListener("keydown", key);
+    return () => window.removeEventListener("keydown", key);
+  });
+  const renderPanels = (snapshot: Snapshot | null) => {
+    const h = snapshot?.households.find((h) => h.id === person);
+    const decision = snapshot?.decisions
+      .filter((d) => d.person === person)
+      .at(-1);
+    const actions = snapshot?.actions.filter((a) => a.person === person) || [];
+    const pending = !!snapshot?.pendingJobs;
+    const current = !!snapshot && snapshot.session.id === sessionId;
+    const lab = (study: string) =>
+      `/reference/design/lab/?study=${study}&person=${person}&incident=${snapshot?.operations.incident ? 1 : 0}&session=${sessionId || ""}`;
+    const evidence = h?.evidence.filter((e) => e.subject === person) || [];
+    const relevantEvidence = evidence.filter(
+      (e) => e.type !== "contact.authority_recorded",
+    );
 
-  const customer = h && (
-    <Panel id="customer" panel={panel} onOpen={openPanel}>
-      <div className="record-identity">
-        <span className="avatar">
-          {h.name
-            .split(" ")
-            .map((n) => n[0])
-            .join("")}
-        </span>
-        <div>
-          <strong>{h.name}</strong>
-          <code>{h.serviceId}</code>
+    const customer = h && (
+      <Panel id="customer" panel={panel} onOpen={openPanel}>
+        <div className="record-identity">
+          <span className="avatar">
+            {h.name
+              .split(" ")
+              .map((n) => n[0])
+              .join("")}
+          </span>
+          <div>
+            <strong>{h.name}</strong>
+            <code>{h.serviceId}</code>
+          </div>
+          <span className="tag">synthetic</span>
         </div>
-        <span className="tag">synthetic</span>
-      </div>
-      <Attributes
-        rows={[
-          [
-            "Case",
-            h.caseStatus === "none"
-              ? "No open case"
-              : h.caseStatus === "closed"
-                ? "Closed · confirmed"
-                : "Open service case",
-          ],
-          ["Owner", h.owner || "None assigned"],
-          [
-            "Commitment",
-            h.promise
-              ? `${formatTime(h.promise)} callback · ${h.promiseFulfilled ? "fulfilled" : "outstanding"}`
-              : "None recorded",
-          ],
-          ["Service", h.serviceState],
-        ]}
-      />
-      <Section
-        title="Relevant source records"
-        note={`${evidence.length} retained`}
-      >
-        {relevantEvidence.slice(-3).map((e) => (
-          <button
-            className="evidence-row"
-            key={e.id}
-            onClick={() => inspect(e)}
-          >
-            <time>{formatTime(e.occurredAt)}</time>
-            <span>
-              <strong>{e.description}</strong>
-              <small>{e.type}</small>
-            </span>
-            <span>↗</span>
-          </button>
-        ))}
-      </Section>
-      <div className="context-note">
-        <Glyph />
-        <p>
-          {h.id === "daniel"
-            ? "Failed diagnostics and the named promise stay attached to this case."
-            : h.id === "sam"
-              ? h.firstUseObserved ? "Successful first use is now observed, separately from delivery and provisioning." : "Delivery is a fact. Successful first use is still unknown."
-              : "A stated habit provides context; contrary evidence would reopen the watch."}
-        </p>
-      </div>
-      <a className="text-link" href={lab("atlas")}>
-        Explore semantic memory <span>↗</span>
-      </a>
-    </Panel>
-  );
-  const operations = h && snapshot && (
-    <Panel id="operations" panel={panel} onOpen={openPanel}>
-      <Attributes
-        rows={[
-          [
-            "Shared incident",
-            snapshot.operations.incident ? (
-              <>
-                <span className="status-dot orange" />{" "}
-                {snapshot.operations.incident.id} ·{" "}
-                {snapshot.operations.incident.status}
-              </>
-            ) : (
-              "No confirmed incident"
-            ),
-          ],
-          [
-            "This service",
-            snapshot.operations.incident
-              ? h.incident
-                ? "Confirmed in scope"
-                : "Confirmed outside scope"
-              : "Membership not established",
-          ],
-          [
-            "Latest ops record",
-            `${formatTime(snapshot.events.filter((e) => e.subject === "shared").at(-1)!.occurredAt)} · source time`,
-          ],
-        ]}
-      />
-      <Section title="Affected-service register" note="explicit membership">
-        <div className="scope-table">
-          {snapshot.households.map((p) => (
+        <Attributes
+          rows={[
+            [
+              "Case",
+              h.caseStatus === "none"
+                ? "No open case"
+                : h.caseStatus === "closed"
+                  ? "Closed · confirmed"
+                  : "Open service case",
+            ],
+            ["Owner", h.owner || "None assigned"],
+            [
+              "Commitment",
+              h.promise
+                ? `${formatTime(h.promise)} callback · ${h.promiseFulfilled ? "fulfilled" : "outstanding"}`
+                : "None recorded",
+            ],
+            ["Service", h.serviceState],
+          ]}
+        />
+        <Section
+          title="Relevant source records"
+          note={`${evidence.length} retained`}
+        >
+          {relevantEvidence.slice(-3).map((e) => (
             <button
-              key={p.id}
-              className={person === p.id ? "selected" : ""}
-              onClick={() => change({ person: p.id })}
+              className="evidence-row"
+              key={e.id}
+              onClick={() => inspect(e)}
             >
-              <span>{p.name}</span>
-              <code>{p.id.slice(0, 3).toUpperCase()} / BB</code>
+              <time>{formatTime(e.occurredAt)}</time>
               <span>
-                {snapshot.operations.incident
-                  ? p.incident
-                    ? "In scope"
-                    : "Outside"
-                  : "Unknown"}
+                <strong>{e.description}</strong>
+                <small>{e.type}</small>
               </span>
+              <span>↗</span>
             </button>
           ))}
+        </Section>
+        <div className="context-note">
+          <Glyph />
+          <p>
+            {h.id === "daniel"
+              ? "Failed diagnostics and the named promise stay attached to this case."
+              : h.id === "sam"
+                ? h.firstUseObserved
+                  ? "Successful first use is now observed, separately from delivery and provisioning."
+                  : "Delivery is a fact. Successful first use is still unknown."
+                : "A stated habit provides context; contrary evidence would reopen the watch."}
+          </p>
         </div>
-      </Section>
-      <Section title="Callback capacity" note="retained commitment">
-        <div className="slots">
-          {snapshot.operations.slots.map((s) => (
-            <div key={s.time} className={s.owner ? "held" : ""}>
-              <strong>{s.time}</strong>
-              <span>
-                {s.owner
-                  ? snapshot.households.find((p) => p.id === s.person)
-                      ?.promiseFulfilled
-                    ? `Completed / ${s.owner}`
-                    : `${s.owner} / ${snapshot.households.find((p) => p.id === s.person)?.name.split(" ")[0] || "Reserved"}`
-                  : "Available"}
-              </span>
-            </div>
-          ))}
-        </div>
-      </Section>
-      <button className="text-link" onClick={() => openPanel("operations")}>
-        Inspect shared context & source freshness <span>↗</span>
-      </button>
-    </Panel>
-  );
-  const phone = h && snapshot && (
-    <Panel id="phone" panel={panel} onOpen={openPanel}>
-      <PhoneExperience
-        key={`${snapshot.session.id}/${person}/${cutoff ?? "live"}`}
-        snapshot={snapshot}
-        customer={h}
-        actions={actions}
-        startChat={params.get("chat") === "eve"}
-        busy={busy || pending || !!error}
-        onConfirm={() => void advance()}
-        onSupport={() => setPlaying(false)}
-      />
-    </Panel>
-  );
-  const arbiter = h && snapshot && (
-    <Panel id="arbiter" panel={panel} onOpen={openPanel}>
-      <div className="signal">
-        <span className={`status-dot ${pending ? "orange" : ""}`} />
-        <code>
-          {decision?.trace?.triggerIds.length
-            ? snapshot.events.find(
-                (e) => e.id === decision.trace!.triggerIds[0],
-              )?.type
-            : snapshot.cutoff
-              ? "Context reassessment"
-              : "Awaiting a source event"}
-        </code>
-        <time>{decision ? formatTime(decision.time) : "—"}</time>
-      </div>
-      <div className="agent-path">
-        <span>Ambient flag</span>
-        <i>→</i>
-        <span className={decision ? "current" : ""}>Arbiter</span>
-        <i>→</i>
-        <span>{decision?.domain || "Domain"}</span>
-      </div>
-      {decision ? (
-        <>
-          <div className="decision">
-            <span className="eyebrow">
-              {pending
-                ? "Re-evaluating context"
-                : `${decision.disposition} / ${decision.trace?.assessment ? (decision.trace.assessment.effective === "model" ? "Jev + policy" : "policy hold") : "rule-derived"}`}
-            </span>
-            <h3>{decision.title}</h3>
-            <p>{decision.reason}</p>
+        <a className="text-link" href={lab("atlas")}>
+          Explore semantic memory <span>↗</span>
+        </a>
+      </Panel>
+    );
+    const operations = h && snapshot && (
+      <Panel id="operations" panel={panel} onOpen={openPanel}>
+        <Attributes
+          rows={[
+            [
+              "Shared incident",
+              snapshot.operations.incident ? (
+                <>
+                  <span className="status-dot orange" />{" "}
+                  {snapshot.operations.incident.id} ·{" "}
+                  {snapshot.operations.incident.status}
+                </>
+              ) : (
+                "No confirmed incident"
+              ),
+            ],
+            [
+              "This service",
+              snapshot.operations.incident
+                ? h.incident
+                  ? "Confirmed in scope"
+                  : "Confirmed outside scope"
+                : "Membership not established",
+            ],
+            [
+              "Latest ops record",
+              `${formatTime(snapshot.events.filter((e) => e.subject === "shared").at(-1)!.occurredAt)} · source time`,
+            ],
+          ]}
+        />
+        <Section title="Affected-service register" note="explicit membership">
+          <div className="scope-table">
+            {snapshot.households.map((p) => (
+              <button
+                key={p.id}
+                className={person === p.id ? "selected" : ""}
+                onClick={() => choosePerson(p.id)}
+              >
+                <span>{p.name}</span>
+                <code>{p.id.slice(0, 3).toUpperCase()} / BB</code>
+                <span>
+                  {snapshot.operations.incident
+                    ? p.incident
+                      ? "In scope"
+                      : "Outside"
+                    : "Unknown"}
+                </span>
+              </button>
+            ))}
           </div>
-          <Attributes
-            rows={[
-              ["Evidence", `${decision.evidenceIds.length} source records`],
-              [
-                "Obligation",
-                h.promise
-                  ? h.promiseFulfilled
-                    ? "Fulfilled independently"
-                    : `${formatTime(h.promise)} · retain`
-                  : "None recorded",
-              ],
-              [
-                "Scope",
-                h.incident
-                  ? `${snapshot.operations.incident?.id || "Incident"} / confirmed`
-                  : "No verified incident impact",
-              ],
-              [
-                "Contact authority",
-                h.contactAllowed
-                  ? "Verified / service / in-app"
-                  : "Not established · no send",
-              ],
-              ["Policy", decision.policyVersion],
-            ]}
-          />
-          <div className="held-action">
-            <span className="tag amber">held</span>
-            <span>
-              {
-                (
-                  decision.held.find((c) => c.title === "Repeat hub restart") ||
-                  decision.held[0]
-                ).title
-              }
-              <small>
+        </Section>
+        <Section title="Callback capacity" note="retained commitment">
+          <div className="slots">
+            {snapshot.operations.slots.map((s) => (
+              <div key={s.time} className={s.owner ? "held" : ""}>
+                <strong>{s.time}</strong>
+                <span>
+                  {s.owner
+                    ? snapshot.households.find((p) => p.id === s.person)
+                        ?.promiseFulfilled
+                      ? `Completed / ${s.owner}`
+                      : `${s.owner} / ${snapshot.households.find((p) => p.id === s.person)?.name.split(" ")[0] || "Reserved"}`
+                    : "Available"}
+                </span>
+              </div>
+            ))}
+          </div>
+        </Section>
+        <button className="text-link" onClick={() => openPanel("operations")}>
+          Inspect shared context & source freshness <span>↗</span>
+        </button>
+      </Panel>
+    );
+    const phone = h && snapshot && (
+      <Panel id="phone" panel={panel} onOpen={openPanel}>
+        <PhoneExperience
+          key={`${snapshot.session.id}/${person}/${cutoff ?? "live"}`}
+          snapshot={snapshot}
+          customer={h}
+          actions={actions}
+          startChat={params.get("chat") === "eve"}
+          busy={
+            busy ||
+            pending ||
+            !!error ||
+            (presenting && beat?.panel !== "phone")
+          }
+          onConfirm={() => void (presenting ? nextChapter() : advance())}
+          onSupport={() => setPlaying(false)}
+        />
+      </Panel>
+    );
+    const arbiter = h && snapshot && (
+      <Panel id="arbiter" panel={panel} onOpen={openPanel}>
+        <div className="signal">
+          <span className={`status-dot ${pending ? "orange" : ""}`} />
+          <code>
+            {decision?.trace?.triggerIds.length
+              ? snapshot.events.find(
+                  (e) => e.id === decision.trace!.triggerIds[0],
+                )?.type
+              : snapshot.cutoff
+                ? "Context reassessment"
+                : "Awaiting a source event"}
+          </code>
+          <time>{decision ? formatTime(decision.time) : "—"}</time>
+        </div>
+        <div className="agent-path">
+          <span>Ambient flag</span>
+          <i>→</i>
+          <span className={decision ? "current" : ""}>Arbiter</span>
+          <i>→</i>
+          <span>{decision?.domain || "Domain"}</span>
+        </div>
+        {decision ? (
+          <>
+            <div className="decision">
+              <span className="eyebrow">
+                {pending
+                  ? "Re-evaluating context"
+                  : `${decision.disposition} / ${decision.trace?.assessment ? (decision.trace.assessment.effective === "model" ? "Jev + policy" : "policy hold") : "rule-derived"}`}
+              </span>
+              <h3>{decision.title}</h3>
+              <p>{decision.reason}</p>
+            </div>
+            <Attributes
+              rows={[
+                ["Evidence", `${decision.evidenceIds.length} source records`],
+                [
+                  "Obligation",
+                  h.promise
+                    ? h.promiseFulfilled
+                      ? "Fulfilled independently"
+                      : `${formatTime(h.promise)} · retain`
+                    : "None recorded",
+                ],
+                [
+                  "Scope",
+                  h.incident
+                    ? `${snapshot.operations.incident?.id || "Incident"} / confirmed`
+                    : "No verified incident impact",
+                ],
+                [
+                  "Contact authority",
+                  h.contactAllowed
+                    ? "Verified / service / in-app"
+                    : "Not established · no send",
+                ],
+                ["Policy", decision.policyVersion],
+              ]}
+            />
+            <div className="held-action">
+              <span className="tag amber">held</span>
+              <span>
                 {
                   (
                     decision.held.find(
                       (c) => c.title === "Repeat hub restart",
                     ) || decision.held[0]
-                  ).reason
+                  ).title
                 }
-              </small>
-            </span>
-          </div>
-        </>
-      ) : (
-        <div className="empty-state">
-          <Glyph />
-          <h3>Ready to read the wider context.</h3>
-          <p>
-            Run the scenario. One event will be evaluated for three different
-            households.
-          </p>
-        </div>
-      )}
-      <a
-        className="text-link"
-        href={`?${new URLSearchParams({ ...Object.fromEntries(params), panel: "arbiter" })}`}
-        onClick={(event) => {
-          event.preventDefault();
-          openPanel("arbiter");
-        }}
-      >
-        Inspect proposals & evidence <span>↗</span>
-      </a>
-    </Panel>
-  );
-  const actionPanel = h && snapshot && (
-    <Panel id="actions" panel={panel} onOpen={openPanel}>
-      <div className="trace-meta">
-        <code>
-          {short(snapshot.session.id)} / rev {snapshot.cutoff}
-        </code>
-        <span className="tag">{pending ? "processing" : "persisted"}</span>
-      </div>
-      <div className="trace-header">
-        <span>Time</span>
-        <span>Action / receipt</span>
-        <span>State</span>
-      </div>
-      {actions.length ? (
-        actions.slice(-3).map((a) => (
-          <button
-            className="trace-row"
-            key={a.id}
-            onClick={() => openPanel("actions")}
-          >
-            <time>{formatTime(a.time)}</time>
-            <span>
-              <strong>{a.title}</strong>
-              <code>action {short(a.id)}</code>
-            </span>
-            <span className="trace-state">demo delivered</span>
-          </button>
-        ))
-      ) : (
-        <div className="trace-empty">
-          {person === "maya" && decision
-            ? "Watch recorded. No customer action committed."
-            : "No actions yet."}
-        </div>
-      )}
-      <Section title="Expected change → observed evidence">
-        {snapshot.operations.outcomes
-          .filter((o) => o.person === person)
-          .map((o) => (
-            <div className="outcome-row" key={o.id}>
-              <span>{o.title}</span>
-              <b className={o.check.status === "met" ? "observed" : ""}>
-                {o.check.status === "met"
-                  ? "verified"
-                  : o.check.status === "contradicted"
-                    ? "reassess"
-                    : o.check.status === "unverified"
-                      ? "proof overdue"
-                      : "awaiting proof"}
-              </b>
+                <small>
+                  {
+                    (
+                      decision.held.find(
+                        (c) => c.title === "Repeat hub restart",
+                      ) || decision.held[0]
+                    ).reason
+                  }
+                </small>
+              </span>
             </div>
-          ))}
-        {!snapshot.operations.outcomes.some((o) => o.person === person) && (
-          <p className="source-foot">
-            Verification begins with the first committed plan.
-          </p>
+          </>
+        ) : (
+          <div className="empty-state">
+            <Glyph />
+            <h3>Ready to read the wider context.</h3>
+            <p>
+              Run the scenario. One event will be evaluated for three different
+              households.
+            </p>
+          </div>
         )}
-      </Section>
-      {actions.at(-1) && (
-        <details className="raw-record">
-          <summary>
-            Persisted action object <span>JSON</span>
-          </summary>
-          <pre>{JSON.stringify(actions.at(-1), null, 2)}</pre>
-        </details>
-      )}
-      <button className="text-link" onClick={() => openPanel("actions")}>
-        Trace actions, expectations & outcomes <span>↗</span>
-      </button>
-    </Panel>
-  );
+        <a
+          className="text-link"
+          href={`?${new URLSearchParams({ ...Object.fromEntries(params), panel: "arbiter" })}`}
+          onClick={(event) => {
+            event.preventDefault();
+            openPanel("arbiter");
+          }}
+        >
+          Inspect proposals & evidence <span>↗</span>
+        </a>
+      </Panel>
+    );
+    const actionPanel = h && snapshot && (
+      <Panel id="actions" panel={panel} onOpen={openPanel}>
+        <div className="trace-meta">
+          <code>
+            {short(snapshot.session.id)} / rev {snapshot.cutoff}
+          </code>
+          <span className="tag">{pending ? "processing" : "persisted"}</span>
+        </div>
+        <div className="trace-header">
+          <span>Time</span>
+          <span>Action / receipt</span>
+          <span>State</span>
+        </div>
+        {actions.length ? (
+          actions.slice(-3).map((a) => (
+            <button
+              className="trace-row"
+              key={a.id}
+              onClick={() => openPanel("actions")}
+            >
+              <time>{formatTime(a.time)}</time>
+              <span>
+                <strong>{a.title}</strong>
+                <code>action {short(a.id)}</code>
+              </span>
+              <span className="trace-state">demo delivered</span>
+            </button>
+          ))
+        ) : (
+          <div className="trace-empty">
+            {person === "maya" && decision
+              ? "Watch recorded. No customer action committed."
+              : "No actions yet."}
+          </div>
+        )}
+        <Section title="Expected change → observed evidence">
+          {snapshot.operations.outcomes
+            .filter((o) => o.person === person)
+            .map((o) => (
+              <div className="outcome-row" key={o.id}>
+                <span>{o.title}</span>
+                <b className={o.check.status === "met" ? "observed" : ""}>
+                  {o.check.status === "met"
+                    ? "verified"
+                    : o.check.status === "contradicted"
+                      ? "reassess"
+                      : o.check.status === "unverified"
+                        ? "proof overdue"
+                        : "awaiting proof"}
+                </b>
+              </div>
+            ))}
+          {!snapshot.operations.outcomes.some((o) => o.person === person) && (
+            <p className="source-foot">
+              Verification begins with the first committed plan.
+            </p>
+          )}
+        </Section>
+        {actions.at(-1) && (
+          <details className="raw-record">
+            <summary>
+              Persisted action object <span>JSON</span>
+            </summary>
+            <pre>{JSON.stringify(actions.at(-1), null, 2)}</pre>
+          </details>
+        )}
+        <button className="text-link" onClick={() => openPanel("actions")}>
+          Trace actions, expectations & outcomes <span>↗</span>
+        </button>
+      </Panel>
+    );
+    return {
+      h,
+      decision,
+      actions,
+      pending,
+      current,
+      lab,
+      customer,
+      operations,
+      phone,
+      arbiter,
+      actionPanel,
+    };
+  };
+  const {
+    h,
+    decision,
+    actions,
+    pending,
+    current,
+    lab,
+    customer,
+    operations,
+    phone,
+    arbiter,
+    actionPanel,
+  } = renderPanels(snapshot);
+  const reveal = (id: PanelId) => {
+    if (!snapshot) return null;
+    const shown = panelSnapshot(
+      snapshot,
+      previousSnapshot,
+      beats,
+      beatIndex,
+      id,
+      person,
+    );
+    const held = shown !== snapshot;
+    if (!shown)
+      return (
+        <Panel id={id} panel={null} onOpen={openPanel} storyHeld>
+          <div className="panel-reveal-placeholder">
+            Waiting to reveal this part of the story.
+          </div>
+        </Panel>
+      );
+    const all =
+      shown === snapshot
+        ? { customer, operations, phone, arbiter, actions: actionPanel }
+        : (() => {
+            const old = renderPanels(shown);
+            return { ...old, actions: old.actionPanel };
+          })();
+    return cloneElement(
+      all[id] as ReactElement<{ storyFocus?: boolean; storyHeld?: boolean }>,
+      { storyFocus: beat?.panel === id, storyHeld: held },
+    );
+  };
+
   return (
     <>
       <a className="skip" href="#workspace">
@@ -686,9 +960,16 @@ export function App() {
           <>
             <span className="focus-heading">
               ACCOUNT /{" "}
-              {review ? "AGENT REVIEW" : records ? "SOURCE RECORDS" : panelNames[panel!].toUpperCase()}
+              {review
+                ? "AGENT REVIEW"
+                : records
+                  ? "SOURCE RECORDS"
+                  : panelNames[panel!].toUpperCase()}
             </span>
-            <button className="focus-back" onClick={() => openPanel(review ? "actions" : null)}>
+            <button
+              className="focus-back"
+              onClick={() => openPanel(review ? "actions" : null)}
+            >
               {review ? "← Back to actions" : "← Back to account"}
             </button>
           </>
@@ -708,13 +989,26 @@ export function App() {
             >
               Source records
             </button>
-            <button onClick={()=>{setPlaying(false);change({view:"agent-review",panel:null,eval:null});}}>Agent review</button>
+            <button
+              onClick={() => {
+                setPlaying(false);
+                change({ view: "agent-review", panel: null, eval: null });
+              }}
+            >
+              Agent review
+            </button>
             <a href={lab("atlas")}>Visual lab ↗</a>
           </nav>
         )}
         <span className="runtime-badge">
           <i className={error ? "offline" : ""} />
-          {sessionUnavailable ? "Session unavailable" : error ? "Connection issue" : snapshot?.storage === "supabase" ? "Supabase runtime" : "Local runtime"}
+          {sessionUnavailable
+            ? "Session unavailable"
+            : error
+              ? "Connection issue"
+              : snapshot?.storage === "supabase"
+                ? "Supabase runtime"
+                : "Local runtime"}
         </span>
         {!focused && (
           <a className="review-link" href="/reference/design/review.html">
@@ -722,7 +1016,62 @@ export function App() {
           </a>
         )}
       </header>
-      {!focused && (
+      {!focused && presenting && (
+        <div className="replay-bar present-replay">
+          <div className="scenario-time">
+            <span>THREE QUIET ROUTERS</span>
+            <strong>{snapshot ? formatTime(snapshot.clock) : "20:45"}</strong>
+          </div>
+          <div className="replay-main">
+            <span className="eyebrow">
+              {names[person].split(" ")[0]}’s story · synthetic scenario
+            </span>
+            <strong>
+              {openingMoment && snapshot
+                ? "Opening the next moment…"
+                : snapshot
+                ? chapterNames[snapshot.cutoff]
+                : "Opening the household records…"}
+            </strong>
+          </div>
+          <div className="step-track" aria-label="Story moments">
+            {chapterNames.map((label, at) => (
+              <button
+                key={label}
+                aria-label={`Moment ${at + 1}: ${label}`}
+                aria-pressed={snapshot?.cutoff === at}
+                disabled={!snapshot || busy || at > snapshot.session.revision}
+                onClick={() => goChapter(at)}
+                className={snapshot && at <= snapshot.cutoff ? "reached" : ""}
+              >
+                {at + 1}
+              </button>
+            ))}
+          </div>
+          <div className="presentation-mode" aria-label="Demo mode">
+            <button aria-pressed onClick={() => {}}>
+              Present
+            </button>
+            <button
+              aria-pressed={false}
+              onClick={() => {
+                setPlaying(false);
+                change({ mode: "explore", person, beat: null });
+              }}
+            >
+              Explore
+            </button>
+          </div>
+          <button
+            disabled={busy}
+            onClick={() => void newSession()}
+            title="Create a fresh session; current records are retained"
+          >
+            ↺ New replay
+          </button>
+        </div>
+      )}
+      {!focused && !presenting && (
         <div className="replay-bar">
           <div className="scenario-time">
             <span>THREE QUIET ROUTERS</span>
@@ -737,7 +1086,9 @@ export function App() {
             <strong>
               {snapshot
                 ? stepLabels[snapshot.cutoff]
-                : error ? "Session unavailable" : "Connecting to the runtime…"}
+                : error
+                  ? "Session unavailable"
+                  : "Connecting to the runtime…"}
             </strong>
           </div>
           <div className="step-track" aria-label="Replay steps">
@@ -784,6 +1135,20 @@ export function App() {
               </option>
             ))}
           </select>
+          <div className="presentation-mode" aria-label="Demo mode">
+            <button
+              aria-pressed={false}
+              onClick={() => {
+                setPlaying(false);
+                change({ mode: "present", beat: null });
+              }}
+            >
+              Present
+            </button>
+            <button aria-pressed onClick={() => {}}>
+              Explore
+            </button>
+          </div>
           <div className="replay-actions">
             <button
               className="primary"
@@ -842,11 +1207,20 @@ export function App() {
       )}
       {error && (
         <div className="error-banner" role="alert">
-          <span>{sessionUnavailable
-            ? "This session isn’t available in the current data store. Start a new replay to load the current household dataset."
-            : error}</span>
-          <button disabled={busy} onClick={() => void (sessionUnavailable ? newSession() : refresh())}>
-            {sessionUnavailable ? busy ? "Starting replay…" : "Start new replay" : "Retry connection"}
+          <span>
+            {sessionUnavailable
+              ? "This session isn’t available in the current data store. Start a new replay to load the current household dataset."
+              : error}
+          </span>
+          <button
+            disabled={busy}
+            onClick={() => void (sessionUnavailable ? newSession() : refresh())}
+          >
+            {sessionUnavailable
+              ? busy
+                ? "Starting replay…"
+                : "Start new replay"
+              : "Retry connection"}
           </button>
         </div>
       )}
@@ -858,43 +1232,78 @@ export function App() {
         </div>
       ) : null}
       <main
+        aria-busy={openingMoment}
+        inert={openingMoment ? true : undefined}
         id="workspace"
         className={
           focused
             ? `focused-workspace${panel === "customer" ? " customer-focus" : panel === "phone" ? " phone-focus" : panel === "arbiter" ? " arbiter-focus" : panel === "operations" ? " operations-focus" : panel === "actions" || review ? " actions-focus" : ""}`
-            : "account-workspace"
+            : `account-workspace${presenting ? " presentation-workspace" : ""}`
         }
       >
-        <div className="workspace-intro">
-          <div>
-            <p className="eyebrow">
-              {review ? "Evaluation / recorded behaviour" : records
-                ? "Evidence / append-only source ledger"
-                : panel
-                  ? "Account / " + panelNames[panel]
-                  : "One signal · three different contexts"}
-            </p>
-            <h1>
-              {review ? "Agent review" : records
-                ? "Read the records behind the experience."
-                : panel
-                  ? panel === "customer"
-                    ? "Knowing your customer."
-                    : panelNames[panel]
-                  : "The next move depends on what we know."}
-            </h1>
+        {(!presenting || focused) && (
+          <div className="workspace-intro">
+            <div>
+              <p className="eyebrow">
+                {review
+                  ? "Evaluation / recorded behaviour"
+                  : records
+                    ? "Evidence / append-only source ledger"
+                    : panel
+                      ? "Account / " + panelNames[panel]
+                      : "One signal · three different contexts"}
+              </p>
+              <h1>
+                {review
+                  ? "Agent review"
+                  : records
+                    ? "Read the records behind the experience."
+                    : panel
+                      ? panel === "customer"
+                        ? "Knowing your customer."
+                        : panelNames[panel]
+                      : "The next move depends on what we know."}
+              </h1>
+            </div>
           </div>
-        </div>
+        )}
         {focused ? (
           <div className="focused-context">
             <strong>{review ? "Replay corpus" : names[person]}</strong>
-            <code>{review ? "Three households · completed runs" : h?.serviceId || (error ? "Service unavailable" : "Loading service…")}</code>
+            <code>
+              {review
+                ? "Three households · completed runs"
+                : h?.serviceId ||
+                  (error ? "Service unavailable" : "Loading service…")}
+            </code>
             <span>
               {snapshot
                 ? `${formatTime(snapshot.clock)} · ${snapshot.historical ? "Historical snapshot" : "Current snapshot"} · rev ${snapshot.cutoff}`
-                : error ? "Snapshot unavailable" : "Loading snapshot…"}
+                : error
+                  ? "Snapshot unavailable"
+                  : "Loading snapshot…"}
             </span>
           </div>
+        ) : presenting && snapshot && beat ? (
+          <>
+            <PresentationRail
+              person={person}
+              beats={beats}
+              index={beatIndex}
+              onPerson={choosePerson}
+            />
+            <PresentationCue
+              snapshot={snapshot}
+              beat={beat}
+              index={beatIndex}
+              total={beats.length}
+              busy={busy || !!error}
+              onNext={nextBeat}
+              onBack={previousBeat}
+              onOpen={openPanel}
+              onInspect={inspect}
+            />
+          </>
         ) : (
           <div className="household-bar">
             <div className="people">
@@ -902,7 +1311,7 @@ export function App() {
                 <button
                   key={id}
                   aria-pressed={person === id}
-                  onClick={() => change({ person: id })}
+                  onClick={() => choosePerson(id as PersonId)}
                 >
                   <span className="avatar">
                     {name
@@ -936,8 +1345,10 @@ export function App() {
                       : "Session persisted"}
                   <code>{short(snapshot.session.id)}</code>
                 </>
+              ) : error ? (
+                "Session unavailable"
               ) : (
-                error ? "Session unavailable" : "Opening session…"
+                "Opening session…"
               )}
             </div>
           </div>
@@ -945,10 +1356,17 @@ export function App() {
         {!snapshot || !h ? (
           <div className="loading">
             <Glyph />
-            <p>{error ? "The data model could not be loaded." : "Loading the data model…"}</p>
+            <p>
+              {error
+                ? "The data model could not be loaded."
+                : "Loading the data model…"}
+            </p>
           </div>
         ) : review ? (
-          <AgentReview snapshot={snapshot} controlled={params.get("study") === "controls"}/>
+          <AgentReview
+            snapshot={snapshot}
+            controlled={params.get("study") === "controls"}
+          />
         ) : records ? (
           <section className="ledger">
             <header>
@@ -958,7 +1376,28 @@ export function App() {
                 {formatTime(snapshot.clock)}
               </span>
             </header>
-            <label style={{display:"flex",gap:12,padding:"10px 16px",alignItems:"center"}}>Filter records <input aria-label="Filter source records" placeholder="Person, source or event type" value={sourceFilter} onChange={e=>{setSourceFilter(e.target.value);setSourceLimit(100);}} /> <button onClick={()=>setSourceLimit(n=>n+100)}>Show 100 more</button></label>
+            <label
+              style={{
+                display: "flex",
+                gap: 12,
+                padding: "10px 16px",
+                alignItems: "center",
+              }}
+            >
+              Filter records{" "}
+              <input
+                aria-label="Filter source records"
+                placeholder="Person, source or event type"
+                value={sourceFilter}
+                onChange={(e) => {
+                  setSourceFilter(e.target.value);
+                  setSourceLimit(100);
+                }}
+              />{" "}
+              <button onClick={() => setSourceLimit((n) => n + 100)}>
+                Show 100 more
+              </button>
+            </label>
             <div className="ledger-scroll">
               <table>
                 <thead>
@@ -970,28 +1409,46 @@ export function App() {
                   </tr>
                 </thead>
                 <tbody>
-                  {[...snapshot.events].reverse().filter(e=>`${e.subject} ${e.type} ${e.description} ${e.source}`.toLowerCase().includes(sourceFilter.toLowerCase())).slice(0,sourceLimit).map((e) => (
-                    <tr key={e.id}>
-                      <td>
-                        {formatTime(e.occurredAt)}
-                        <small>{new Date(e.occurredAt).toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"})} · known {formatTime(e.receivedAt)}</small>
-                      </td>
-                      <td>
-                        {e.subject === "shared"
-                          ? "Operational"
-                          : names[e.subject]}
-                      </td>
-                      <td>
-                        <button onClick={() => inspect(e)}>
-                          {e.description} ↗
-                        </button>
-                        <code>{e.type}</code>
-                      </td>
-                      <td>
-                        <code>{e.source}</code>
-                      </td>
-                    </tr>
-                  ))}
+                  {[...snapshot.events]
+                    .reverse()
+                    .filter((e) =>
+                      `${e.subject} ${e.type} ${e.description} ${e.source}`
+                        .toLowerCase()
+                        .includes(sourceFilter.toLowerCase()),
+                    )
+                    .slice(0, sourceLimit)
+                    .map((e) => (
+                      <tr key={e.id}>
+                        <td>
+                          {formatTime(e.occurredAt)}
+                          <small>
+                            {new Date(e.occurredAt).toLocaleDateString(
+                              "en-GB",
+                              {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                              },
+                            )}{" "}
+                            · known {formatTime(e.receivedAt)}
+                          </small>
+                        </td>
+                        <td>
+                          {e.subject === "shared"
+                            ? "Operational"
+                            : names[e.subject]}
+                        </td>
+                        <td>
+                          <button onClick={() => inspect(e)}>
+                            {e.description} ↗
+                          </button>
+                          <code>{e.type}</code>
+                        </td>
+                        <td>
+                          <code>{e.source}</code>
+                        </td>
+                      </tr>
+                    ))}
                 </tbody>
               </table>
             </div>
@@ -1012,16 +1469,41 @@ export function App() {
             inspect={inspect}
           />
         ) : (
-          <div className="overview">
-            <div className="panel-stack left-stack">
-              {customer}
-              {operations}
-            </div>
-            {phone}
-            <div className="panel-stack right-stack">
-              {arbiter}
-              {actionPanel}
-            </div>
+          <div className={presenting ? "presentation-stage" : ""}>
+            {presenting && beat?.kind === "comparison" ? (
+              <PresentationComparison
+                person={person}
+                snapshot={snapshot}
+                onOpen={(next) => {
+                  change({ person: next, panel: "actions" });
+                }}
+              />
+            ) : (
+              <div className="overview">
+                <div className="panel-stack left-stack">
+                  {presenting ? reveal("customer") : customer}
+                  {presenting ? reveal("operations") : operations}
+                </div>
+                {presenting ? reveal("phone") : phone}
+                <div className="panel-stack right-stack">
+                  {presenting ? reveal("arbiter") : arbiter}
+                  {presenting ? reveal("actions") : actionPanel}
+                </div>
+              </div>
+            )}
+            {presenting && (
+              <div className="governance-receipt">
+                <strong>DECISION RECEIPT</strong>
+                <span>
+                  {decision?.policyVersion || "Awaiting first decision"}
+                </span>
+                <span>Owner: {h.owner || "Automated observation"}</span>
+                <span>{decision?.evidenceIds.length || 0} linked records</span>
+                <button onClick={() => openPanel("arbiter")}>
+                  Inspect policy & execution ↗
+                </button>
+              </div>
+            )}
           </div>
         )}
         <footer>
@@ -1034,7 +1516,10 @@ export function App() {
             · demo actions
           </span>
           <span>
-            {snapshot ? `${snapshot.storage === "supabase" ? "Supabase" : "SQLite"} + server worker` : "Runtime not loaded"} <b>·</b> Eve / OpenAI on demand
+            {snapshot
+              ? `${snapshot.storage === "supabase" ? "Supabase" : "SQLite"} + server worker`
+              : "Runtime not loaded"}{" "}
+            <b>·</b> Eve / OpenAI on demand
           </span>
         </footer>
       </main>

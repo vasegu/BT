@@ -35,13 +35,17 @@ const normal = (date: Date | string) =>
 export class PostgresRepository {
   db: Sql;
   private processing = false;
+  private processingDone: Promise<void> = Promise.resolve();
+  private closing = false;
   private fixtures = new Map<string, Promise<HouseholdFixture>>();
   constructor(db: Sql) {
     this.db = db;
   }
   async createSession(variant = "canonical") {
     const id = randomUUID();
-    await importHistory(generateHistory({ variant }), id, this.db);
+    const fixture = generateHistory({ variant });
+    await importHistory(fixture, id, this.db);
+    this.fixtures.set(id, Promise.resolve(fixture));
     return this.session(id);
   }
   async session(id: string): Promise<Snapshot["session"]> {
@@ -63,55 +67,41 @@ export class PostgresRepository {
       this.fixtures.set(
         id,
         (async () => {
-          const [s] = await this
-            .db`select d.* from runtime.sessions s join runtime.datasets d on d.id=s.dataset_id where s.id=${id}`;
-          if (!s) throw new DomainError("Session not found", 404);
-          const tables: Record<string, Row[]> = {};
-          await Promise.all(
-            domainTables.map(async (table) => {
+          // One snapshot-consistent round trip; table names come only from the import allowlist.
+          const tables = domainTables
+            .map((table) => {
               const shared =
                 table === "ingestion.sources" ||
                 table === "operations.products";
-              const rows = shared
-                ? await this.db`select * from ${this.db(table)}`
-                : await this
-                    .db`select * from ${this.db(table)} where session_id=${id}`;
-              tables[table] = rows.map(
-                ({ session_id, ...r }) =>
-                  Object.fromEntries(
-                    Object.entries(r).map(([k, v]) => [
-                      k,
-                      v instanceof Date ? v.toISOString() : v,
-                    ]),
-                  ) as Row,
-              );
-            }),
+              return `'${table}', coalesce((select jsonb_agg(to_jsonb(t)-'session_id') from ${table} t ${shared ? "" : "where t.session_id=s.id"}), '[]'::jsonb)`;
+            })
+            .join(",");
+          const [row] = await this.db.unsafe(
+            `select jsonb_build_object(
+            'datasetVersion', d.manifest->>'datasetVersion', 'seed', d.seed,
+            'variant', d.manifest->>'variant', 'scenarioStart', d.manifest->>'scenarioStart',
+            'timeZone', 'Europe/London', 'tables', jsonb_build_object(${tables}),
+            'events', coalesce((select jsonb_agg(jsonb_strip_nulls(jsonb_build_object(
+              'id',e.id,'source',e.source_id,'sourceEventId',e.source_event_id,'type',e.event_type,
+              'occurredAt',e.occurred_at,'knownAt',e.known_at,'personId',e.person_id,
+              'serviceId',e.service_id,'caseId',e.case_id,'description',e.description,
+              'payload',e.payload,'supersedesId',e.supersedes_id,'correlationId',e.correlation_id
+            )) order by e.known_at,e.occurred_at,e.source_event_id) from ingestion.events e where e.session_id=s.id),'[]'::jsonb)
+          ) fixture from runtime.sessions s join runtime.datasets d on d.id=s.dataset_id where s.id=$1`,
+            [id],
           );
-          const rows = await this
-            .db`select * from ingestion.events where session_id=${id} order by known_at,occurred_at,source_event_id`;
-          return {
-            datasetVersion: s.manifest.datasetVersion,
-            seed: Number(s.seed),
-            variant: s.manifest.variant,
-            scenarioStart: s.manifest.scenarioStart,
-            timeZone: "Europe/London" as const,
-            tables,
-            events: rows.map((e) => ({
-              id: e.id,
-              source: e.source_id,
-              sourceEventId: e.source_event_id,
-              type: e.event_type,
-              occurredAt: normal(e.occurred_at),
-              knownAt: normal(e.known_at),
-              personId: e.person_id,
-              serviceId: e.service_id,
-              caseId: e.case_id,
-              description: e.description,
-              payload: e.payload,
-              ...(e.supersedes_id ? { supersedesId: e.supersedes_id } : {}),
-              correlationId: e.correlation_id,
-            })),
-          };
+          if (!row) throw new DomainError("Session not found", 404);
+          const fixture = row.fixture as HouseholdFixture;
+          fixture.seed = Number(fixture.seed);
+          fixture.events = fixture.events.map((e) => ({
+            ...e,
+            personId: e.personId ?? null,
+            serviceId: e.serviceId ?? null,
+            caseId: e.caseId ?? null,
+            occurredAt: normal(e.occurredAt),
+            knownAt: normal(e.knownAt),
+          }));
+          return fixture;
         })().catch((e) => {
           this.fixtures.delete(id);
           throw e;
@@ -147,13 +137,16 @@ export class PostgresRepository {
       (!Number.isInteger(cutoff) || cutoff < 0 || cutoff > 5)
     )
       throw new DomainError("Invalid historical cutoff");
-    const [state] = await this.db`select to_jsonb(s) session,
+    const [[state], fixture] = await Promise.all([
+      this.db`select to_jsonb(s) session,
       coalesce((select jsonb_agg(data order by revision,person_id) from runtime.decisions where session_id=s.id and revision<=coalesce(${cutoff ?? null}::int,s.revision)),'[]') decisions,
       coalesce((select jsonb_agg(data order by revision,person_id) from runtime.actions where session_id=s.id and revision<=coalesce(${cutoff ?? null}::int,s.revision)),'[]') actions,
-      (select count(*)::int from runtime.jobs where session_id=s.id and state in ('pending','running')) pending,
-      (select count(*)::int from runtime.jobs where session_id=s.id and state='failed') failed,
+      (select count(*)::int from runtime.jobs where session_id=s.id and revision<=coalesce(${cutoff ?? null}::int,s.revision) and state in ('pending','running')) pending,
+      (select count(*)::int from runtime.jobs where session_id=s.id and revision<=coalesce(${cutoff ?? null}::int,s.revision) and state='failed') failed,
       coalesce((select jsonb_agg(x) from (select distinct on (e.id) e.data contract,o.data verification from runtime.expectations e join runtime.outcome_observations o on o.session_id=e.session_id and o.expectation_id=e.id where e.session_id=s.id and e.revision<=coalesce(${cutoff ?? null}::int,s.revision) and o.revision<=coalesce(${cutoff ?? null}::int,s.revision) order by e.id,o.revision desc) x),'[]') checks
-      from runtime.sessions s where s.id=${id}`;
+      from runtime.sessions s where s.id=${id}`,
+      this.fixture(id),
+    ]);
     if (!state)
       throw new DomainError("Session not found in the selected store", 404);
     const raw = state.session,
@@ -167,8 +160,7 @@ export class PostgresRepository {
       at = cutoff ?? raw.revision;
     if (at > session.revision)
       throw new DomainError("Invalid historical cutoff");
-    const fixture = await this.fixture(id),
-      contexts = await this.contexts(id, at);
+    const contexts = await this.contexts(id, at);
     const aliases = new Map(
       fixture.tables["customer.people"].map((p) => [p.id, p.alias]),
     );
@@ -286,11 +278,16 @@ export class PostgresRepository {
     });
   }
   async processJobs(evaluate?: Evaluator, sessionId?: string) {
-    if (this.processing) return;
+    if (this.closing) return;
+    if (this.processing) return this.processingDone;
     this.processing = true;
+    let finished!: () => void;
+    this.processingDone = new Promise((resolve) => {
+      finished = resolve;
+    });
     try {
       // A bounded batch yields to HTTP work. Postgres leases support safe restart/concurrent workers.
-      for (let n = 0; n < 6; n++) {
+      for (let n = 0; n < 6 && !this.closing; n++) {
         const job = await this.claim(sessionId);
         if (!job) break;
         try {
@@ -347,6 +344,7 @@ export class PostgresRepository {
       }
     } finally {
       this.processing = false;
+      finished();
     }
   }
   private async commitJob(
@@ -487,6 +485,8 @@ export class PostgresRepository {
     this.fixtures.delete(id);
   }
   async close() {
+    this.closing = true;
+    await this.processingDone;
     await this.db.end();
   }
 }
