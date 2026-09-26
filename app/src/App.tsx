@@ -1,3 +1,4 @@
+import btLogo from "./assets/bt-logo.png";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { AgentReview } from "./AgentReview";
@@ -664,7 +665,7 @@ export function App() {
       </a>
       <header className={`topbar${focused ? " focus-topbar" : ""}`}>
         <div className="identity">
-          <img src="/reference/references/bt/BT_Logo_purple.png" alt="BT" />
+          <img src={btLogo} alt="BT" />
           <span>
             Experience intelligence<small>BT CONSUMER / WORKING APP</small>
           </span>

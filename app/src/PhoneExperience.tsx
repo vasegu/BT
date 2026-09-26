@@ -1,3 +1,4 @@
+import btLogo from "./assets/bt-logo.png";
 import { useState } from "react";
 import { Eve } from "./Eve";
 import type { Snapshot, Household, DemoAction } from "./types";
@@ -124,7 +125,7 @@ export function PhoneExperience({
             <div className="phone-body" key={page}>
               <div className="phone-app-header">
                 <img
-                  src="/reference/references/bt/BT_Logo_purple.png"
+                  src={btLogo}
                   alt="BT"
                 />
                 <strong>My BT</strong>
@@ -178,7 +179,7 @@ export function PhoneExperience({
                             <div className="message-meta">
                               <span>
                                 <img
-                                  src="/reference/references/bt/BT_Logo_purple.png"
+                                  src={btLogo}
                                   alt=""
                                 />
                                 Your BT team
