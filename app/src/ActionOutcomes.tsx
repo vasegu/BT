@@ -1,5 +1,7 @@
 import {
   BehaviourSpace,
+  ContextContrasts,
+  contrastNarrative,
   BehaviourInspector,
   useBehaviourSpace,
 } from "./BehaviourSpace";
@@ -287,7 +289,8 @@ export function ActionOutcomes({
   const [selectedId, setSelectedId] = useState<string | null>(null),
     [filter, setFilter] = useState("all"),
     [view, setView] = useState<"behaviour" | "evidence">("behaviour"),
-    [selectedRunId, setSelectedRunId] = useState<string | null>(null);
+    [selectedRunId, setSelectedRunId] = useState<string | null>(null),
+    [referenceId, setReferenceId] = useState<string | null>(null);
   const space = useBehaviourSpace(snapshot);
   const runRows =
     space.data?.runs.filter((r) => filter === "all" || r.person === filter) ||
@@ -296,6 +299,36 @@ export function ActionOutcomes({
     runRows.find((r) => r.id === selectedRunId) ||
     runRows.filter((r) => r.person === h.id).at(-1) ||
     runRows[0];
+  const defaultContrast =
+    space.data?.contrasts.find((c) => {
+      if (!run || (c.a !== run.id && c.b !== run.id)) return false;
+      const other = runRows.find((r) => r.id === (c.a === run.id ? c.b : c.a));
+      return other?.person === run.person && other.revision < run.revision;
+    }) ||
+    space.data?.contrasts.find(
+      (c) =>
+        (c.a === run?.id || c.b === run?.id) &&
+        runRows.some((r) => r.id === (c.a === run?.id ? c.b : c.a)),
+    );
+  const reference =
+    runRows.find((r) => r.id === referenceId && r.id !== run?.id) ||
+    runRows.find(
+      (r) =>
+        r.id ===
+        (defaultContrast?.a === run?.id
+          ? defaultContrast?.b
+          : defaultContrast?.a),
+    ) ||
+    runRows.find((r) => r.id !== run?.id);
+  const contrast = space.data?.contrasts.find(
+    (c) =>
+      (c.a === run?.id && c.b === reference?.id) ||
+      (c.b === run?.id && c.a === reference?.id),
+  );
+  const chooseRun = (id: string) => {
+    setSelectedRunId(id);
+    setReferenceId((current) => (current === id ? null : current));
+  };
   const dialog = useRef<HTMLDialogElement>(null);
   const outcomes = snapshot.operations.outcomes,
     rows = outcomes.filter((o) => filter === "all" || o.person === filter);
@@ -331,15 +364,21 @@ export function ActionOutcomes({
       <div className="om-summary">
         <div>
           <span className="eyebrow">
-            ACTION → EXPECTATION → EVIDENCE → MEMORY
+            CONTEXT → POSSIBLE ACTIONS → GOVERNED ACTION → EVIDENCE
           </span>
-          <h2>{person.name.split(" ")[0]}: what actually changed?</h2>
+          <h2>
+            {view === "behaviour"
+              ? "What in the context changes the response?"
+              : `${person.name.split(" ")[0]}: what actually changed?`}
+          </h2>
           <p>
-            {!targets.length
-              ? "No committed plan yet. The operating context is ready."
-              : verified === targets.length
-                ? `${verified} expected changes verified. Inspect the evidence for each one.`
-                : `${targets.length - verified} of ${targets.length} expected changes still need evidence.`}
+            {view === "behaviour"
+              ? contrastNarrative(reference, run)
+              : !targets.length
+                ? "No committed plan yet. The operating context is ready."
+                : verified === targets.length
+                  ? `${verified} expected changes verified. Inspect the evidence for each one.`
+                  : `${targets.length - verified} of ${targets.length} expected changes still need evidence.`}
           </p>
         </div>
         <div className="om-summary-stat">
@@ -376,68 +415,89 @@ export function ActionOutcomes({
       </div>
       <div className="om-layout">
         <Panel
-          title="Action ledger"
+          title={
+            view === "behaviour"
+              ? "Find a meaningful contrast"
+              : "Action ledger"
+          }
           number="01"
-          note="SIMULATED DELIVERY"
+          note={view === "behaviour" ? "RECORDED RUNS" : "SIMULATED DELIVERY"}
           className="om-context"
         >
-          <div className="om-scroll">
-            <div className="om-context-block">
-              <span className="eyebrow">Committed actions / receipts</span>
-              <p>
-                A delivery receipt proves delivery in this demo. The expected
-                customer change is verified separately.
-              </p>
+          {view === "behaviour" && space.data ? (
+            <ContextContrasts
+              data={space.data}
+              selected={run}
+              reference={reference}
+              filter={filter}
+              compare={(a, b) => {
+                setReferenceId(a);
+                setSelectedRunId(b);
+              }}
+            />
+          ) : (
+            <div className="om-scroll">
+              <div className="om-context-block">
+                <span className="eyebrow">Committed actions / receipts</span>
+                <p>
+                  A delivery receipt proves delivery in this demo. The expected
+                  customer change is verified separately.
+                </p>
+              </div>
+              {snapshot.actions
+                .filter((a) => filter === "all" || a.person === filter)
+                .map((a) => (
+                  <button
+                    className="ao-ledger-row"
+                    key={a.id}
+                    onClick={() => {
+                      setSelectedRunId(a.decisionId);
+                      setView("behaviour");
+                    }}
+                  >
+                    <span className="eyebrow">
+                      {time(a.time)} ·{" "}
+                      {
+                        snapshot.households
+                          .find((p) => p.id === a.person)
+                          ?.name.split(" ")[0]
+                      }
+                    </span>
+                    <strong>{a.title}</strong>
+                    <span>{a.body}</span>
+                    <code>
+                      decision {short(a.decisionId)}
+                      <br />
+                      action {short(a.id)}
+                      <br />
+                      receipt {a.receiptId ? short(a.receiptId) : "pending"}
+                    </code>
+                    <small>{a.status} · simulated</small>
+                  </button>
+                ))}
+              {!snapshot.actions.length && (
+                <p className="om-empty">
+                  No customer action committed at this cutoff.
+                </p>
+              )}
+              <div className="om-context-block om-value">
+                <span className="eyebrow">Value to test</span>
+                <strong>Less effort. More trust. Successful use.</strong>
+                <p>
+                  Kept promises and confirmed service are observable. Contact
+                  savings and retention still need measurement.
+                </p>
+              </div>
             </div>
-            {snapshot.actions
-              .filter((a) => filter === "all" || a.person === filter)
-              .map((a) => (
-                <button
-                  className="ao-ledger-row"
-                  key={a.id}
-                  onClick={() => {
-                    setSelectedRunId(a.decisionId);
-                    setView("behaviour");
-                  }}
-                >
-                  <span className="eyebrow">
-                    {time(a.time)} ·{" "}
-                    {
-                      snapshot.households
-                        .find((p) => p.id === a.person)
-                        ?.name.split(" ")[0]
-                    }
-                  </span>
-                  <strong>{a.title}</strong>
-                  <span>{a.body}</span>
-                  <code>
-                    decision {short(a.decisionId)}
-                    <br />
-                    action {short(a.id)}
-                    <br />
-                    receipt {a.receiptId ? short(a.receiptId) : "pending"}
-                  </code>
-                  <small>{a.status} · simulated</small>
-                </button>
-              ))}
-            {!snapshot.actions.length && (
-              <p className="om-empty">
-                No customer action committed at this cutoff.
-              </p>
-            )}
-            <div className="om-context-block om-value">
-              <span className="eyebrow">Value to test</span>
-              <strong>Less effort. More trust. Successful use.</strong>
-              <p>
-                Kept promises and confirmed service are observable. Contact
-                savings and retention still need measurement.
-              </p>
-            </div>
-          </div>
+          )}
         </Panel>
         <div className="om-centre">
           <Panel
-            title="Behaviour & evidence"
+            title={
+              view === "behaviour"
+                ? "From context to action"
+                : "Expected change & evidence"
+            }
             number="02"
             className="om-chart-panel"
           >
@@ -447,13 +507,13 @@ export function ActionOutcomes({
                   aria-pressed={view === "behaviour"}
                   onClick={() => setView("behaviour")}
                 >
-                  Behaviour space
+                  Context → action
                 </button>
                 <button
                   aria-pressed={view === "evidence"}
                   onClick={() => setView("evidence")}
                 >
-                  Evidence timeline
+                  Outcome evidence
                 </button>
               </div>
               <label>
@@ -477,13 +537,15 @@ export function ActionOutcomes({
                 <BehaviourSpace
                   data={space.data}
                   selected={run}
-                  select={setSelectedRunId}
+                  reference={reference}
+                  contrast={contrast}
+                  select={chooseRun}
+                  setReference={setReferenceId}
                   filter={filter}
                 />
               ) : (
                 <div className="om-empty" role="status">
-                  {space.error ||
-                    "Embedding recorded context + actions locally…"}
+                  {space.error || "Embedding recorded customer facts locally…"}
                   {space.error && (
                     <button
                       className="om-json"
@@ -599,7 +661,7 @@ export function ActionOutcomes({
         <Panel
           title={
             view === "behaviour"
-              ? "Inspect a decision run"
+              ? "Explain the difference"
               : "Verify the change"
           }
           number="03"
@@ -621,10 +683,8 @@ export function ActionOutcomes({
                 data={space.data}
                 snapshot={snapshot}
                 inspect={inspect}
-                select={(id) => {
-                  setFilter("all");
-                  setSelectedRunId(id);
-                }}
+                reference={reference}
+                contrast={contrast}
                 verify={(id) => {
                   setSelectedId(id);
                   setView("evidence");

@@ -1024,57 +1024,6 @@
   color: var(--brand);
   background: var(--brand-soft);
 }
-.bs-toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 13px 0;
-  font: 9px var(--mono);
-  color: var(--muted);
-}
-.bs-toolbar b {
-  color: var(--ink);
-  font-weight: 500;
-}
-.bs-toolbar label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font: 9px var(--sans);
-}
-.bs-toolbar select {
-  font: 9px var(--sans);
-  background: white;
-  border: 1px solid var(--line);
-  border-radius: 3px;
-  padding: 3px;
-  color: var(--ink);
-}
-.bs-plot-wrap {
-  flex: 1;
-  display: flex;
-  min-height: 150px;
-}
-.bs-plot {
-  width: 100%;
-  min-height: 0;
-}
-.bs-axis {
-  font: 8px var(--mono);
-  fill: #96909f;
-}
-.bs-cluster-label {
-  font: 8px var(--mono);
-  letter-spacing: 0.5px;
-}
-.bs-point-label {
-  font: 9px var(--mono);
-  fill: #5b5367;
-  paint-order: stroke;
-  stroke: #fbfafc;
-  stroke-width: 3px;
-}
 .bs-point {
   cursor: pointer;
 }
@@ -1085,24 +1034,6 @@
   stroke: var(--brand);
   stroke-width: 1.5px;
   stroke-dasharray: 2 2;
-}
-.bs-legend {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  padding: 0 13px 6px;
-  font: 8px var(--mono);
-  color: var(--muted);
-}
-.bs-legend span {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-.bs-legend i {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
 }
 .bs-inspector .om-inspector-title {
   border-left-color: var(--brand);
@@ -1128,35 +1059,6 @@
 .bs-receipt code {
   color: var(--muted);
 }
-.bs-neighbour {
-  display: flex;
-  gap: 6px;
-  justify-content: space-between;
-  align-items: center;
-  background: none;
-  border: 0;
-  border-bottom: 1px solid var(--line);
-  width: 100%;
-  padding: 9px 0;
-  border-radius: 0;
-  text-align: left;
-}
-.bs-neighbour strong {
-  font: 10px var(--sans);
-  text-transform: capitalize;
-  display: block;
-}
-.bs-neighbour small {
-  color: var(--muted);
-  font-size: 9px;
-  margin-top: 3px;
-  display: block;
-}
-.bs-neighbour code {
-  color: var(--brand);
-  font-size: 9px;
-  white-space: nowrap;
-}
 .bs-input {
   margin: 12px;
   font-size: 10px;
@@ -1172,119 +1074,6 @@
 }
 .bs-input code {
   font-size: 8px;
-}
-.action-outcomes .om-chart-panel {
-  flex: 2;
-  min-height: 295px;
-}
-.action-outcomes .om-feedback {
-  flex: 1;
-  min-height: 195px;
-}
-@media (min-width: 901px) and (max-height: 780px) {
-  .action-outcomes .om-chart-panel {
-    min-height: 277px;
-  }
-  .action-outcomes .om-feedback {
-    min-height: 195px;
-  }
-  .bs-toolbar {
-    padding-top: 4px;
-  }
-  .bs-legend {
-    font-size: 7px;
-  }
-}
-.bs-axis {
-  font-size: 9px;
-}
-.bs-cluster-label {
-  font-size: 9px;
-  letter-spacing: 0;
-}
-.bs-point-label {
-  font-size: 10px;
-  text-transform: capitalize;
-}
-.action-outcomes .om-feedback {
-  min-height: 226px;
-}
-@media (min-width: 901px) and (max-height: 780px) {
-  .action-outcomes .om-feedback {
-    min-height: 195px;
-  }
-}
-.bs-plot-wrap {
-  position: relative;
-  min-height: 130px;
-}
-.bs-plot {
-  position: absolute;
-  inset: 0;
-  height: 100%;
-}
-@media (min-width: 901px) and (max-height: 780px) {
-  .action-outcomes .om-chart-panel {
-    min-height: 280px;
-    flex: 1;
-  }
-  .action-outcomes .om-feedback {
-    min-height: 0;
-    flex: 0 0 174px;
-  }
-  .action-outcomes .om-feedback-rows > button {
-    padding-block: 4px;
-  }
-  .action-outcomes .om-bandit p {
-    font-size: 8px;
-  }
-  .action-outcomes .om-bandit {
-    padding-block: 5px;
-  }
-}
-@media (min-width: 901px) and (max-height: 780px) {
-  .action-outcomes .om-feedback-rows {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-  .action-outcomes .om-feedback-rows > button {
-    align-items: flex-start;
-    padding: 8px;
-    border-right: 1px solid var(--line);
-  }
-  .action-outcomes .om-feedback-rows .om-initial {
-    display: none;
-  }
-  .action-outcomes .om-feedback-rows strong small {
-    display: block;
-    padding: 3px 0 0;
-  }
-  .action-outcomes .om-feedback-rows button span span {
-    font-size: 9px;
-    line-height: 1.4;
-  }
-}
-@media (min-width: 901px) and (min-height: 781px) {
-  .action-outcomes .om-feedback {
-    min-height: 242px;
-  }
-}
-@media (max-width: 900px) {
-  .action-outcomes .om-chart-panel {
-    min-height: 390px;
-    flex: none;
-  }
-  .action-outcomes .bs-plot-wrap {
-    min-height: 215px;
-  }
-  .action-outcomes .om-feedback {
-    flex: none;
-    min-height: 0;
-  }
-  .action-outcomes .om-feedback-rows {
-    flex: none;
-    overflow: visible;
-  }
 }
 .ops-network-body {
   display: flex;
@@ -1312,5 +1101,390 @@
   .ops-network-body .ops-network-map svg {
     flex-basis: 38px;
     min-height: 38px;
+  }
+}
+
+/* Context sensitivity: factual geometry and model choice remain separate. */
+.cs-contrasts h3 {
+  font-size: 18px;
+  line-height: 1.2;
+  letter-spacing: -0.4px;
+  margin: 7px 0;
+}
+.cs-switch {
+  display: flex;
+  gap: 4px;
+  margin-top: 12px;
+}
+.cs-switch button {
+  flex: 1;
+  background: var(--canvas);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 6px 4px;
+  font: 10px var(--sans);
+  color: var(--muted);
+}
+.cs-switch button[aria-pressed="true"] {
+  background: var(--brand-soft);
+  border-color: #d9c9ef;
+  color: var(--brand);
+}
+.cs-contrast {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  padding: 13px;
+  text-align: left;
+  display: grid;
+  gap: 8px;
+}
+.cs-contrast:hover {
+  background: var(--canvas);
+}
+.cs-contrast[aria-pressed="true"] {
+  background: #f5f0fc;
+  box-shadow: inset 2px 0 var(--brand);
+}
+.cs-contrast-top {
+  display: flex;
+  gap: 7px;
+  align-items: baseline;
+  text-transform: capitalize;
+  font-size: 10px;
+}
+.cs-contrast-top code {
+  font-size: 9px;
+  color: var(--brand);
+}
+.cs-contrast-top small {
+  margin-left: auto;
+  font: 8px var(--mono);
+  color: var(--muted);
+}
+.cs-contrast > strong {
+  font: 500 11px/1.55 var(--sans);
+}
+.cs-contrast > strong > span {
+  color: #9b8bae;
+}
+.cs-pair-metrics {
+  display: flex;
+  gap: 13px;
+  font: 8px var(--mono);
+  color: var(--muted);
+}
+.cs-pair-metrics b {
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 500;
+}
+.cs-prompt-note {
+  font: 9px var(--sans);
+  color: #9b7140;
+}
+.cs-prompt-note.stable {
+  color: #47837f;
+}
+.cs-method {
+  margin-top: auto;
+}
+.cs-pickers {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 8px 13px;
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+}
+.cs-pickers label {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.cs-pickers select {
+  min-width: 0;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: 10px var(--mono);
+  text-transform: capitalize;
+  padding: 3px 0;
+}
+.cs-key {
+  display: grid;
+  place-items: center;
+  flex: 0 0 20px;
+  height: 20px;
+  border-radius: 4px;
+  font: 10px var(--mono);
+}
+.cs-key.a {
+  background: #eaf2f0;
+  color: #39746f;
+}
+.cs-key.b {
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+.cs-stage {
+  display: flex;
+  flex: 1;
+  min-height: 195px;
+  position: relative;
+}
+.cs-stage svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.cs-svg-heading {
+  font: 8.5px var(--mono);
+  fill: #7a6d8d;
+  letter-spacing: 0.3px;
+}
+.cs-svg-small {
+  font: 8.5px var(--mono);
+  fill: #8f839e;
+}
+.cs-point-label {
+  font: 10px var(--mono);
+  fill: #5514b4;
+  paint-order: stroke;
+  stroke: #faf9fc;
+  stroke-width: 3px;
+}
+.cs-stack-count {
+  font: 8px var(--mono);
+  fill: #94879f;
+}
+.cs-action-label {
+  font: 10.5px var(--sans);
+  fill: #756a80;
+}
+.cs-action-label.chosen {
+  fill: #5514b4;
+  font-weight: 600;
+}
+.cs-prob {
+  font: 10px var(--mono);
+  fill: #8c819b;
+}
+.cs-prob.a {
+  fill: #47837f;
+}
+.cs-prob.chosen {
+  fill: #5514b4;
+  font-weight: 600;
+}
+.cs-governed {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 10px;
+  padding: 9px 13px;
+  margin: 0 12px 3px;
+  background: var(--canvas);
+  border-left: 2px solid var(--brand);
+  flex-shrink: 0;
+}
+.cs-governed .eyebrow {
+  grid-column: 1/-1;
+  font-size: 8px;
+}
+.cs-governed strong {
+  font-size: 11px;
+  font-weight: 600;
+}
+.cs-governed > span:last-child {
+  font-size: 9px;
+  color: var(--muted);
+}
+.cs-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin: 10px 0;
+  gap: 10px;
+}
+.cs-metrics span {
+  font-size: 9px;
+  color: var(--muted);
+}
+.cs-metrics b {
+  display: block;
+  color: var(--brand);
+  font: 25px var(--mono);
+  margin-bottom: 3px;
+}
+.cs-fact {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+.cs-fact:last-child {
+  border-bottom: 0;
+}
+.cs-fact strong {
+  display: block;
+  font: 10px var(--mono);
+  color: var(--ink);
+  margin-bottom: 5px;
+  text-transform: capitalize;
+}
+.cs-fact > div {
+  display: grid;
+  grid-template-columns: 1fr 12px 1fr;
+  gap: 6px;
+  font: 10px/1.5 var(--sans);
+  overflow-wrap: anywhere;
+}
+.cs-fact span:first-child {
+  color: #47837f;
+}
+.cs-fact span:last-child {
+  color: var(--brand);
+}
+.cs-fact i {
+  color: var(--faint);
+  font-style: normal;
+}
+.cs-control-check > strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 12px;
+}
+.cs-hash {
+  display: flex;
+  justify-content: space-between;
+  font: 9px var(--mono);
+  padding: 8px;
+  background: var(--canvas);
+  color: var(--muted);
+}
+.cs-method-details summary {
+  cursor: pointer;
+  color: var(--brand);
+  font-size: 10px;
+  margin-top: 12px;
+}
+.action-outcomes .om-chart-panel {
+  overflow-y: auto;
+}
+@media (min-width: 901px) {
+  .action-outcomes .om-feedback {
+    flex: 0 0 166px;
+    min-height: 0;
+  }
+  .action-outcomes .om-feedback-rows {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .action-outcomes .om-feedback-rows > button {
+    padding: 9px;
+    align-items: flex-start;
+    border-right: 1px solid var(--line);
+  }
+  .action-outcomes .om-feedback-rows .om-initial {
+    display: none;
+  }
+  .action-outcomes .om-feedback-rows strong small {
+    display: block;
+    padding: 3px 0 0;
+  }
+  .action-outcomes .om-feedback-rows button span span {
+    font-size: 9px;
+    line-height: 1.35;
+  }
+  .action-outcomes .om-bandit {
+    padding: 6px 12px;
+  }
+  .action-outcomes .om-bandit p {
+    font-size: 8px;
+  }
+  .action-outcomes .om-chart-panel {
+    min-height: 280px;
+  }
+}
+@media (max-width: 900px) {
+  .cs-stage {
+    flex: none;
+    aspect-ratio: 650 / 292;
+  }
+}
+@media (max-width: 580px) {
+  .cs-pickers {
+    grid-template-columns: 1fr;
+  }
+  .cs-stage {
+    overflow-x: auto;
+    min-height: 290px;
+  }
+  .cs-stage svg {
+    min-width: 600px;
+  }
+  .cs-governed {
+    grid-template-columns: 1fr;
+  }
+}
+@media (min-width: 901px) and (max-height: 780px) {
+  .action-outcomes .om-feedback {
+    flex-basis: 104px;
+  }
+  .action-outcomes .om-feedback-rows button span span {
+    display: none;
+  }
+  .action-outcomes .om-feedback-rows > button {
+    padding-block: 5px;
+  }
+  .action-outcomes .om-bandit p {
+    display: none;
+  }
+  .action-outcomes .om-bandit {
+    padding-block: 3px;
+  }
+  .action-outcomes .om-feedback .om-panel-heading {
+    padding-block: 6px;
+  }
+}
+.cs-probability-table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-top: 12px;
+  font: 9px var(--mono);
+}
+.cs-probability-table caption {
+  text-align: left;
+  padding-bottom: 8px;
+  font: 10px/1.4 var(--sans);
+}
+.cs-probability-table th,
+.cs-probability-table td {
+  border-bottom: 1px solid var(--line);
+  padding: 7px 3px;
+  text-align: right;
+}
+.cs-probability-table th:first-child {
+  text-align: left;
+  font: 10px/1.4 var(--sans);
+}
+.cs-probability-table td {
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .action-outcomes .om-chart-panel {
+    flex: none;
+    min-height: 390px;
+  }
+  .action-outcomes .om-feedback {
+    flex: none;
+    min-height: 0;
+  }
+  .action-outcomes .om-feedback-rows {
+    flex: none;
+    overflow: visible;
   }
 }

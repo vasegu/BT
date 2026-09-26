@@ -98,3 +98,105 @@ test("PCA preserves pairwise distances in a rank-two fixture and neighbours use 
   assert.deepEqual(result.points[0].position, result.points[3].position);
   assert.ok(Math.abs(result.variance.reduce((a, b) => a + b, 0) - 1) < 1e-6);
 });
+
+test("context geometry is unchanged when only the chosen action and its explanation change", async () => {
+  const e = new Engine(":memory:");
+  try {
+    const { id } = e.createSession();
+    e.advance(id, "heartbeat", "one", 0);
+    await e.processJobs();
+    const s = e.snapshot(id),
+      before = behaviourRuns(s, (at) => e.snapshot(id, at));
+    s.decisions[0].title = "A completely different action";
+    s.decisions[0].reason = "Outcome leaked into the explanation";
+    s.decisions[0].trace!.selectedId = "offer";
+    const after = behaviourRuns(s, (at) => e.snapshot(id, at));
+    assert.equal(after[0].input, before[0].input);
+    assert.ok(!after[0].input.includes("Decision:"));
+    assert.ok(!after[0].input.includes("Effect:"));
+  } finally {
+    e.close();
+  }
+});
+
+test("sensitivity measures action distributions independently of factual similarity and flags changed prompts", async () => {
+  const { distributionShift, contextContrasts } =
+    await import("../server/behaviour.ts");
+  assert.equal(distributionShift({ watch: 1 }, { recovery: 1 }), 1);
+  assert.equal(
+    distributionShift(
+      { watch: 0.6, recovery: 0.4 },
+      { watch: 0.2, recovery: 0.8 },
+    ),
+    0.4,
+  );
+  assert.equal(distributionShift(null, { watch: 1 }), null);
+  assert.equal(distributionShift({ watch: 2 }, { watch: 1 }), null);
+  const e = new Engine(":memory:");
+  try {
+    const { id } = e.createSession();
+    e.advance(id, "heartbeat", "one", 0);
+    await e.processJobs();
+    const runs = behaviourRuns(e.snapshot(id), (at) => e.snapshot(id, at));
+    assert.deepEqual(
+      contextContrasts(runs, [
+        [1, 0],
+        [1, 0],
+        [0, 1],
+      ]),
+      [],
+      "Rule outputs must not become model probabilities",
+    );
+    const a = {
+      ...runs[0],
+      model: "test-model",
+      probabilities: { watch: 1 },
+      promptHash: "fixed",
+      promptVersion: "v1",
+      facts: { habit: "overnight" },
+      selectedAction: "watch",
+    };
+    const b = {
+      ...runs[1],
+      model: "test-model",
+      probabilities: { recovery: 1 },
+      promptHash: "fixed",
+      promptVersion: "v1",
+      facts: { habit: "overnight" },
+      selectedAction: "recovery",
+    };
+    const pair = contextContrasts(
+      [a, b],
+      [
+        [1, 0],
+        [1, 0],
+      ],
+    )[0];
+    assert.equal(pair.similarity, 1);
+    assert.equal(pair.actionShift, 1);
+    assert.equal(pair.samePrompt, true);
+    assert.deepEqual(pair.facts, []);
+    assert.equal(
+      contextContrasts(
+        [a, { ...b, promptHash: "edited" }],
+        [
+          [1, 0],
+          [1, 0],
+        ],
+      )[0].samePrompt,
+      false,
+    );
+    assert.deepEqual(
+      contextContrasts(
+        [a, { ...b, model: "another-model" }],
+        [
+          [1, 0],
+          [1, 0],
+        ],
+      ),
+      [],
+    );
+  } finally {
+    e.close();
+  }
+});

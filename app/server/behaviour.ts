@@ -6,9 +6,10 @@ import type { Snapshot } from "../src/types.ts";
 import type {
   BehaviourRun,
   BehaviourSpaceData,
+  ContextContrast,
 } from "../src/behaviour-types.ts";
 
-// Decision-time inputs are frozen; outcome colour is a separate as-of-cutoff overlay.
+// Geometry uses input facts only. Actions, prompt identity and later outcomes remain separate.
 export function behaviourRuns(
   snapshot: Snapshot,
   at: (revision: number) => Snapshot,
@@ -34,9 +35,6 @@ export function behaviourRuns(
       customerConfirmed: h.confirmed,
       incidentInScope: h.incident,
     };
-    const selected = d.trace?.candidates.find(
-      (c) => c.id === d.trace?.selectedId,
-    );
     const outcomes = snapshot.operations.outcomes.filter(
       (o) => o.person === d.person && o.revision <= d.revision,
     );
@@ -50,11 +48,22 @@ export function behaviourRuns(
           : met
             ? "mixed"
             : "pending";
-    const input = `Context: ${Object.entries(facts)
+    const input = `Customer context: ${Object.entries(facts)
+      .sort(([a], [b]) => a.localeCompare(b))
       .map(([key, value]) => `${key}: ${value ?? "none"}`)
-      .join(
-        "; ",
-      )}. Decision: ${d.title}. ${d.reason} Effect: ${selected?.effect || d.disposition}`;
+      .join("; ")}`;
+    const assessment = d.trace?.assessment;
+    const probabilities =
+      assessment?.status === "ok"
+        ? validDistribution(assessment.answers.next_action?.probabilities)
+        : null;
+    const hash = (value: unknown) =>
+      createHash("sha256")
+        .update(JSON.stringify(value) ?? "null")
+        .digest("hex");
+    const candidateState = assessment?.state.candidates as
+      | { id: string; eligible: boolean }[]
+      | undefined;
     return {
       id: d.id,
       person: d.person,
@@ -65,6 +74,39 @@ export function behaviourRuns(
       disposition: d.disposition,
       reason: d.reason,
       input,
+      facts,
+      contextParts: Object.fromEntries(
+        [
+          "clock",
+          "records",
+          "candidates",
+          "recentActions",
+          "outcomeMemory",
+        ].map((key) => [key, hash(assessment?.state[key])]),
+      ),
+      promptHash: assessment ? hash(assessment.questions) : null,
+      promptVersion: assessment?.promptVersion || null,
+      model: assessment?.model || null,
+      probabilities,
+      modelChoice: probabilities
+        ? assessment?.answers.next_action?.choice || null
+        : null,
+      selectedAction: d.trace?.selectedId || d.domain,
+      eligibleActions: candidateState
+        ? candidateState.filter((c) => c.eligible).map((c) => c.id)
+        : (d.trace?.candidates || [])
+            .filter(
+              (c) =>
+                c.checks.every((check) => check.state === "pass") &&
+                c.status !== "merged",
+            )
+            .map((c) => c.id),
+      inputEvidenceIds:
+        assessment && Array.isArray(assessment.state.records)
+          ? (assessment.state.records as { id: string }[])
+              .map((r) => r.id)
+              .filter((id) => s.events.some((e) => e.id === id))
+          : h.evidence.map((e) => e.id),
       evidenceIds: d.evidenceIds.filter((id) =>
         s.events.some((e) => e.id === id),
       ),
@@ -80,6 +122,89 @@ export function behaviourRuns(
         : "Deterministic policy",
     };
   });
+}
+
+function validDistribution(
+  value: Record<string, number> | undefined,
+): Record<string, number> | null {
+  if (
+    !value ||
+    !Object.keys(value).length ||
+    Object.values(value).some((v) => !Number.isFinite(v) || v < 0 || v > 1)
+  )
+    return null;
+  const sum = Object.values(value).reduce((a, b) => a + b, 0);
+  return Math.abs(sum - 1) <= 0.02 ? value : null;
+}
+export function distributionShift(
+  a: Record<string, number> | null,
+  b: Record<string, number> | null,
+): number | null {
+  if (!validDistribution(a || undefined) || !validDistribution(b || undefined))
+    return null;
+  const sumA = Object.values(a!).reduce((x, y) => x + y, 0),
+    sumB = Object.values(b!).reduce((x, y) => x + y, 0);
+  return (
+    [...new Set([...Object.keys(a!), ...Object.keys(b!)])].reduce(
+      (sum, key) =>
+        sum + Math.abs((a![key] || 0) / sumA - (b![key] || 0) / sumB),
+      0,
+    ) / 2
+  );
+}
+export function contextContrasts(
+  runs: BehaviourRun[],
+  vectors: number[][],
+): ContextContrast[] {
+  // ponytail: O(n²) over at most 15 runs in this replay; use a vector index for a production corpus.
+  const pairs: ContextContrast[] = [];
+  for (let i = 0; i < runs.length; i++)
+    for (let j = i + 1; j < runs.length; j++) {
+      const a = runs[i],
+        b = runs[j],
+        shift = distributionShift(a.probabilities, b.probabilities);
+      if (shift === null || !a.model || a.model !== b.model) continue;
+      const cosine = vectors[i].reduce(
+        (sum, v, k) => sum + v * vectors[j][k],
+        0,
+      );
+      const facts = [
+        ...new Set([...Object.keys(a.facts), ...Object.keys(b.facts)]),
+      ]
+        .filter(
+          (key) =>
+            JSON.stringify(a.facts[key]) !== JSON.stringify(b.facts[key]),
+        )
+        .map((key) => ({
+          key,
+          before: a.facts[key] ?? null,
+          after: b.facts[key] ?? null,
+        }));
+      pairs.push({
+        a: a.id,
+        b: b.id,
+        similarity: Math.max(-1, Math.min(1, cosine)),
+        actionShift: shift,
+        rank: Math.max(0, cosine) * shift,
+        samePrompt:
+          a.promptHash !== null &&
+          a.promptHash === b.promptHash &&
+          a.promptVersion === b.promptVersion,
+        samePerson: a.person === b.person,
+        actionChanged: a.selectedAction !== b.selectedAction,
+        facts,
+        otherChanges: Object.keys(a.contextParts).filter(
+          (key) => a.contextParts[key] !== b.contextParts[key],
+        ),
+        eligibilityChanged: [
+          ...new Set([...a.eligibleActions, ...b.eligibleActions]),
+        ].filter(
+          (key) =>
+            a.eligibleActions.includes(key) !== b.eligibleActions.includes(key),
+        ),
+      });
+    }
+  return pairs.sort((a, b) => b.rank - a.rank || b.similarity - a.similarity);
 }
 
 type Projection = {
@@ -179,6 +304,7 @@ export async function behaviourSpace(
   for (const run of runs) encoded.push(await embed(run.input));
   const projection = await projectVectors(encoded);
   return {
+    contrasts: contextContrasts(runs, encoded),
     runs: runs.map((run, i) => ({
       ...run,
       ...projection.points[i],
@@ -194,7 +320,7 @@ export async function behaviourSpace(
       variance: projection.variance,
       clusters: projection.clusters,
       uniqueInputs: projection.uniqueInputs,
-      fit: "Distinct context + selected-action vectors through this cutoff. Refit when new runs arrive. Cosine clusters in 384D; later outcomes do not enter embeddings.",
+      fit: "Input facts only, excluding selected actions, decision explanations and later outcomes. Prompt fingerprints and other retrieved context are compared separately. PCA is refitted at each cutoff. Neighbours use original 384D cosine similarity.",
     },
   };
 }

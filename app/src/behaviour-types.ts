@@ -9,13 +9,37 @@ export type BehaviourRun = {
   disposition: string;
   reason: string;
   input: string;
+  facts: Record<string, unknown>;
+  contextParts: Record<string, string>;
+  promptHash: string | null;
+  promptVersion: string | null;
+  model: string | null;
+  probabilities: Record<string, number> | null;
+  modelChoice: string | null;
+  selectedAction: string;
+  eligibleActions: string[];
+  inputEvidenceIds: string[];
   evidenceIds: string[];
   actionIds: string[];
   outcomeIds: string[];
   outcome: "verified" | "pending" | "mixed" | "reassess" | "unknown";
   assessment: string;
 };
+export type ContextContrast = {
+  a: string;
+  b: string;
+  similarity: number;
+  actionShift: number;
+  rank: number;
+  samePrompt: boolean;
+  samePerson: boolean;
+  actionChanged: boolean;
+  facts: { key: string; before: unknown; after: unknown }[];
+  otherChanges: string[];
+  eligibilityChanged: string[];
+};
 export type BehaviourSpaceData = {
+  contrasts: ContextContrast[];
   runs: (BehaviourRun & {
     position: number[];
     cluster: number;
