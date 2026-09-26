@@ -805,6 +805,14 @@ export function generateHistory(
     { statement: "It’s working again, thank you." },
     "daniel-case",
   );
+  if (version === "bt-households-v1.2") {
+    emit("sam", "sam-provisioned", "activation.confirmed", "2026-09-25T20:16:00Z",
+      "Provisioning completed. Successful first use still requires a separate observation.", {}, "sam-case", "orders");
+    const firstUse = emit("sam", "sam-first-use", "activation.first_use_observed", "2026-09-25T20:17:00Z",
+      "Successful authenticated broadband use observed for Sam’s service. This does not establish that outreach caused activation.",
+      { successful: true, observation: "authenticated_session" }, "sam-case", "router");
+    firstUse.knownAt = "2026-09-25T20:18:00Z";
+  }
   if (variant === "late-diagnostic")
     f.events.find((e) => e.sourceEventId === "daniel-restart")!.knownAt =
       "2026-09-25T20:04:00Z";

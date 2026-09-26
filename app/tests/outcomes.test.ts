@@ -56,7 +56,7 @@ test("delivery opens immutable expectations; separate observations close only th
     );
     const done = await step(e, id, "confirm");
     assert.equal(episode(done, "daniel", "confirmation").check.status, "met");
-    assert.equal(episode(done, "sam", "activation").check.status, "waiting");
+    assert.equal(episode(done, "sam", "activation").check.status, "met");
     assert.equal(episode(done, "daniel", "callback").id, original.id);
     assert.equal(episode(done, "daniel", "callback").dueAt, original.dueAt);
     assert.deepEqual(

@@ -117,6 +117,7 @@ export function deriveMemories(input: {
       "diagnostic.completed",
       "service.restored_observed",
       "service.failure_observed",
+      "activation.first_use_observed",
     ].includes(e.type),
   ))
     add("episode", "observed", `${e.occurredAt}: ${e.description}`, [e]);

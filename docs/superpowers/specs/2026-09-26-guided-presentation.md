@@ -1,0 +1,11 @@
+# Guided three-household presentation
+
+Approved in conversation: three equal household stories, stable five-panel layout, one focal point per beat, expandable technical proof, explicit outcomes. Keep the existing Explore mode.
+
+Present mode separates recorded scenario revisions from reveal beats. Within a revision, expose a household's relevant memory, operations, decision and customer effect in a deliberate sequence. All three households remain selectable and equally visible, with a three-way outcome comparison at the end of each chapter. A compact cue names the current claim and its evidence; the selected panel has a restrained BT accent. Surrounding text stays readable. No automatic animation carousel or six mandatory clicks when nothing changes.
+
+Next reveals a beat; only the chapter boundary applies the next synthetic event. Processing/error states cannot be presented as completed decisions. Back/forward beats and deep dives do not call the model or mutate stored events. Opening a panel retains the beat URL; returning restores it. Keyboard arrows navigate beats, Enter opens the focus, Escape returns. Inputs, dialogs and Eve retain normal keyboard behavior. Reduced motion is respected.
+
+Daniel: service restoration, callback fulfilment and customer confirmation stay separate. Maya: a stated habit plus 26 returns in 28 observed windows supports a bounded watch; an actual return ends it, without a notification. Sam: provisioning and successful first use are separate records. Add synthetic provisioning at 21:16 and first use at 21:17, known at 21:18, in new dataset v1.2. Previous hosted datasets remain immutable. First-use evidence closes the activation expectation without claiming the outreach caused activation, satisfaction or revenue.
+
+Technical detail remains in the existing full-page panels. Overview emphasis and the cue must follow actual snapshot evidence, not hardcoded claims of success. The final comparison includes unresolved/contradicted states honestly. Governance is a compact receipt linked to the current decision, policy and owner, not a new certification claim.

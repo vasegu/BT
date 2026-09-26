@@ -1,12 +1,12 @@
 {
-  "datasetVersion": "bt-households-v1.1",
+  "datasetVersion": "bt-households-v1.2",
   "seed": 260926,
   "variant": "canonical",
-  "contentHash": "8a2f245942b0b6eb7a982b9d4441d5897f11d6f28ca20cecfaf13d347a4a2d76",
-  "events": 2827,
+  "contentHash": "cfb272b89036ac610be4f310cc4cb6da77476e766a617d02298b5184e6f963ae",
+  "events": 2829,
   "counts": {
-    "activation.confirmed": 3,
-    "activation.first_use_observed": 1,
+    "activation.confirmed": 4,
+    "activation.first_use_observed": 2,
     "activation.pending": 1,
     "capacity.recorded": 1,
     "case.closed": 1,

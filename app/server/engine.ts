@@ -73,6 +73,7 @@ export function project(
     promiseFulfilled: false,
     serviceState: "No current observation",
     activation: "unknown",
+    firstUseObserved: false,
     habit: null,
     restartTried: false,
     restored: false,
@@ -124,6 +125,15 @@ export function project(
         break;
       case "activation.confirmed":
         h.activation = "Activation confirmed";
+        break;
+      case "activation.first_use_observed":
+        if (e.payload.successful === true) {
+          h.firstUseObserved = true;
+          h.activation = "Successful first use observed";
+          h.serviceState = "First use observed";
+          h.restored = true;
+          h.caseStatus = "closed";
+        }
         break;
       case "case.closed":
         h.caseStatus = "none"; h.owner = null;
@@ -318,7 +328,7 @@ export class Engine {
         .prepare(
           "INSERT INTO sessions(id,seed_version,created_at) VALUES(?,?,?)",
         )
-        .run(id, "bt-three-routers-v2", new Date().toISOString());
+        .run(id, "bt-three-routers-v3", new Date().toISOString());
       for (const p of people) {
         this.db
           .prepare("INSERT INTO customers VALUES(?,?,?)")
@@ -510,6 +520,17 @@ export class Engine {
           source: "customer_phone_simulator",
           description: "Daniel confirms: “It’s working again, thank you.”",
           payload: { statement: "It’s working again, thank you." },
+        });
+      if (step === "confirm" && session.seedVersion === "bt-three-routers-v3")
+        inputs.push({
+          type: "activation.confirmed", subject: "sam", source: "provisioning_simulator",
+          occurredAt: "2026-09-25T20:16:00Z",
+          description: "Provisioning completed. Successful first use still requires a separate observation.", payload: {},
+        }, {
+          type: "activation.first_use_observed", subject: "sam", source: "router_simulator",
+          occurredAt: "2026-09-25T20:17:00Z",
+          description: "Successful authenticated broadband use observed for Sam’s service. This does not establish that outreach caused activation.",
+          payload: { successful: true },
         });
       for (const e of inputs) this.append(id, rev, e);
       const jobId = randomUUID();

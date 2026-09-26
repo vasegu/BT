@@ -13,7 +13,7 @@ import type {
 const MODEL = "typesafe-ai/jev";
 class AssessmentFormatError extends Error {}
 
-const VERSION = "bt-jev-v2-outcomes";
+const VERSION = "bt-jev-v3-first-use";
 const MIN_PROBABILITY = 0.7;
 export type AssessmentRequest = {
   state: Record<string, unknown>;
@@ -51,6 +51,7 @@ export function buildAssessmentRequest(
     serviceState: h.serviceState,
     caseStatus: h.caseStatus,
     activation: h.activation,
+    firstUseObserved: h.firstUseObserved === true,
     statedPreference: h.habit,
     ownerAssigned: !!h.owner,
     callbackDue: h.promise,
@@ -138,6 +139,7 @@ export function buildAssessmentRequest(
             "Active service issue or explicitly scoped network incident",
           activation_unknown:
             "Delivered equipment but activation and first use are unconfirmed",
+          first_use_observed: "Successful service use is observed; separate from a customer confirmation or causal effect of outreach",
           recovery_followup:
             "Technical recovery observed; human follow-through or customer confirmation still matters",
           confirmed: "Customer explicitly confirmed working service",

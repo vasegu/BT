@@ -1,8 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { generateHistory } from "../../scripts/generate-bt-history.ts";
+import { generateHistory, fixtureHash } from "../../scripts/generate-bt-history.ts";
 import { buildContext } from "../server/context.ts";
-import { clocks } from "../server/engine.ts";
+import { clocks, project } from "../server/engine.ts";
 import { arbitrate, serviceMessage } from "../server/arbiter.ts";
 import { contractsFor, verifyOutcome } from "../server/outcomes.ts";
 import type { Snapshot } from "../src/types.ts";
@@ -110,4 +110,36 @@ test("a received heartbeat fulfils its watch; future recovery cannot fulfil a pa
   )!;
   assert.notEqual(verifyOutcome(callback, run[3]).status, "met");
   assert.equal(verifyOutcome(callback, run[4]).status, "met");
+});
+
+test("Sam's first use requires its own observed proof and does not stand in for a customer reply", () => {
+  const run = replay();
+  const earlier = run[4].households[1], final = run[5].households[1];
+  assert.equal(earlier.firstUseObserved, false);
+  assert.equal(final.firstUseObserved, true);
+  assert.equal(final.confirmed, false);
+  const decision = arbitrate(final, earlier, run[5]);
+  assert.equal(decision.trace!.selectedId, "first-use");
+  assert.equal(serviceMessage(final, decision)?.title, "You’re connected");
+  const first = arbitrate(run[1].households[1], run[0].households[1], run[1]);
+  const expected = contractsFor(run[1].households[1], first, run[1], false).find(c=>c.goal === "activation")!;
+  assert.equal(verifyOutcome(expected, run[4]).status, "waiting");
+  const observed = verifyOutcome(expected, run[5]);
+  assert.equal(observed.status, "met");
+  assert.ok(observed.evidenceIds.some(id=>run[5].events.find(e=>e.id===id)?.type === "activation.first_use_observed"));
+});
+
+test("provisioning alone or a later failed test cannot be presented as successful first use", () => {
+  const run = replay();
+  const h = run[5].households[1];
+  const without = h.evidence.filter(e=>e.type!=="activation.first_use_observed");
+  const provisional = project({id:"sam",name:h.name}, without);
+  assert.equal(provisional.firstUseObserved, false);
+  assert.notEqual(arbitrate(provisional, run[4].households[1], run[5]).trace!.selectedId, "first-use");
+  const failed = project({id:"sam",name:h.name}, [...h.evidence, {id:"later-failure",sessionId:"test",serviceId:h.serviceId,subject:"sam",revision:5,type:"service.failure_observed",source:"test",occurredAt:"2026-09-25T20:18:00Z",receivedAt:"2026-09-25T20:18:00Z",description:"Fresh test failed",payload:{lineTest:"failed"}}]);
+  assert.notEqual(arbitrate(failed, h, run[5]).trace!.selectedId, "first-use");
+});
+
+test("v1.1 remains reproducible after adding the v1.2 first-use checkpoint", () => {
+  assert.equal(fixtureHash(generateHistory({datasetVersion:"bt-households-v1.1"})), "8a2f245942b0b6eb7a982b9d4441d5897f11d6f28ca20cecfaf13d347a4a2d76");
 });

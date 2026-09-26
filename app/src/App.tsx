@@ -401,7 +401,7 @@ export function App() {
           {h.id === "daniel"
             ? "Failed diagnostics and the named promise stay attached to this case."
             : h.id === "sam"
-              ? "Delivery is a fact. Successful first use is still unknown."
+              ? h.firstUseObserved ? "Successful first use is now observed, separately from delivery and provisioning." : "Delivery is a fact. Successful first use is still unknown."
               : "A stated habit provides context; contrary evidence would reopen the watch."}
         </p>
       </div>

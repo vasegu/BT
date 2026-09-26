@@ -89,6 +89,18 @@ export function arbitrate(
     });
   }
   propose(
+    "first-use", "activation.verification", "Successful first use observed", "activation", "complete",
+    "Provisioning and a successful authenticated session are recorded separately. Stop repeating setup advice; retain the observed outcome.",
+    "A new service failure or support request opens a fresh assessment.",
+    "Record successful first use and publish a connection update; do not attribute it to the earlier outreach.",
+    [["First-use proof", 110]],
+    [gate("first_use", "Successful first-use observation", h.firstUseObserved === true,
+      "Requires a successful first-use record for this service, not delivery or provisioning alone.", "activation.first_use_observed"),
+      gate("no_new_fault", "No later contradictory test", !contraryTest,
+        contraryTest ? "A later failed test requires further investigation." : "No contradictory service test is recorded.", "service.failure_observed")],
+    refs("activation.confirmed", "activation.first_use_observed"),
+  );
+  propose(
     "confirmation",
     "care.outcome",
     "Recovery confirmed",
@@ -464,6 +476,8 @@ export function arbitrate(
     "promiseFulfilled",
     "restored",
     "confirmed",
+    "activation",
+    "firstUseObserved",
     "contactAllowed",
   ];
   const previous = snapshot.decisions.filter((d) => d.person === h.id).at(-1);
@@ -512,6 +526,9 @@ export function serviceMessage(
       ? ` ${h.owner || "Your care team"} will still call at ${clock(h.promise)}, as promised.`
       : "";
   switch (selected) {
+    case "first-use":
+      return { key: "first-use", title: "You’re connected",
+        body: "Your broadband is active and we’ve now observed a successful connection. You don’t need to repeat the setup steps. Your activation history is here if you need us." };
     case "confirmation":
       return {
         key: "confirmed",

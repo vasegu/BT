@@ -31,6 +31,7 @@ export type Household = {
   promiseFulfilled: boolean;
   serviceState: string;
   activation: string;
+  firstUseObserved?: boolean;
   habit: string | null;
   restartTried: boolean;
   restored: boolean;

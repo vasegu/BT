@@ -38,10 +38,10 @@ test(
       }
       const final = await remote.snapshot(b.id);
       assert.equal(final.decisions.length, 15);
-      assert.equal(final.actions.length, 6);
+      assert.equal(final.actions.length, 7);
       await remote.advance(b.id, "confirm", "step-4", 4);
       await remote.processJobs(undefined, b.id);
-      assert.equal((await remote.snapshot(b.id)).actions.length, 6);
+      assert.equal((await remote.snapshot(b.id)).actions.length, 7);
       await assert.rejects(
         remote.advance(b.id, "confirm", "wrong", 0),
         /revision|step/i,
@@ -49,7 +49,7 @@ test(
       const reopen = new PostgresRepository(database(true));
       try {
         const s = await reopen.snapshot(b.id);
-        assert.equal(s.actions.length, 6);
+        assert.equal(s.actions.length, 7);
         assert.ok(s.operations.outcomes.length > 0);
         assert.equal(
           (await reopen.snapshot(b.id, 1)).households[0].restored,

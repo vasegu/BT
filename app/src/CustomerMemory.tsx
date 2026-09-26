@@ -72,7 +72,7 @@ export function CustomerMemory({
           ]
         : [
             ["What arrived", "Hub delivery recorded", "order.delivered"],
-            ["What is missing", "Activation and successful first use", undefined],
+            [h.firstUseObserved ? "What is verified" : "What is missing", h.firstUseObserved ? "Successful first use observed" : "Successful first use", h.firstUseObserved ? "activation.first_use_observed" : undefined],
             ["Latest signal", h.serviceState, events.at(-1)?.type],
           ];
   return (
@@ -92,7 +92,7 @@ export function CustomerMemory({
               {h.id === "maya"
                 ? "An overnight rhythm."
                 : h.id === "sam"
-                  ? "A first-use gap."
+                  ? h.firstUseObserved ? "A verified first use." : "A first-use gap."
                   : "A history to honour."}
             </h2>
             <p>

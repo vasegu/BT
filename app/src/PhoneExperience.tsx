@@ -78,7 +78,7 @@ export function PhoneExperience({
   };
   const service = h.confirmed
     ? "Working · confirmed by you"
-    : h.restored
+    : h.firstUseObserved ? "Connected · first use observed" : h.restored
       ? "Connection observed"
       : snapshot.cutoff && h.id !== "maya"
         ? "Your service team has the context"
