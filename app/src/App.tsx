@@ -43,7 +43,9 @@ async function api<T>(path: string, body?: unknown): Promise<T> {
   );
   const value = await response.json();
   if (!response.ok)
-    throw new Error(value.error || `Request failed (${response.status})`);
+    throw Object.assign(new Error(value.error || `Request failed (${response.status})`), {
+      status: response.status,
+    });
   return value;
 }
 function useLocation() {
@@ -187,6 +189,7 @@ export function App() {
   const cutoff = params.has("at") ? Number(params.get("at")) : undefined;
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null),
     [error, setError] = useState(""),
+    [sessionUnavailable, setSessionUnavailable] = useState(false),
     [busy, setBusy] = useState(false),
     [playing, setPlaying] = useState(false),
     [inspected, setInspected] = useState<SourceEvent | null>(null);
@@ -208,11 +211,15 @@ export function App() {
           JSON.stringify(old) === JSON.stringify(next) ? old : next,
         );
         setError("");
+        setSessionUnavailable(false);
       }
     } catch (e) {
       if (n === request.current) {
         setError((e as Error).message);
+        const missing = (e as Error & { status?: number }).status === 404;
+        setSessionUnavailable(missing);
         setPlaying(false);
+        if (missing) return false;
       }
     }
   }, [sessionId, cutoff]);
@@ -226,12 +233,16 @@ export function App() {
         {
           session: session.id,
           at: null,
+          view: null,
+          eval: null,
+          study: null,
           panel: sessionId ? null : panel,
           chat: sessionId ? null : params.get("chat"),
         },
         !sessionId,
       );
       setError("");
+      setSessionUnavailable(false);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -246,9 +257,10 @@ export function App() {
   }, [sessionId]);
   useEffect(() => {
     setSnapshot(null);
+    setSessionUnavailable(false);
     let stopped=false;
     let timer:ReturnType<typeof setTimeout>;
-    const poll=async()=>{await refresh();if(!stopped)timer=setTimeout(poll,1000);};
+    const poll=async()=>{const retry=await refresh();if(!stopped && retry!==false)timer=setTimeout(poll,1000);};
     void poll();
     return () => {
       stopped=true;
@@ -702,7 +714,7 @@ export function App() {
         )}
         <span className="runtime-badge">
           <i className={error ? "offline" : ""} />
-          {error ? "Connection issue" : snapshot?.storage === "supabase" ? "Supabase runtime" : "Local runtime"}
+          {sessionUnavailable ? "Session unavailable" : error ? "Connection issue" : snapshot?.storage === "supabase" ? "Supabase runtime" : "Local runtime"}
         </span>
         {!focused && (
           <a className="review-link" href="/reference/design/review.html">
@@ -725,7 +737,7 @@ export function App() {
             <strong>
               {snapshot
                 ? stepLabels[snapshot.cutoff]
-                : "Connecting to the runtime…"}
+                : error ? "Session unavailable" : "Connecting to the runtime…"}
             </strong>
           </div>
           <div className="step-track" aria-label="Replay steps">
@@ -830,8 +842,12 @@ export function App() {
       )}
       {error && (
         <div className="error-banner" role="alert">
-          <span>{error}</span>
-          <button onClick={() => void refresh()}>Retry connection</button>
+          <span>{sessionUnavailable
+            ? "This session isn’t available in the current data store. Start a new replay to load the current household dataset."
+            : error}</span>
+          <button disabled={busy} onClick={() => void (sessionUnavailable ? newSession() : refresh())}>
+            {sessionUnavailable ? busy ? "Starting replay…" : "Start new replay" : "Retry connection"}
+          </button>
         </div>
       )}
       {snapshot?.failedJobs ? (
@@ -872,11 +888,11 @@ export function App() {
         {focused ? (
           <div className="focused-context">
             <strong>{review ? "Replay corpus" : names[person]}</strong>
-            <code>{review ? "Three households · completed runs" : h?.serviceId || "Loading service…"}</code>
+            <code>{review ? "Three households · completed runs" : h?.serviceId || (error ? "Service unavailable" : "Loading service…")}</code>
             <span>
               {snapshot
                 ? `${formatTime(snapshot.clock)} · ${snapshot.historical ? "Historical snapshot" : "Current snapshot"} · rev ${snapshot.cutoff}`
-                : "Loading snapshot…"}
+                : error ? "Snapshot unavailable" : "Loading snapshot…"}
             </span>
           </div>
         ) : (
@@ -921,7 +937,7 @@ export function App() {
                   <code>{short(snapshot.session.id)}</code>
                 </>
               ) : (
-                "Opening session…"
+                error ? "Session unavailable" : "Opening session…"
               )}
             </div>
           </div>
@@ -929,7 +945,7 @@ export function App() {
         {!snapshot || !h ? (
           <div className="loading">
             <Glyph />
-            <p>Loading the data model…</p>
+            <p>{error ? "The data model could not be loaded." : "Loading the data model…"}</p>
           </div>
         ) : review ? (
           <AgentReview snapshot={snapshot} controlled={params.get("study") === "controls"}/>
@@ -1018,7 +1034,7 @@ export function App() {
             · demo actions
           </span>
           <span>
-            {snapshot?.storage === "supabase" ? "Supabase" : "SQLite"} + server worker <b>·</b> Eve / OpenAI on demand
+            {snapshot ? `${snapshot.storage === "supabase" ? "Supabase" : "SQLite"} + server worker` : "Runtime not loaded"} <b>·</b> Eve / OpenAI on demand
           </span>
         </footer>
       </main>
