@@ -2,6 +2,8 @@
 
 A working local demonstrator and design pack connecting Mark's pitch to customer memory, operational context, ambient agents, arbitration and accountable action. It carries forward interaction and engineering patterns from Jio CX, Sainsbury's and Soho House.
 
+Private repository: [vasegu/BT](https://github.com/vasegu/BT). Current planning focus: [data foundation — gaps, relational model and three-household simulation](docs/superpowers/plans/2026-09-26-bt-data-foundation.md). The Supabase migration is planned; the running app still uses SQLite.
+
 ## Run the app
 
 Requires Node 24 or newer. The rules baseline works without Docker or an API key. Jev uses a Vercel AI Gateway key for live arbitration; Eve uses an OpenAI project key for live chat and voice.
@@ -95,7 +97,7 @@ Open `http://127.0.0.1:5181/design/review.html`. Port 5181 keeps the existing So
 
 ## Status and provenance
 
-Design pack moved from `../SohoHouse` on 25 September 2026. Original BT specification commit: Soho `a38501c`. The first working app is in `app/`; hosted database, Gateway configuration and deployment remain unconfigured. This is a local Git repository; no GitHub remote has been created or published.
+Design pack moved from `../SohoHouse` on 25 September 2026. Original BT specification commit: Soho `a38501c`. The working app is in `app/`, with local Gateway/Eve integrations described above. The dedicated hosted BT database and application deployment remain planned. App and design history are maintained in the private `vasegu/BT` GitHub repository; local keys and runtime data are excluded.
 
 Reference implementations remain in the sibling `SohoHouse`, `ecd_jio_cx` and `sainsburys-demo` repositories. The spec records the inspected revisions. No credentials or customer datasets were transferred.
 
