@@ -2,6 +2,8 @@ import { createServer } from "node:http";
 import { readFileSync, existsSync, statSync, mkdirSync } from "node:fs";
 import { resolve, dirname, extname, sep } from "node:path";
 import { fileURLToPath } from "node:url";
+import { ContextEvals, summariseEvaluation } from "./context-evals.ts";
+import { buildHodoscope, explorerPath, explorerStatus } from "./hodoscope-export.ts";
 import { behaviourSpace } from "./behaviour.ts";
 import { Engine, DomainError } from "./engine.ts";
 import { assessmentConfig, evaluateJev } from "./assessment.ts";
@@ -18,6 +20,7 @@ const port = Number(process.env.BT_PORT || 5186);
 const dbPath = process.env.BT_DB_PATH || resolve(root, ".data/bt.sqlite");
 mkdirSync(dirname(dbPath), { recursive: true });
 const engine = new Engine(dbPath);
+const contextEvals = new ContextEvals(engine.db);
 const getEveConfig = () => eveConfig(resolve(root, ".env.local"));
 let eveRequests = 0;
 const worker = setInterval(() => {
@@ -74,6 +77,50 @@ const server = createServer(async (req, res) => {
             configured: Boolean(config.key.trim()),
             textModel: config.textModel,
             voiceModel: "gpt-live-1",
+          });
+        }
+        if (
+          url.pathname === "/api/context-evals" ||
+          url.pathname === "/api/context-evals/explorer"
+        ) {
+          const id = url.searchParams.get("session");
+          if (!id) throw new DomainError("Session is required");
+          const snapshot = engine.snapshot(
+            id,
+            url.searchParams.has("at")
+              ? Number(url.searchParams.get("at"))
+              : undefined,
+          );
+          const suite = snapshot.cutoff >= 1 ? contextEvals.get(id) : null;
+          if (url.pathname.endsWith("/explorer")) {
+            if (!suite || !existsSync(explorerPath(suite)))
+              throw new DomainError(
+                "The native Hodoscope explorer is not ready.",
+                409,
+              );
+            res.writeHead(200, {
+              "Content-Type": "text/html; charset=utf-8",
+              "Cache-Control": "no-store",
+            });
+            return res.end(readFileSync(explorerPath(suite)));
+          }
+          return send(200, {
+            suite,
+            summary: suite ? summariseEvaluation(suite) : [],
+            explorer: Boolean(suite && explorerStatus(suite) === "ready"),
+            exportStatus: suite ? explorerStatus(suite) : "unavailable",
+            map:
+              suite &&
+              existsSync(
+                resolve(dirname(explorerPath(suite)), "projection.json"),
+              )
+                ? JSON.parse(
+                    readFileSync(
+                      resolve(dirname(explorerPath(suite)), "projection.json"),
+                      "utf8",
+                    ),
+                  )
+                : null,
           });
         }
         if (url.pathname === "/api/behaviour-space") {
@@ -199,6 +246,38 @@ const server = createServer(async (req, res) => {
           eveRequests--;
           res.off("close", disconnected);
         }
+      }
+      if (url.pathname === "/api/context-evals") {
+        if (typeof value.sessionId !== "string")
+          throw new DomainError("Session is required");
+        const config = assessmentConfig(resolve(root, ".env.local"));
+        if (!config.key.trim())
+          throw new DomainError(
+            "Configure the AI Gateway key before running a model evaluation.",
+            503,
+          );
+        const snapshot = engine.snapshot(value.sessionId, 1);
+        const suite = contextEvals.start(snapshot, (request) =>
+          evaluateJev(request, config),
+        );
+        void contextEvals
+          .finished()
+          .then(() => {
+            const complete = contextEvals.get(snapshot.session.id);
+            if (complete?.status === "complete")
+              return buildHodoscope(complete);
+          })
+          .catch(() =>
+            console.error(
+              "Native Hodoscope export is unavailable; recorded evaluations are still inspectable.",
+            ),
+          );
+        return send(202, {
+          suite,
+          summary: summariseEvaluation(suite),
+          explorer: explorerStatus(suite) === "ready",
+          exportStatus: explorerStatus(suite),
+        });
       }
       if (url.pathname === "/api/scenarios")
         return send(201, engine.createSession());

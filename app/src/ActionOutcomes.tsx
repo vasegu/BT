@@ -5,6 +5,7 @@ import {
   BehaviourInspector,
   useBehaviourSpace,
 } from "./BehaviourSpace";
+import { ContextEvaluation } from "./ContextEvaluation";
 import { useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import type {
@@ -288,9 +289,16 @@ export function ActionOutcomes({
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null),
     [filter, setFilter] = useState("all"),
-    [view, setView] = useState<"behaviour" | "evidence">("behaviour"),
+    [view, setViewState] = useState<"behaviour" | "evidence" | "eval">(() => new URLSearchParams(location.search).get("eval") === "context" ? "eval" : "behaviour"),
     [selectedRunId, setSelectedRunId] = useState<string | null>(null),
     [referenceId, setReferenceId] = useState<string | null>(null);
+  const setView = (next: "behaviour" | "evidence" | "eval") => {
+    setViewState(next);
+    const url = new URL(location.href);
+    if (next === "eval") url.searchParams.set("eval", "context");
+    else url.searchParams.delete("eval");
+    history.replaceState(null, "", url);
+  };
   const space = useBehaviourSpace(snapshot);
   const runRows =
     space.data?.runs.filter((r) => filter === "all" || r.person === filter) ||
@@ -359,6 +367,13 @@ export function ActionOutcomes({
     selected &&
     modelMemory.find((m) => m.id === selected.id);
   const loopReady = selected && selected.check.status !== "waiting";
+  if (view === "eval")
+    return (
+      <ContextEvaluation
+        snapshot={snapshot}
+        back={() => setView("behaviour")}
+      />
+    );
   return (
     <div className="operational-memory action-outcomes">
       <div className="om-summary">
@@ -503,6 +518,9 @@ export function ActionOutcomes({
           >
             <div className="om-map-tools">
               <div className="bs-view-controls" aria-label="Chart view">
+                <button onClick={() => setView("eval")}>
+                  Controlled eval ↗
+                </button>
                 <button
                   aria-pressed={view === "behaviour"}
                   onClick={() => setView("behaviour")}

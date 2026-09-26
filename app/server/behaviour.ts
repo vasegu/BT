@@ -271,7 +271,7 @@ function localEncoder() {
     });
   return encoder;
 }
-async function embed(input: string) {
+export async function embed(input: string) {
   const key = createHash("sha256").update(input).digest("hex");
   if (!vectors.has(key)) {
     if (vectors.size >= 128) vectors.delete(vectors.keys().next().value!);

@@ -1,6 +1,6 @@
 # Context → possible actions → governed action → customer evidence
 
-Updated 26 September after clarifying the intended Hodoscope-inspired interaction. This is a local inspection tool, not a connection to Hodoscope. The earlier map embedded context together with the selected action. That mixed the input and output, so it could not support the question we actually want to ask: **where do nearby input contexts lead to different responses?**
+Updated 26 September after clarifying the intended Hodoscope-inspired interaction. This recorded-comparison view is a local inspection tool. The adjacent [controlled eval](2026-09-26-context-invariance-eval.md) now uses the actual Hodoscope package and the Jio explorer structure. The earlier map embedded context together with the selected action. That mixed the input and output, so it could not support the question we actually want to ask: **where do nearby input contexts lead to different responses?**
 
 ## Mark's pitch is the organising question
 
@@ -46,7 +46,7 @@ The completed replay `a3d0a506-abb7-4c39-923e-dbd48394a9ba` contains fifteen sav
 
 The current view compares observations. To establish which context feature sways a decision, hold model/settings, questions, candidate policy and all other retrieved context fixed; alter one supported fact; repeat calls; compare distributions and governed selections. Record these as evaluation-only runs, never real customer dispatches. A one-off difference is not enough to infer a reliable causal relationship.
 
-That controlled experiment is not implemented here. Neither is a trained contextual bandit. The future loop is illustrated as context + action + outcome → reward → policy improvement, with an explicit Concept label. No reward model, policy update or commercial uplift estimate runs behind the visual.
+The first controlled experiment is now implemented as a separate **Controlled eval** view: frozen 21:00 requests, gamer self-description variants, three repeats and actual Hodoscope projection. See [method and pilot results](2026-09-26-context-invariance-eval.md). A trained contextual bandit remains unimplemented. The future loop is illustrated as context + action + outcome → reward → policy improvement, with an explicit Concept label. No reward model, policy update or commercial uplift estimate runs behind the visual.
 
 ## Runtime and verification
 

@@ -51,6 +51,14 @@ The full-page workspace links proposal selection, source activity, memory change
 
 Operational memory shows shared incident scope, capacity and source freshness. **Actions & outcomes** contains the persisted expectation/verification ledger and a context-to-action inspection view of actual recorded decision runs: local 384D factual embeddings, paired Jev action distributions, prompt/eligibility differences and linked evidence. Older plans are visibly reconstructed; new plans capture contracts when committed. The bandit learning loop is conceptual only. See [outcome design and limits](docs/design/2026-09-25-operational-memory.md) and [behaviour-space methods and local runtime requirements](docs/design/2026-09-25-behaviour-space.md).
 
+### Controlled context eval and Hodoscope
+
+Open **Actions & outcomes → Controlled eval**. The explorer follows Jio's **Observe → Triage → Decide → Improve** structure: action embeddings and density overlays, largest measured shifts, a paired trace inspector and regression evidence. It evaluates whether an unverified “I'm a gamer” claim diverts an existing service plan.
+
+A run makes 36 real Jev calls (three frozen service cases × four variants × three repeats), persists each attempt and applies the existing policy gates without dispatching customer actions. Viewing saved results is read-only. Missing frozen requests are rejected before billing; interrupted/failed calls are not silently retried. Known violations remain failures even when coverage is incomplete.
+
+The completed local pilot has 36 recorded calls, no model/governed action flips and maximum total-variation shift 0.01. This is a bounded pilot, not universal robustness or commercial uplift. **Open native Hodoscope** opens the upstream explorer over the same action records. Local 384D embeddings, upstream PCA and KDE overlays are real; three identical action groups overlap deliberately. See [evaluation design, installation, controls and limitations](docs/design/2026-09-26-context-invariance-eval.md).
+
 Implementation and source comparison: [Jev integration and the real Sainsbury's CA2 pattern](docs/design/2026-09-25-jev-arbiter.md).
 
 ### Eve: live chat and voice
