@@ -1,26 +1,27 @@
 /* Agent review · context sway — styled after the Jio CX Hodoscope action map.
    Tokens are scoped to .hodo so the rest of the BT app keeps its own palette. */
 .hodo {
-  --h-bg: #faf9f5;
-  --h-raised: #ffffff;
-  --h-code: #f3f1ec;
-  --h-border: #e8e5de;
-  --h-border-soft: #efede6;
-  --h-text: #1f1e1b;
-  --h-muted: #6b6960;
-  --h-faint: #a09d93;
-  --h-accent: #5514b4;
-  --h-danger: #b53a3a;
-  --h-success: #3d8b5e;
-  --h-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
-  --h-shadow: 0 2px 6px rgba(28, 27, 24, 0.06), 0 8px 24px rgba(28, 27, 24, 0.04);
+  /* Same tokens as the rest of the app (styles.css): canvas, surfaces, lines, ink, brand. */
+  --h-bg: var(--canvas);
+  --h-raised: var(--surface);
+  --h-code: #f4f2f7;
+  --h-border: var(--line);
+  --h-border-soft: #efedf2;
+  --h-text: var(--ink);
+  --h-muted: var(--muted);
+  --h-faint: #a39fab;
+  --h-accent: var(--brand);
+  --h-danger: #c2416b;
+  --h-success: #0f7b5f;
+  --h-mono: var(--mono);
+  --h-shadow: 0 2px 6px rgba(40, 20, 60, 0.06), 0 8px 24px rgba(40, 20, 60, 0.05);
   color: var(--h-text);
-  font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
+  font-family: var(--sans);
 }
 .hodo-empty {
   margin: 0;
   padding: 24px 4px;
-  color: #6b6960;
+  color: var(--muted);
   font-size: 12px;
 }
 .hodo-label {
@@ -36,43 +37,27 @@
 .hodo-page {
   display: flex;
   flex-direction: column;
-  margin: 0 -26px;
-  background: var(--h-bg);
-  border-top: 1px solid var(--h-border);
-}
-.hodo-head {
-  padding: 16px 28px 12px;
-}
-.hodo-head h1 {
-  margin: 0;
-  font-size: 21px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-}
-.hodo-head h1 span {
-  color: var(--h-muted);
-  font-weight: 400;
-}
-.hodo-head p {
-  margin: 4px 0 0;
-  color: var(--h-muted);
-  font-size: 13px;
-  letter-spacing: 0.01em;
+  gap: 14px;
 }
 .hodo-stats {
   display: flex;
-  flex-wrap: wrap;
-  border-top: 1px solid var(--h-border);
-  border-bottom: 1px solid var(--h-border);
-  background: var(--h-bg);
+  flex-wrap: nowrap;
+  overflow: hidden;
+  border: 1px solid var(--h-border);
+  border-radius: 12px;
+  background: var(--h-raised);
 }
 .hodo-stat {
   display: flex;
   align-items: baseline;
-  gap: 9px;
+  gap: 8px;
   min-width: 0;
   padding: 9px 16px;
   border-right: 1px solid var(--h-border-soft);
+  white-space: nowrap;
+}
+.hodo-stat:last-child {
+  border-right: 0;
 }
 .hodo-stat span {
   color: var(--h-faint);
@@ -81,7 +66,7 @@
   text-transform: uppercase;
 }
 .hodo-stat b {
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 600;
   line-height: 1.1;
 }
@@ -94,7 +79,6 @@
   display: flex;
   gap: 14px;
   height: max(640px, calc(100vh - 230px));
-  padding: 14px 20px;
 }
 .hodo-card {
   display: flex;
@@ -178,7 +162,7 @@
   border-radius: 6px;
   background: var(--h-raised);
   color: var(--h-text);
-  font: 13px -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+  font: 13px var(--sans);
 }
 .hodo-count {
   padding-top: 6px;
@@ -229,10 +213,8 @@
   font-size: 11px;
 }
 .hodo-pop {
-  position: absolute;
-  top: 110%;
-  left: 0;
-  z-index: 50;
+  position: fixed;
+  z-index: 1000;
   width: 340px;
   padding: 12px 14px;
   background: var(--h-raised);
@@ -347,7 +329,7 @@
   font-weight: 600;
 }
 .hodo-scale .is-under {
-  color: #23467e;
+  color: #2a78d6;
   font-weight: 600;
 }
 .hodo-vertical {
@@ -379,7 +361,7 @@
   background: var(--h-bg);
 }
 .hodo-item[aria-pressed="true"] {
-  background: #f1ebfa;
+  background: var(--soft);
 }
 .hodo-item-head {
   display: flex;
@@ -421,7 +403,7 @@
   display: flex;
   justify-content: space-between;
   gap: 20px;
-  padding: 0 24px 16px;
+  padding: 0 4px 16px;
   color: var(--h-muted);
   font-size: 11.5px;
 }
@@ -536,12 +518,12 @@
 .hodo-review button[aria-pressed="true"]:first-child {
   border-color: var(--h-success);
   color: var(--h-success);
-  background: #e9f3ec;
+  background: #e3f4ee;
 }
 .hodo-review button[aria-pressed="true"]:last-child {
   border-color: var(--h-danger);
   color: var(--h-danger);
-  background: #f8e9e9;
+  background: #fcf3f6;
 }
 .hodo-faint {
   display: block;
@@ -569,11 +551,11 @@
   font-size: 12px;
 }
 .hodo-check.is-ok {
-  background: #e9f3ec;
-  color: #2f6e4a;
+  background: #e3f4ee;
+  color: #0f7b5f;
 }
 .hodo-check.is-bad {
-  background: #f8e9e9;
+  background: #fcf3f6;
   color: var(--h-danger);
 }
 @media (max-width: 1100px) {
@@ -585,4 +567,83 @@
     width: auto;
     max-height: 520px;
   }
+}
+
+/* what led to an action */
+.hodo-typical {
+  margin: 4px 8px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.hodo-typical div {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 8px;
+  font-size: 12px;
+}
+.hodo-typical dt {
+  color: var(--h-muted);
+}
+.hodo-typical dd {
+  margin: 0;
+}
+.hodo-typical small {
+  color: var(--h-faint);
+  font: 10px var(--h-mono);
+}
+.hodo-item.is-odd {
+  border-left: 3px solid #c2416b;
+  border-radius: 0 8px 8px 0;
+}
+.hodo-diff {
+  margin: 3px 0 0 !important;
+  font-size: 12.5px !important;
+}
+.hodo-diff small {
+  display: inline !important;
+  margin-left: 4px;
+  color: var(--h-faint);
+}
+
+/* overview tile: subtitle, readable axes, colour key */
+.hodo-tile-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.hodo-tile-sub {
+  margin: -4px 0 0;
+  color: var(--h-muted);
+  font-size: 11.5px;
+}
+.hodo-tile-sub b {
+  color: var(--h-text);
+  font-weight: 600;
+}
+.hodo-axis-label.is-compact {
+  fill: var(--h-muted);
+  font: 9px var(--h-sans, var(--sans));
+  letter-spacing: 0;
+}
+.hodo-tile-key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  font-size: 11px;
+  color: var(--h-text);
+}
+.hodo-tile-key span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.hodo-tile-key i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.hodo-tile-key .is-more {
+  color: var(--h-faint);
+  font: 10px var(--h-mono);
 }

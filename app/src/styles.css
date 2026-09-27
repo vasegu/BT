@@ -1903,3 +1903,33 @@ footer b {
     --text-meta: 8px;
   }
 }
+
+/* Single breadcrumb on expanded pages: the crumb is the way back. */
+.topbar .crumbs {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-left: 18px;
+  border-left: 1px solid var(--line);
+  font-size: 12.5px;
+}
+.topbar .crumbs button {
+  border: 0;
+  padding: 5px 9px;
+  border-radius: 7px;
+  background: none;
+  color: var(--brand);
+  font-weight: 500;
+}
+.topbar .crumbs button:hover {
+  background: var(--soft);
+}
+.topbar .crumbs span {
+  color: var(--line);
+}
+.topbar .crumbs strong {
+  font-weight: 600;
+}
+.topbar .runtime-badge {
+  margin-left: auto;
+}

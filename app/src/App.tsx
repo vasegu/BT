@@ -841,35 +841,26 @@ export function App() {
         <div className="identity">
           <img src={btLogo} alt="BT" />
           <span>
-            Experience intelligence<small>BT CONSUMER / WORKING APP</small>
+            Experience intelligence<small>BT Consumer</small>
           </span>
         </div>
         {focused ? (
-          <>
-            <span className="focus-heading">
-              ACCOUNT /{" "}
-              {review
-                ? "AGENT REVIEW"
-                : records
-                  ? "SOURCE RECORDS"
-                  : panelNames[panel!].toUpperCase()}
-            </span>
-            <button
-              className="focus-back"
-              onClick={() => openPanel(review ? "review" : null)}
-            >
-              {review ? "← Back to agent review" : "← Back to account"}
+          <nav className="crumbs" aria-label="Breadcrumb">
+            <button onClick={() => openPanel(review ? "review" : null)}>
+              ← {review ? "Agent review" : "Account"}
             </button>
-          </>
+            <span aria-hidden="true">/</span>
+            <strong>
+              {review ? "Response wording" : records ? "Source records" : panelNames[panel!]}
+            </strong>
+          </nav>
         ) : (
           <nav aria-label="Main">
-            <button
-              aria-current="page"
-              onClick={() => change({ view: null, panel: null })}
-            >
+            <button aria-current={!records ? "page" : undefined} onClick={() => change({ view: null, panel: null })}>
               Account
             </button>
             <button
+              aria-current={records ? "page" : undefined}
               onClick={() => {
                 setPlaying(false);
                 change({ view: "records", panel: null });
@@ -879,21 +870,10 @@ export function App() {
             </button>
           </nav>
         )}
-        <span className="runtime-badge">
+        <span className="runtime-badge" title={snapshot?.storage === "supabase" ? "Supabase runtime" : "Local runtime"}>
           <i className={error ? "offline" : ""} />
-          {sessionUnavailable
-            ? "Session unavailable"
-            : error
-              ? "Connection issue"
-              : snapshot?.storage === "supabase"
-                ? "Supabase runtime"
-                : "Local runtime"}
+          {sessionUnavailable ? "Session unavailable" : error ? "Connection issue" : snapshot?.storage === "supabase" ? "Live" : "Local"}
         </span>
-        {!focused && (
-          <a className="review-link" href="/reference/design/review.html">
-            Design review ↗
-          </a>
-        )}
       </header>
       {!focused && presenting && (
         <MomentSpine

@@ -58,12 +58,11 @@ export function gaussianKDE(
   return grid;
 }
 
-/** t in [-1, 1]: red for over-represented, blue for under, near-white at 0. */
+/** t in [-1, 1]: rose for over-represented, blue for under, near-white at 0 (app palette). */
 export function divergingColor(t: number) {
   const a = Math.min(1, Math.abs(t));
-  if (t >= 0)
-    return `rgb(${Math.round(250 - 85 * a)},${Math.round(244 - 214 * a)},${Math.round(232 - 202 * a)})`;
-  return `rgb(${Math.round(244 - 209 * a)},${Math.round(248 - 178 * a)},${Math.round(252 - 122 * a)})`;
+  const mix = (from: number[], to: number[]) => `rgb(${from.map((v, i) => Math.round(v + (to[i] - v) * a)).join(",")})`;
+  return t >= 0 ? mix([250, 246, 248], [194, 65, 107]) : mix([246, 248, 252], [42, 120, 214]);
 }
 
 export function makeContourPaths(

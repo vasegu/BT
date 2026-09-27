@@ -14,6 +14,7 @@ import {
   divergingColor,
   makeContourPaths,
 } from "./hodoscope-specs";
+import "./actions-view.css";
 import "./sway.css";
 
 // Visual language follows the Jio CX Hodoscope action map: warm neutrals, hairlines,
@@ -30,18 +31,19 @@ export const actionLabels: Record<string, string> = {
   defer: "Hold / review",
 };
 const ACTION_TINT: Record<string, string> = {
-  incident: "#CC6633",
-  recovery: "#4A6EAD",
-  restoration: "#3D8B5E",
-  confirmation: "#856B3A",
-  activation: "#C08040",
-  "first-use": "#7B5EA7",
-  watch: "#A09D93",
-  no_plan: "#B53A3A",
-  defer: "#6B6960",
+  // The app's own palette: brand purple, the household/status colours used across the panels.
+  incident: "#c2416b",
+  recovery: "#5514b4",
+  restoration: "#0f7b5f",
+  confirmation: "#2a78d6",
+  activation: "#a15c07",
+  "first-use": "#0e9aa7",
+  watch: "#8a8494",
+  no_plan: "#3b3544",
+  defer: "#b9b3c1",
 };
-const PERSON_TINT: Record<PersonId, string> = { daniel: "#5514B4", sam: "#3D8B5E", maya: "#C08040" };
-const KIND_TINT: Record<SwayPoint["kind"], string> = { recorded: "#1F1E1B", base: "#4A6EAD", single: "#CC6633", pair: "#A09D93" };
+const PERSON_TINT: Record<PersonId, string> = { daniel: "#5514b4", sam: "#0f7b5f", maya: "#a15c07" };
+const KIND_TINT: Record<SwayPoint["kind"], string> = { recorded: "#2a2a2a", base: "#5514b4", single: "#c2416b", pair: "#b9b3c1" };
 const KIND_LABEL: Record<SwayPoint["kind"], string> = {
   recorded: "live decision",
   base: "policy replay",
@@ -55,6 +57,35 @@ const who = (p: SwayPoint) => householdNames[p.person].split(" ")[0];
 const when = (p: SwayPoint) => moments[p.revision]?.time ?? "";
 
 type ColorBy = "action" | "person" | "moment" | "kind" | "changed";
+
+/** The structured facts the agent saw, read back from the first lines of the embedded context. */
+function factsOf(p: SwayPoint): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const line of p.text.split("\n").slice(0, 3))
+    for (const m of line.matchAll(/([A-Z][A-Za-z ]+?): ([^.]+)\./g)) out[m[1].trim()] = m[2].trim();
+  return out;
+}
+/** For one action: what its contexts usually look like, and which ones got there unusually. */
+function triggers(points: SwayPoint[]) {
+  const facts = points.map((p) => ({ p, f: factsOf(p) }));
+  const keys = [...new Set(facts.flatMap((x) => Object.keys(x.f)))];
+  const typical = keys
+    .map((k) => {
+      const counts = new Map<string, number>();
+      for (const x of facts) counts.set(x.f[k] ?? "—", (counts.get(x.f[k] ?? "—") || 0) + 1);
+      const [value, n] = [...counts].sort((a, b) => b[1] - a[1])[0];
+      return { key: k, value, share: n / facts.length };
+    })
+    .filter((t) => t.share >= 0.6);
+  const unusual = facts
+    .map(({ p, f }) => ({
+      p,
+      diffs: typical.filter((t) => (f[t.key] ?? "—") !== t.value).map((t) => ({ key: t.key, value: f[t.key] ?? "—", usual: t.value })),
+    }))
+    .filter((x) => x.diffs.length)
+    .sort((a, b) => b.diffs.length - a.diffs.length || Number(b.p.kind === "recorded") - Number(a.p.kind === "recorded") || b.p.outlier - a.p.outlier);
+  return { typical, unusual };
+}
 type Density = "off" | "groups" | "diff";
 
 // The all-customer review is baked at build time (scripts/build-context-sway.ts): the replay
@@ -117,7 +148,7 @@ function grouping(colorBy: ColorBy, changed: (p: SwayPoint) => boolean) {
               : "same action as replay";
   const color = (k: string) =>
     colorBy === "action"
-      ? ACTION_TINT[k] || "#856B3A"
+      ? ACTION_TINT[k] || "#8a8494"
       : colorBy === "person"
         ? PERSON_TINT[k as PersonId]
         : colorBy === "moment"
@@ -125,8 +156,8 @@ function grouping(colorBy: ColorBy, changed: (p: SwayPoint) => boolean) {
           : colorBy === "kind"
             ? KIND_TINT[k as SwayPoint["kind"]]
             : k === "changed"
-              ? "#B53A3A"
-              : "#C9C5BB";
+              ? "#c2416b"
+              : "#d6d0de";
   return { key, label, color };
 }
 
@@ -180,7 +211,7 @@ function Scatter({
     const half = (Math.max(xmax - xmin, ymax - ymin) / 2) * 1.06;
     const xRange = [(xmax + xmin) / 2 - half, (xmax + xmin) / 2 + half],
       yRange = [(ymax + ymin) / 2 - half, (ymax + ymin) / 2 + half];
-    const pad = compact ? { l: 26, r: 8, t: 8, b: 22 } : { l: 38, r: 14, t: 12, b: 28 };
+    const pad = compact ? { l: 18, r: 6, t: 6, b: 20 } : { l: 38, r: 14, t: 12, b: 28 };
     const innerW = size.w - pad.l - pad.r,
       innerH = size.h - pad.t - pad.b;
     const plot = Math.max(20, Math.min(innerW, innerH));
@@ -197,7 +228,8 @@ function Scatter({
   const layers = useMemo(() => {
     if (density === "off") return null;
     const groups: Record<string, SwayPoint[]> = {};
-    for (const r of allRows) (groups[groupKey(r)] ||= []).push(r);
+    // Bands follow what is on the map (after filters); axes stay pinned to the full dataset.
+    for (const r of rows) (groups[groupKey(r)] ||= []).push(r);
     const s = plot / GRID_W;
     const map = (gi: number, gj: number): [number, number] => [plotL + gi * s, plotT + plot - gj * (plot / GRID_H)];
     if (density === "groups")
@@ -223,7 +255,7 @@ function Scatter({
     for (let k = 0; k < a.length; k++) diff[k] /= amax || 1;
     return { mode: "diff" as const, paths: makeContourPaths(diff, DIFF_LEVELS, map) };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [density, densityGroup, allRows, groupKey, plot, plotL, plotT]);
+  }, [density, densityGroup, rows, groupKey, plot, plotL, plotT]);
   const clip = `clip-${compact ? "c" : "f"}`;
   return (
     <svg ref={ref} width="100%" height="100%" className="hodo-svg" onMouseLeave={() => onHover?.(null, 0, 0)}>
@@ -256,18 +288,28 @@ function Scatter({
       )}
       <line x1={plotL} y1={plotT + plot} x2={plotL + plot} y2={plotT + plot} className="hodo-axis" />
       <line x1={plotL} y1={plotT} x2={plotL} y2={plotT + plot} className="hodo-axis" />
-      {xTicks.map((t) => (
+      {!compact && xTicks.map((t) => (
         <g key={`xt${t}`}>
           <line x1={px(t)} y1={plotT + plot} x2={px(t)} y2={plotT + plot + 4} className="hodo-axis" />
           <text x={px(t)} y={plotT + plot + 16} className="hodo-tick" textAnchor="middle">{t}</text>
         </g>
       ))}
-      {yTicks.map((t) => (
+      {!compact && yTicks.map((t) => (
         <g key={`yt${t}`}>
           <line x1={plotL - 4} y1={py(t)} x2={plotL} y2={py(t)} className="hodo-axis" />
           <text x={plotL - 7} y={py(t) + 3} className="hodo-tick" textAnchor="end">{t}</text>
         </g>
       ))}
+      {compact && (
+        <>
+          <text x={plotL + plot / 2} y={plotT + plot + 15} className="hodo-axis-label is-compact" textAnchor="middle">
+            similar contexts sit close together →
+          </text>
+          <text x={plotL - 9} y={plotT + plot / 2} className="hodo-axis-label is-compact" textAnchor="middle" transform={`rotate(-90, ${plotL - 9}, ${plotT + plot / 2})`}>
+            context space (UMAP) →
+          </text>
+        </>
+      )}
       {!compact && (
         <>
           <text x={plotL + plot / 2} y={plotT + plot + 27} className="hodo-axis-label" textAnchor="middle">{axis} x</text>
@@ -279,7 +321,7 @@ function Scatter({
           hov = r.id === hoverId,
           label = labels[r.id];
         const radius = sel ? 8 : hov ? 7 : (compact ? 3 : 3.5) + Math.max(0, (r.outlier - 0.6) * 5) + (r.kind === "recorded" ? 1.5 : 0);
-        const stroke = label === "investigate" ? "#B53A3A" : label === "expected" ? "#3D8B5E" : sel || r.kind === "recorded" ? "#1F1E1B" : "transparent";
+        const stroke = label === "investigate" ? "#c2416b" : label === "expected" ? "#0f7b5f" : sel || r.kind === "recorded" ? "#2a2a2a" : "transparent";
         return (
           <circle
             key={r.id}
@@ -334,12 +376,33 @@ function StackedSelect({ label, value, onChange, options }: { label: string; val
   );
 }
 function HowToRead() {
-  const [open, setOpen] = useState(false);
+  // Fixed to the viewport so the scrolling controls column and the plot can't clip it.
+  const [at, setAt] = useState<{ top: number; left: number } | null>(null);
+  const button = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!at) return;
+    const close = (e: Event) => {
+      if (e instanceof KeyboardEvent ? e.key === "Escape" : !(e.target as Element).closest(".hodo-pop, .hodo-howto > button")) setAt(null);
+    };
+    window.addEventListener("keydown", close);
+    window.addEventListener("pointerdown", close);
+    window.addEventListener("scroll", () => setAt(null), { once: true, capture: true });
+    return () => {
+      window.removeEventListener("keydown", close);
+      window.removeEventListener("pointerdown", close);
+    };
+  }, [at]);
+  const toggle = () => {
+    const r = button.current?.getBoundingClientRect();
+    setAt(at || !r ? null : { top: r.bottom + 6, left: r.left });
+  };
   return (
     <div className="hodo-howto">
-      <button onClick={() => setOpen((o) => !o)}>ⓘ how to read this</button>
-      {open && (
-        <div className="hodo-pop">
+      <button ref={button} aria-expanded={!!at} onClick={toggle}>
+        ⓘ how to read this
+      </button>
+      {at && (
+        <div className="hodo-pop" role="dialog" aria-label="How to read the context map" style={{ top: at.top, left: at.left }}>
           <div className="hodo-pop-title">Reading the context map</div>
           <p>
             Each dot is one context the arbiter could face: a recorded moment, or the same moment with one or two facts
@@ -351,15 +414,15 @@ function HowToRead() {
             mixing where contexts are nearly identical is where a small fact sways the decision — read those first.
           </p>
           <p>
-            Bands show where each colour-group concentrates (normalised KDE, 10–88% of peak). Switch to <em>diff vs rest</em>
-            to see where one group is over- or under-represented.
+            Filter by an action to see what usually leads to it, and which contexts reached it for an unusual reason.
           </p>
-          <button onClick={() => setOpen(false)}>close</button>
+          <button onClick={() => setAt(null)}>close</button>
         </div>
       )}
     </div>
   );
 }
+
 function DensityScale({ mode }: { mode: Density }) {
   if (mode === "groups") {
     const stops = CONTOUR_LEVELS.slice().reverse();
@@ -368,7 +431,7 @@ function DensityScale({ mode }: { mode: Density }) {
         <span>peak</span>
         <svg width="14" height="120">
           {stops.map((t, i) => (
-            <rect key={i} x={0} y={(i / stops.length) * 120} width={14} height={120 / stops.length} fill="#6B6960" fillOpacity={CONTOUR_ALPHAS[CONTOUR_LEVELS.indexOf(t)]} />
+            <rect key={i} x={0} y={(i / stops.length) * 120} width={14} height={120 / stops.length} fill="#5514b4" fillOpacity={CONTOUR_ALPHAS[CONTOUR_LEVELS.indexOf(t)]} />
           ))}
         </svg>
         <span>tail</span>
@@ -409,9 +472,26 @@ export function SwayTile() {
 function TileBody({ data }: { data: SwayData }) {
   const { changed } = useModel(data);
   const g = useMemo(() => grouping("action", changed), [changed]);
+  const counts = new Map<string, number>();
+  data.points.forEach((p) => counts.set(p.action, (counts.get(p.action) || 0) + 1));
+  const top = [...counts].sort((a, b) => b[1] - a[1]).slice(0, 4);
   return (
-    <div className="hodo hodo-tile">
-      <Scatter compact rows={data.points} allRows={data.points} groupKey={g.key} colorOf={g.color} density="groups" densityGroup="" labels={{}} />
+    <div className="hodo hodo-tile-wrap">
+      <p className="hodo-tile-sub">
+        What the agent saw → what it did · <b>{data.points.length}</b> contexts
+      </p>
+      <div className="hodo-tile">
+        <Scatter compact rows={data.points} allRows={data.points} groupKey={g.key} colorOf={g.color} density="groups" densityGroup="" labels={{}} />
+      </div>
+      <div className="hodo-tile-key">
+        {top.map(([k]) => (
+          <span key={k}>
+            <i style={{ background: g.color(k) }} />
+            {nameOf(k)}
+          </span>
+        ))}
+        <span className="is-more">colour = action taken</span>
+      </div>
     </div>
   );
 }
@@ -432,6 +512,7 @@ function Review({ data, onLegacy }: { data: SwayData; onLegacy: () => void }) {
   const [fact, setFact] = useState("all");
   const [person, setPerson] = useState("all");
   const [kind, setKind] = useState("all");
+  const [action, setAction] = useState("all");
   const [selectedId, setSelectedId] = useState<string>();
   const [hover, setHover] = useState<{ p: SwayPoint; x: number; y: number } | null>(null);
   const [labels, setLabels] = useState<Record<string, string>>({});
@@ -449,7 +530,8 @@ function Review({ data, onLegacy }: { data: SwayData; onLegacy: () => void }) {
     (p) =>
       (fact === "all" || p.flips.includes(fact) || p.kind === "recorded" || p.kind === "base") &&
       (person === "all" || p.person === person) &&
-      (kind === "all" || p.kind === kind),
+      (kind === "all" || p.kind === kind) &&
+      (action === "all" || p.action === action),
   );
   const groups = [...new Set(data.points.map(groupKey))];
   const counts = new Map<string, number>();
@@ -471,26 +553,38 @@ function Review({ data, onLegacy }: { data: SwayData; onLegacy: () => void }) {
   };
   return (
     <div className="hodo hodo-page">
-      <header className="hodo-head">
-        <h1>
-          Agent review <span>· context sway</span>
-        </h1>
-        <p>All three customers · every moment of the scenario · flip one fact at a time · see what moves the action</p>
+      <header className="av-head">
+        <div>
+          <span className="eyebrow">Agent review · all three customers · every moment</span>
+          <h2>Did anything unexpected sway the action?</h2>
+        </div>
+        <div className="av-verified">
+          <strong>{data.points.length}</strong>
+          <small>contexts replayed</small>
+        </div>
       </header>
       <div className="hodo-stats">
-        <Stat label="Contexts" value={data.points.length} sub="replayed through the policy" />
-        <Stat label="Moments" value={data.bases} sub="live decisions" />
-        <Stat label="Facts" value={data.factors.length} sub="flipped one at a time" />
+        <Stat label="Moments" value={data.bases} />
+        <Stat label="Facts flipped" value={data.factors.length} />
         <Stat label="Top sway" value={pct(top.sway)} sub={top.label.toLowerCase()} />
-        {claim && <Stat label="Claim sway" value={pct(claim.sway)} sub="unverified prompt claim" />}
-        <Stat label="Live = replay" value={data.policyAgreement === null ? "—" : pct(data.policyAgreement)} sub="agreement" />
-        <Stat label="Flagged" value={Object.values(labels).filter((v) => v === "investigate").length} sub="marked to investigate" />
+        {claim && <Stat label="Claim sway" value={pct(claim.sway)} sub="unverified claim" />}
+        <Stat label="Live = replay" value={data.policyAgreement === null ? "—" : pct(data.policyAgreement)} />
+        <Stat label="Flagged" value={Object.values(labels).filter((v) => v === "investigate").length} />
       </div>
       <div className="hodo-body">
         <section className="hodo-card hodo-observe">
           <VerticalStep step="01 · observe" title="Context map" hint="UMAP · context + prompt embeddings" />
           <div className="hodo-controls">
             <HowToRead />
+            <StackedSelect
+              label="filter · action"
+              value={action}
+              onChange={setAction}
+              options={[
+                ["all", "all"],
+                ...[...new Set(data.points.map((p) => p.action))].map((a): [string, string] => [a, nameOf(a)]),
+              ]}
+            />
             <StackedSelect
               label="colour"
               value={colorBy}
@@ -566,6 +660,42 @@ function Review({ data, onLegacy }: { data: SwayData; onLegacy: () => void }) {
         <section className="hodo-card hodo-triage">
           <VerticalStep step="02 · triage" title="What sways the action" hint="ranked by single-fact flip rate" />
           <div className="hodo-rail">
+            {action !== "all" && (() => {
+              const { typical, unusual } = triggers(data.points.filter((p) => p.action === action));
+              return (
+                <div className="hodo-led">
+                  <div className="hodo-rail-sep">What led to “{nameOf(action)}”</div>
+                  <dl className="hodo-typical">
+                    {typical.map((t) => (
+                      <div key={t.key}>
+                        <dt>{t.key}</dt>
+                        <dd>
+                          {t.value} <small>{pct(t.share)}</small>
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                  <div className="hodo-rail-sep">Unusual triggers · {unusual.length}</div>
+                  {unusual.slice(0, 8).map(({ p, diffs }, i) => (
+                    <button key={p.id} className="hodo-item is-odd" aria-pressed={selectedId === p.id} onClick={() => setSelectedId(p.id)}>
+                      <div className="hodo-item-head">
+                        <span>
+                          <i style={{ background: ACTION_TINT[p.action] }} />#{i + 1} · {who(p).toUpperCase()} · {when(p)}
+                        </span>
+                        <span>{p.kind === "recorded" ? "LIVE" : p.flips.join(" + ") || KIND_LABEL[p.kind]}</span>
+                      </div>
+                      {diffs.slice(0, 3).map((d) => (
+                        <p key={d.key} className="hodo-diff">
+                          <b>{d.key}:</b> {d.value} <small>usually {d.usual}</small>
+                        </p>
+                      ))}
+                    </button>
+                  ))}
+                  {!unusual.length && <p className="hodo-empty">Every context behind this action looks alike.</p>}
+                  <div className="hodo-rail-sep">What sways any action</div>
+                </div>
+              );
+            })()}
             {data.factors.map((f, i) => (
               <button
                 key={f.id}
@@ -578,7 +708,7 @@ function Review({ data, onLegacy }: { data: SwayData; onLegacy: () => void }) {
               >
                 <div className="hodo-item-head">
                   <span>
-                    <i style={{ background: f.sway ? "#CC6633" : "#C9C5BB" }} />#{i + 1} · {f.id.toUpperCase()}
+                    <i style={{ background: f.sway ? "#5514b4" : "#d6d0de" }} />#{i + 1} · {f.id.toUpperCase()}
                     {f.promptOnly && " · PROMPT"}
                   </span>
                   <span>{pct(f.sway)}</span>
