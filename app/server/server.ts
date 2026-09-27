@@ -1,6 +1,7 @@
 import { waitUntil } from "@vercel/functions";
 import { hosted, requestOriginAllowed } from "./hosting.ts";
 import type { IncomingMessage, ServerResponse } from "node:http";
+import { gzipSync } from "node:zlib";
 import { DatabaseSync } from "node:sqlite";
 import { parseEnv } from "node:util";
 import { memoryAtlas } from "./memory-atlas.ts";
@@ -46,6 +47,11 @@ const engine =
   storage === "supabase"
     ? new PostgresRepository(database())
     : new Engine(dbPath);
+// Import (once) and cache the shared baseline dataset so the first session is not slow.
+if (engine instanceof PostgresRepository)
+  void engine
+    .baseline()
+    .catch((e) => console.error("Baseline dataset unavailable:", e.message));
 const evalDb =
   engine instanceof Engine
     ? engine.db
@@ -93,11 +99,18 @@ export async function handler(req: IncomingMessage, res: ServerResponse) {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("Referrer-Policy", "same-origin");
   const send = (status: number, data: unknown) => {
+    const body = JSON.stringify(data);
+    // Snapshots carry the full source history (~1.6 MB); gzip makes them ~13x smaller.
+    const gzip =
+      body.length > 2048 &&
+      /\bgzip\b/.test(String(req.headers["accept-encoding"] || ""));
     res.writeHead(status, {
       "Content-Type": "application/json; charset=utf-8",
       "Cache-Control": "no-store",
+      Vary: "Accept-Encoding",
+      ...(gzip ? { "Content-Encoding": "gzip" } : {}),
     });
-    res.end(JSON.stringify(data));
+    res.end(gzip ? gzipSync(body, { level: 5 }) : body);
   };
   try {
     const host = req.headers.host || "";

@@ -5,30 +5,22 @@ import {
 } from "./snapshot-client";
 import btLogo from "./assets/bt-logo.png";
 import {
-  cloneElement,
   useCallback,
   useEffect,
   useMemo,
   useRef,
   useState,
 } from "react";
-import type { ReactElement, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { AgentReview } from "./AgentReview";
 import { SectionView } from "./SectionView";
 import { PhoneExperience } from "./PhoneExperience";
+import { Rhythm } from "./Rhythm";
+import { SwayTile, SwayReview } from "./SwayReview";
 import type { Snapshot, PersonId, SourceEvent, Step } from "./types";
 
-import {
-  presentationBeats,
-  presentationCursor,
-  panelSnapshot,
-  chapterNames,
-} from "./presentation";
-import {
-  PresentationRail,
-  PresentationCue,
-  PresentationComparison,
-} from "./GuidedPresentation";
+import { momentView } from "./presentation";
+import { MomentSpine, MomentLanes, MomentSkeleton } from "./GuidedPresentation";
 const formatTime = (iso: string) =>
   new Intl.DateTimeFormat("en-GB", {
     timeZone: "Europe/London",
@@ -51,6 +43,7 @@ const panelNames = {
   phone: "Customer experience",
   arbiter: "Arbiter",
   actions: "Actions & outcomes",
+  review: "Agent review",
 };
 type PanelId = keyof typeof panelNames;
 async function api<T>(path: string, body?: unknown): Promise<T> {
@@ -161,10 +154,8 @@ function Panel({
   panel,
   onOpen,
   storyFocus = false,
-  storyHeld = false,
 }: {
   storyFocus?: boolean;
-  storyHeld?: boolean;
   id: PanelId;
   children: ReactNode;
   panel: PanelId | null;
@@ -172,7 +163,7 @@ function Panel({
 }) {
   return (
     <article
-      className={`panel panel-${id}${storyFocus ? " is-story-focus" : ""}${storyHeld ? " is-story-next" : ""}`}
+      className={`panel panel-${id}${storyFocus ? " is-story-focus" : ""}`}
     >
       <header>
         <div>
@@ -184,6 +175,7 @@ function Panel({
                 phone: "03",
                 arbiter: "04",
                 actions: "05",
+                review: "06",
               }[id]
             }
           </span>
@@ -197,12 +189,6 @@ function Panel({
           {panel ? "↙" : "↗"}
         </button>
       </header>
-      {storyHeld && (
-        <div className="panel-reveal-note">
-          <span>Previous chapter</span>
-          <span>Not yet revealed</span>
-        </div>
-      )}
       <div className="panel-body">{children}</div>
     </article>
   );
@@ -233,40 +219,11 @@ export function App() {
     [inspected, setInspected] = useState<SourceEvent | null>(null);
   const presenting = params.get("mode") !== "explore";
   const openingMoment = Boolean(sessionId && (!snapshot || snapshot.session.id !== sessionId || (cutoff !== undefined && snapshot.cutoff !== cutoff)));
-  const beats = useMemo(
-    () => (snapshot ? presentationBeats(snapshot, requestedPerson) : []),
-    [snapshot, requestedPerson],
-  );
-  const beatIndex = presentationCursor(
-    beats,
-    requestedPerson,
-    params.get("beat"),
-  );
-  const beat = beats[beatIndex];
-  const person = presenting && beat?.person ? beat.person : requestedPerson;
-  const [previousSnapshot, setPreviousSnapshot] = useState<Snapshot | null>(
-    null,
-  );
-  useEffect(() => {
-    if (!presenting || !snapshot?.cutoff) {
-      setPreviousSnapshot(null);
-      return;
-    }
-    let stopped = false;
-    const id = snapshot.session.id,
-      at = snapshot.cutoff - 1;
-    setPreviousSnapshot(cachedSnapshot(id, at));
-    void readSnapshot(id, at)
-      .then((value) => {
-        if (!stopped) setPreviousSnapshot(value);
-      })
-      .catch(() => {
-        if (!stopped) setPreviousSnapshot(null);
-      });
-    return () => {
-      stopped = true;
-    };
-  }, [presenting, snapshot?.session.id, snapshot?.cutoff]);
+  const view = useMemo(() => (snapshot ? momentView(snapshot) : null), [snapshot]);
+  const person = requestedPerson;
+  const changedPanels: string[] = presenting
+    ? view?.lanes.find((l) => l.person === person)?.panels || []
+    : [];
   const [sourceFilter, setSourceFilter] = useState("");
   const [sourceLimit, setSourceLimit] = useState(100);
   const created = useRef(false),
@@ -319,7 +276,6 @@ export function App() {
         {
           session: session.id,
           at: null,
-          beat: "0",
           person: "daniel",
           view: null,
           eval: null,
@@ -447,57 +403,26 @@ export function App() {
     change({ panel: id, view: null, eval: null, study: null });
   };
   const inspect = (e: SourceEvent) => setInspected(e);
-  const goBeat = (index: number) => {
-    const next = beats[Math.max(0, Math.min(index, beats.length - 1))];
-    if (next) change({ beat: String(index), person: next.person || person });
-  };
-  const choosePerson = (next: PersonId) => {
-    change({ person: next, ...(presenting ? { beat: "0", at: "0" } : {}) });
-  };
+  const choosePerson = (next: PersonId) => change({ person: next });
   const goChapter = (at: number) => {
     setPlaying(false);
-    change({ at: String(at), beat: "0" });
+    change({ at: String(at) });
   };
-  const nextChapter = async () => {
-    if (
-      !snapshot ||
-      busy ||
-      snapshot.pendingJobs ||
-      snapshot.failedJobs ||
-      error
-    )
-      return;
+  /** → moves the clock: replay a recorded moment, or record the next signal. */
+  const nextMoment = async () => {
+    if (!snapshot || busy || view?.status !== "ready" || error) return;
     if (snapshot.cutoff < snapshot.session.revision)
       goChapter(snapshot.cutoff + 1);
-    else if (snapshot.nextStep) {
-      if (await advance()) change({ at: null, beat: "0" });
-    } else
-      choosePerson(
-        person === "daniel" ? "sam" : person === "sam" ? "maya" : "daniel",
-      );
+    else if (snapshot.nextStep && (await advance())) change({ at: null });
   };
-  const nextBeat = () => {
-    if (
-      !snapshot ||
-      busy ||
-      snapshot.pendingJobs ||
-      snapshot.failedJobs ||
-      error ||
-      beat?.kind === "waiting"
-    )
-      return;
-    if (beatIndex < beats.length - 1) goBeat(beatIndex + 1);
-    else void nextChapter();
-  };
-  const previousBeat = () => {
-    if (busy) return;
-    if (beatIndex > 0) goBeat(beatIndex - 1);
-    else if (snapshot && snapshot.cutoff > 0) goChapter(snapshot.cutoff - 1);
+  const previousMoment = () => {
+    if (!busy && snapshot && snapshot.cutoff > 0) goChapter(snapshot.cutoff - 1);
   };
   useEffect(() => {
     if (!presenting || openingMoment) return;
     const key = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement;
+      const target =
+        event.target instanceof Element ? event.target : document.body;
       if (
         event.altKey ||
         event.metaKey ||
@@ -505,8 +430,7 @@ export function App() {
         target.closest(
           'input,textarea,select,[contenteditable="true"],[role="textbox"],dialog,.eve-chat,.eve-voice',
         ) ||
-        (target.closest("button,a") &&
-          !target.closest(".cue-controls,.story-rail")) ||
+        (target.closest("button,a") && !target.closest(".spine,.lanes")) ||
         document.querySelector("dialog[open]")
       )
         return;
@@ -519,15 +443,15 @@ export function App() {
       }
       if (event.key === "ArrowRight") {
         event.preventDefault();
-        nextBeat();
+        void nextMoment();
       }
       if (event.key === "ArrowLeft") {
         event.preventDefault();
-        previousBeat();
+        previousMoment();
       }
-      if (event.key === "Enter" && !target.closest("button,a") && beat?.panel) {
+      if (["1", "2", "3"].includes(event.key)) {
         event.preventDefault();
-        openPanel(beat.panel);
+        choosePerson((["daniel", "sam", "maya"] as const)[Number(event.key) - 1]);
       }
     };
     window.addEventListener("keydown", key);
@@ -541,15 +465,13 @@ export function App() {
     const actions = snapshot?.actions.filter((a) => a.person === person) || [];
     const pending = !!snapshot?.pendingJobs;
     const current = !!snapshot && snapshot.session.id === sessionId;
-    const lab = (study: string) =>
-      `/reference/design/lab/?study=${study}&person=${person}&incident=${snapshot?.operations.incident ? 1 : 0}&session=${sessionId || ""}`;
     const evidence = h?.evidence.filter((e) => e.subject === person) || [];
     const relevantEvidence = evidence.filter(
       (e) => e.type !== "contact.authority_recorded",
     );
 
     const customer = h && (
-      <Panel id="customer" panel={panel} onOpen={openPanel}>
+      <Panel id="customer" panel={panel} onOpen={openPanel} storyFocus={changedPanels.includes("customer")}>
         <div className="record-identity">
           <span className="avatar">
             {h.name
@@ -583,6 +505,7 @@ export function App() {
             ["Service", h.serviceState],
           ]}
         />
+        {snapshot && <Rhythm snapshot={snapshot} person={person} />}
         <Section
           title="Relevant source records"
           note={`${evidence.length} retained`}
@@ -614,13 +537,10 @@ export function App() {
                 : "A stated habit provides context; contrary evidence would reopen the watch."}
           </p>
         </div>
-        <a className="text-link" href={lab("atlas")}>
-          Explore semantic memory <span>↗</span>
-        </a>
       </Panel>
     );
     const operations = h && snapshot && (
-      <Panel id="operations" panel={panel} onOpen={openPanel}>
+      <Panel id="operations" panel={panel} onOpen={openPanel} storyFocus={changedPanels.includes("operations")}>
         <Attributes
           rows={[
             [
@@ -693,26 +613,21 @@ export function App() {
       </Panel>
     );
     const phone = h && snapshot && (
-      <Panel id="phone" panel={panel} onOpen={openPanel}>
+      <Panel id="phone" panel={panel} onOpen={openPanel} storyFocus={changedPanels.includes("phone")}>
         <PhoneExperience
           key={`${snapshot.session.id}/${person}/${cutoff ?? "live"}`}
           snapshot={snapshot}
           customer={h}
           actions={actions}
           startChat={params.get("chat") === "eve"}
-          busy={
-            busy ||
-            pending ||
-            !!error ||
-            (presenting && beat?.panel !== "phone")
-          }
-          onConfirm={() => void (presenting ? nextChapter() : advance())}
+          busy={busy || pending || !!error}
+          onConfirm={() => void (presenting ? nextMoment() : advance())}
           onSupport={() => setPlaying(false)}
         />
       </Panel>
     );
     const arbiter = h && snapshot && (
-      <Panel id="arbiter" panel={panel} onOpen={openPanel}>
+      <Panel id="arbiter" panel={panel} onOpen={openPanel} storyFocus={changedPanels.includes("arbiter")}>
         <div className="signal">
           <span className={`status-dot ${pending ? "orange" : ""}`} />
           <code>
@@ -815,7 +730,7 @@ export function App() {
       </Panel>
     );
     const actionPanel = h && snapshot && (
-      <Panel id="actions" panel={panel} onOpen={openPanel}>
+      <Panel id="actions" panel={panel} onOpen={openPanel} storyFocus={changedPanels.includes("actions")}>
         <div className="trace-meta">
           <code>
             {short(snapshot.session.id)} / rev {snapshot.cutoff}
@@ -885,18 +800,23 @@ export function App() {
         </button>
       </Panel>
     );
+    const reviewPanel = h && snapshot && (
+      <Panel id="review" panel={panel} onOpen={openPanel}>
+        <SwayTile />
+      </Panel>
+    );
     return {
       h,
       decision,
       actions,
       pending,
       current,
-      lab,
       customer,
       operations,
       phone,
       arbiter,
       actionPanel,
+      reviewPanel,
     };
   };
   const {
@@ -905,45 +825,13 @@ export function App() {
     actions,
     pending,
     current,
-    lab,
     customer,
     operations,
     phone,
     arbiter,
     actionPanel,
+    reviewPanel,
   } = renderPanels(snapshot);
-  const reveal = (id: PanelId) => {
-    if (!snapshot) return null;
-    const shown = panelSnapshot(
-      snapshot,
-      previousSnapshot,
-      beats,
-      beatIndex,
-      id,
-      person,
-    );
-    const held = shown !== snapshot;
-    if (!shown)
-      return (
-        <Panel id={id} panel={null} onOpen={openPanel} storyHeld>
-          <div className="panel-reveal-placeholder">
-            Waiting to reveal this part of the story.
-          </div>
-        </Panel>
-      );
-    const all =
-      shown === snapshot
-        ? { customer, operations, phone, arbiter, actions: actionPanel }
-        : (() => {
-            const old = renderPanels(shown);
-            return { ...old, actions: old.actionPanel };
-          })();
-    return cloneElement(
-      all[id] as ReactElement<{ storyFocus?: boolean; storyHeld?: boolean }>,
-      { storyFocus: beat?.panel === id, storyHeld: held },
-    );
-  };
-
   return (
     <>
       <a className="skip" href="#workspace">
@@ -968,9 +856,9 @@ export function App() {
             </span>
             <button
               className="focus-back"
-              onClick={() => openPanel(review ? "actions" : null)}
+              onClick={() => openPanel(review ? "review" : null)}
             >
-              {review ? "← Back to actions" : "← Back to account"}
+              {review ? "← Back to agent review" : "← Back to account"}
             </button>
           </>
         ) : (
@@ -989,15 +877,6 @@ export function App() {
             >
               Source records
             </button>
-            <button
-              onClick={() => {
-                setPlaying(false);
-                change({ view: "agent-review", panel: null, eval: null });
-              }}
-            >
-              Agent review
-            </button>
-            <a href={lab("atlas")}>Visual lab ↗</a>
           </nav>
         )}
         <span className="runtime-badge">
@@ -1017,59 +896,19 @@ export function App() {
         )}
       </header>
       {!focused && presenting && (
-        <div className="replay-bar present-replay">
-          <div className="scenario-time">
-            <span>THREE QUIET ROUTERS</span>
-            <strong>{snapshot ? formatTime(snapshot.clock) : "20:45"}</strong>
-          </div>
-          <div className="replay-main">
-            <span className="eyebrow">
-              {names[person].split(" ")[0]}’s story · synthetic scenario
-            </span>
-            <strong>
-              {openingMoment && snapshot
-                ? "Opening the next moment…"
-                : snapshot
-                ? chapterNames[snapshot.cutoff]
-                : "Opening the household records…"}
-            </strong>
-          </div>
-          <div className="step-track" aria-label="Story moments">
-            {chapterNames.map((label, at) => (
-              <button
-                key={label}
-                aria-label={`Moment ${at + 1}: ${label}`}
-                aria-pressed={snapshot?.cutoff === at}
-                disabled={!snapshot || busy || at > snapshot.session.revision}
-                onClick={() => goChapter(at)}
-                className={snapshot && at <= snapshot.cutoff ? "reached" : ""}
-              >
-                {at + 1}
-              </button>
-            ))}
-          </div>
-          <div className="presentation-mode" aria-label="Demo mode">
-            <button aria-pressed onClick={() => {}}>
-              Present
-            </button>
-            <button
-              aria-pressed={false}
-              onClick={() => {
-                setPlaying(false);
-                change({ mode: "explore", person, beat: null });
-              }}
-            >
-              Explore
-            </button>
-          </div>
-          <button
-            disabled={busy}
-            onClick={() => void newSession()}
-            title="Create a fresh session; current records are retained"
-          >
-            ↺ New replay
-          </button>
-        </div>
+        <MomentSpine
+          snapshot={snapshot}
+          status={view?.status ?? null}
+          busy={busy || openingMoment || !!error}
+          onGo={goChapter}
+          onNext={() => void nextMoment()}
+          onBack={previousMoment}
+          onExplore={() => {
+            setPlaying(false);
+            change({ mode: "explore", person });
+          }}
+          onRestart={() => void newSession()}
+        />
       )}
       {!focused && !presenting && (
         <div className="replay-bar">
@@ -1140,7 +979,7 @@ export function App() {
               aria-pressed={false}
               onClick={() => {
                 setPlaying(false);
-                change({ mode: "present", beat: null });
+                change({ mode: "present" });
               }}
             >
               Present
@@ -1198,9 +1037,9 @@ export function App() {
               className="new-session"
               disabled={busy}
               onClick={() => void newSession()}
-              title="Create a fresh session; current records are retained"
+              title="Start a fresh run of the scenario from 20:45. Earlier runs are kept."
             >
-              ↺ <span>New session</span>
+              ↺ <span>Restart</span>
             </button>
           </div>
         </div>
@@ -1209,7 +1048,7 @@ export function App() {
         <div className="error-banner" role="alert">
           <span>
             {sessionUnavailable
-              ? "This session isn’t available in the current data store. Start a new replay to load the current household dataset."
+              ? "This replay isn’t in the current data store. Restart to begin a fresh run."
               : error}
           </span>
           <button
@@ -1218,8 +1057,8 @@ export function App() {
           >
             {sessionUnavailable
               ? busy
-                ? "Starting replay…"
-                : "Start new replay"
+                ? "Restarting…"
+                : "Restart the scenario"
               : "Retry connection"}
           </button>
         </div>
@@ -1241,7 +1080,7 @@ export function App() {
             : `account-workspace${presenting ? " presentation-workspace" : ""}`
         }
       >
-        {(!presenting || focused) && (
+        {(!presenting || focused) && panel !== "review" && panel !== "actions" && panel !== "operations" && (
           <div className="workspace-intro">
             <div>
               <p className="eyebrow">
@@ -1267,7 +1106,7 @@ export function App() {
             </div>
           </div>
         )}
-        {focused ? (
+        {focused && (panel === "review" || panel === "actions" || panel === "operations") ? null : focused ? (
           <div className="focused-context">
             <strong>{review ? "Replay corpus" : names[person]}</strong>
             <code>
@@ -1284,26 +1123,17 @@ export function App() {
                   : "Loading snapshot…"}
             </span>
           </div>
-        ) : presenting && snapshot && beat ? (
-          <>
-            <PresentationRail
-              person={person}
-              beats={beats}
-              index={beatIndex}
-              onPerson={choosePerson}
-            />
-            <PresentationCue
-              snapshot={snapshot}
-              beat={beat}
-              index={beatIndex}
-              total={beats.length}
-              busy={busy || !!error}
-              onNext={nextBeat}
-              onBack={previousBeat}
-              onOpen={openPanel}
-              onInspect={inspect}
-            />
-          </>
+        ) : presenting && !(snapshot && view) ? (
+          <MomentSkeleton />
+        ) : presenting && snapshot && view ? (
+          <MomentLanes
+            key={`${snapshot.session.id}/${snapshot.cutoff}`}
+            snapshot={snapshot}
+            view={view}
+            focus={person}
+            onFocus={choosePerson}
+            onInspect={inspect}
+          />
         ) : (
           <div className="household-bar">
             <div className="people">
@@ -1338,12 +1168,13 @@ export function App() {
               {snapshot ? (
                 <>
                   <span className={`status-dot ${pending ? "orange" : ""}`} />
-                  {pending
-                    ? "Worker processing…"
-                    : snapshot.historical
-                      ? "Historical · read only"
-                      : "Session persisted"}
-                  <code>{short(snapshot.session.id)}</code>
+                  <span title={`Replay ${snapshot.session.id}`}>
+                    {pending
+                      ? "Arbiter deciding…"
+                      : snapshot.historical
+                        ? "Looking back · read only"
+                        : "Replay saved"}
+                  </span>
                 </>
               ) : error ? (
                 "Session unavailable"
@@ -1353,7 +1184,7 @@ export function App() {
             </div>
           </div>
         )}
-        {!snapshot || !h ? (
+        {(!snapshot || !h) && presenting && !focused && !error ? null : !snapshot || !h ? (
           <div className="loading">
             <Glyph />
             <p>
@@ -1453,6 +1284,10 @@ export function App() {
               </table>
             </div>
           </section>
+        ) : panel === "review" ? (
+          <SwayReview
+            onLegacy={() => change({ view: "agent-review", panel: null })}
+          />
         ) : panel ? (
           <SectionView
             onCutoff={(at) =>
@@ -1461,6 +1296,7 @@ export function App() {
               })
             }
             panel={panel}
+            onPerson={choosePerson}
             h={h}
             snapshot={snapshot}
             decision={decision}
@@ -1470,27 +1306,18 @@ export function App() {
           />
         ) : (
           <div className={presenting ? "presentation-stage" : ""}>
-            {presenting && beat?.kind === "comparison" ? (
-              <PresentationComparison
-                person={person}
-                snapshot={snapshot}
-                onOpen={(next) => {
-                  change({ person: next, panel: "actions" });
-                }}
-              />
-            ) : (
-              <div className="overview">
-                <div className="panel-stack left-stack">
-                  {presenting ? reveal("customer") : customer}
-                  {presenting ? reveal("operations") : operations}
-                </div>
-                {presenting ? reveal("phone") : phone}
-                <div className="panel-stack right-stack">
-                  {presenting ? reveal("arbiter") : arbiter}
-                  {presenting ? reveal("actions") : actionPanel}
-                </div>
+            <div className="overview">
+              <div className="panel-stack left-stack">
+                {customer}
+                {operations}
               </div>
-            )}
+              {phone}
+              <div className="panel-stack right-stack">
+                {arbiter}
+                {actionPanel}
+                {reviewPanel}
+              </div>
+            </div>
             {presenting && (
               <div className="governance-receipt">
                 <strong>DECISION RECEIPT</strong>

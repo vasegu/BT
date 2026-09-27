@@ -1,0 +1,588 @@
+/* Agent review · context sway — styled after the Jio CX Hodoscope action map.
+   Tokens are scoped to .hodo so the rest of the BT app keeps its own palette. */
+.hodo {
+  --h-bg: #faf9f5;
+  --h-raised: #ffffff;
+  --h-code: #f3f1ec;
+  --h-border: #e8e5de;
+  --h-border-soft: #efede6;
+  --h-text: #1f1e1b;
+  --h-muted: #6b6960;
+  --h-faint: #a09d93;
+  --h-accent: #5514b4;
+  --h-danger: #b53a3a;
+  --h-success: #3d8b5e;
+  --h-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --h-shadow: 0 2px 6px rgba(28, 27, 24, 0.06), 0 8px 24px rgba(28, 27, 24, 0.04);
+  color: var(--h-text);
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
+}
+.hodo-empty {
+  margin: 0;
+  padding: 24px 4px;
+  color: #6b6960;
+  font-size: 12px;
+}
+.hodo-label {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--h-faint);
+  font: 700 9px var(--h-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* page */
+.hodo-page {
+  display: flex;
+  flex-direction: column;
+  margin: 0 -26px;
+  background: var(--h-bg);
+  border-top: 1px solid var(--h-border);
+}
+.hodo-head {
+  padding: 16px 28px 12px;
+}
+.hodo-head h1 {
+  margin: 0;
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.hodo-head h1 span {
+  color: var(--h-muted);
+  font-weight: 400;
+}
+.hodo-head p {
+  margin: 4px 0 0;
+  color: var(--h-muted);
+  font-size: 13px;
+  letter-spacing: 0.01em;
+}
+.hodo-stats {
+  display: flex;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--h-border);
+  border-bottom: 1px solid var(--h-border);
+  background: var(--h-bg);
+}
+.hodo-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  min-width: 0;
+  padding: 9px 16px;
+  border-right: 1px solid var(--h-border-soft);
+}
+.hodo-stat span {
+  color: var(--h-faint);
+  font: 700 9px var(--h-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.hodo-stat b {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.1;
+}
+.hodo-stat small {
+  color: var(--h-muted);
+  font-size: 11px;
+  white-space: nowrap;
+}
+.hodo-body {
+  display: flex;
+  gap: 14px;
+  height: max(640px, calc(100vh - 230px));
+  padding: 14px 20px;
+}
+.hodo-card {
+  display: flex;
+  min-height: 0;
+  background: var(--h-raised);
+  border: 1px solid var(--h-border);
+  border-radius: 12px;
+}
+.hodo-observe {
+  flex: 1;
+  min-width: 0;
+}
+.hodo-triage {
+  width: 420px;
+  flex-shrink: 0;
+}
+
+/* vertical step label */
+.hodo-vstep {
+  width: 36px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 0;
+  border-right: 1px solid var(--h-border-soft);
+}
+.hodo-vstep > div {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-family: var(--h-mono);
+  white-space: nowrap;
+}
+.hodo-vstep-step {
+  color: var(--h-accent);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.hodo-vstep-title {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.hodo-vstep-hint {
+  color: var(--h-muted);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+}
+
+/* controls column */
+.hodo-controls {
+  width: 188px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border-right: 1px solid var(--h-border-soft);
+  overflow-y: auto;
+}
+.hodo-select {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.hodo-select span {
+  color: var(--h-muted);
+  font: 700 9.5px var(--h-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.hodo-select select {
+  width: 100%;
+  padding: 7px 9px;
+  border: 1px solid var(--h-border);
+  border-radius: 6px;
+  background: var(--h-raised);
+  color: var(--h-text);
+  font: 13px -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+}
+.hodo-count {
+  padding-top: 6px;
+  border-top: 1px solid var(--h-border-soft);
+  color: var(--h-faint);
+  font: 11px var(--h-mono);
+  letter-spacing: 0.04em;
+}
+.hodo-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding-top: 8px;
+  border-top: 1px solid var(--h-border-soft);
+}
+.hodo-legend-row {
+  display: grid;
+  grid-template-columns: 10px 1fr auto;
+  align-items: start;
+  gap: 8px;
+  color: var(--h-muted);
+  font: 11.5px/1.3 var(--h-mono);
+}
+.hodo-legend-row i {
+  width: 9px;
+  height: 9px;
+  margin-top: 2px;
+  border-radius: 50%;
+}
+.hodo-legend-row i.is-ring {
+  background: #fff;
+  border: 1.6px solid var(--h-text);
+  box-sizing: border-box;
+}
+.hodo-legend-row small {
+  color: var(--h-faint);
+  font-size: 10px;
+}
+.hodo-howto {
+  position: relative;
+}
+.hodo-howto > button {
+  padding: 3px 8px;
+  border: 1px solid var(--h-border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--h-muted);
+  font-size: 11px;
+}
+.hodo-pop {
+  position: absolute;
+  top: 110%;
+  left: 0;
+  z-index: 50;
+  width: 340px;
+  padding: 12px 14px;
+  background: var(--h-raised);
+  border: 1px solid var(--h-border);
+  border-radius: 12px;
+  box-shadow: var(--h-shadow);
+  font-size: 11.5px;
+  line-height: 1.55;
+}
+.hodo-pop-title {
+  margin-bottom: 6px;
+  color: var(--h-accent);
+  font: 700 9px var(--h-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.hodo-pop p {
+  margin: 0 0 8px;
+}
+.hodo-pop button {
+  padding: 4px 10px;
+  border: 1px solid var(--h-border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--h-muted);
+  font-size: 10px;
+}
+
+/* plot */
+.hodo-plot {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  gap: 6px;
+  align-items: stretch;
+  justify-content: center;
+  padding: 14px 16px;
+}
+.hodo-square {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  max-width: 100%;
+  max-height: 100%;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+}
+.hodo-svg {
+  display: block;
+  cursor: crosshair;
+}
+.hodo-grid {
+  stroke: var(--h-border-soft);
+  stroke-width: 0.5;
+}
+.hodo-axis {
+  stroke: var(--h-border);
+  stroke-width: 1;
+}
+.hodo-tick {
+  fill: var(--h-muted);
+  font: 9px var(--h-mono);
+}
+.hodo-axis-label {
+  fill: var(--h-faint);
+  font: 9px var(--h-mono);
+  letter-spacing: 0.06em;
+}
+.hodo-dot {
+  cursor: pointer;
+  transition: r 0.12s;
+}
+.hodo-tip {
+  position: absolute;
+  z-index: 10;
+  width: 300px;
+  padding: 10px 14px;
+  background: var(--h-raised);
+  border: 1px solid var(--h-border);
+  border-radius: 8px;
+  box-shadow: var(--h-shadow);
+  pointer-events: none;
+}
+.hodo-tip-head {
+  color: var(--h-muted);
+  font: 10.5px var(--h-mono);
+  letter-spacing: 0.02em;
+}
+.hodo-tip-body {
+  margin: 6px 0;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.hodo-tip-foot {
+  color: var(--h-muted);
+  font: 10.5px var(--h-mono);
+}
+.hodo-scale {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 6px;
+  padding: 10px 4px 4px;
+  color: var(--h-faint);
+  font: 9px var(--h-mono);
+  letter-spacing: 0.06em;
+}
+.hodo-scale .is-over {
+  color: var(--h-danger);
+  font-weight: 600;
+}
+.hodo-scale .is-under {
+  color: #23467e;
+  font-weight: 600;
+}
+.hodo-vertical {
+  margin-top: 4px;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  letter-spacing: 0.08em;
+}
+
+/* triage rail */
+.hodo-rail {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  padding: 14px 18px 14px 14px;
+}
+.hodo-item {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 10px 8px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  text-align: left;
+  color: inherit;
+}
+.hodo-item:not(.is-static):hover {
+  background: var(--h-bg);
+}
+.hodo-item[aria-pressed="true"] {
+  background: #f1ebfa;
+}
+.hodo-item-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--h-muted);
+  font: 11px var(--h-mono);
+  letter-spacing: 0.04em;
+}
+.hodo-item-head i {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 7px;
+  border-radius: 50%;
+  vertical-align: 1px;
+}
+.hodo-item p {
+  margin: 5px 0 0;
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+.hodo-item small {
+  display: block;
+  margin-top: 3px;
+  color: var(--h-faint);
+  font-size: 11px;
+}
+.hodo-rail-sep {
+  margin: 12px 8px 4px;
+  padding-top: 12px;
+  border-top: 1px solid var(--h-border-soft);
+  color: var(--h-accent);
+  font: 700 9px var(--h-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.hodo-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 0 24px 16px;
+  color: var(--h-muted);
+  font-size: 11.5px;
+}
+.hodo-foot summary {
+  cursor: pointer;
+  font: 10px var(--h-mono);
+  letter-spacing: 0.06em;
+}
+.hodo-foot p {
+  max-width: 920px;
+}
+.hodo-foot > button {
+  align-self: flex-start;
+  border: 0;
+  background: none;
+  color: var(--h-accent);
+  font: 10px var(--h-mono);
+}
+
+/* 03 · decide drawer */
+.hodo-drawer {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  bottom: 12px;
+  z-index: 60;
+  width: 420px;
+  display: flex;
+  flex-direction: column;
+  background: var(--h-raised);
+  border: 1px solid var(--h-border);
+  border-radius: 18px;
+  box-shadow: var(--h-shadow), 0 20px 60px rgba(28, 27, 24, 0.12);
+  animation: hodo-in 180ms ease both;
+}
+.hodo-drawer > header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 20px 12px;
+  border-bottom: 1px solid var(--h-border-soft);
+}
+.hodo-drawer code {
+  color: var(--h-muted);
+  font: 11px var(--h-mono);
+}
+.hodo-drawer h3 {
+  margin: 2px 0 0;
+  font-size: 17px;
+  font-weight: 600;
+}
+.hodo-drawer header small {
+  color: var(--h-muted);
+  font-size: 13px;
+}
+.hodo-drawer header button {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border: 1px solid var(--h-border);
+  border-radius: 8px;
+  background: var(--h-raised);
+  color: var(--h-muted);
+  font-size: 16px;
+}
+.hodo-drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px 20px 20px;
+}
+.hodo-drawer h4 {
+  margin: 18px 0 8px;
+  color: var(--h-muted);
+  font: 700 10.5px var(--h-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.hodo-drawer pre {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: var(--h-code);
+  font: 12px/1.6 var(--h-mono);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.hodo-chip {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font: 600 11.5px var(--h-mono);
+  letter-spacing: 0.04em;
+}
+.hodo-quote {
+  margin: 0;
+  font-size: 14px;
+  font-style: italic;
+  line-height: 1.5;
+}
+.hodo-review {
+  display: flex;
+  gap: 6px;
+}
+.hodo-review button {
+  padding: 6px 12px;
+  border: 1px solid var(--h-border);
+  border-radius: 6px;
+  background: var(--h-raised);
+  font-size: 12px;
+}
+.hodo-review button[aria-pressed="true"]:first-child {
+  border-color: var(--h-success);
+  color: var(--h-success);
+  background: #e9f3ec;
+}
+.hodo-review button[aria-pressed="true"]:last-child {
+  border-color: var(--h-danger);
+  color: var(--h-danger);
+  background: #f8e9e9;
+}
+.hodo-faint {
+  display: block;
+  margin-top: 8px;
+  color: var(--h-faint);
+  font-size: 11px;
+}
+@keyframes hodo-in {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+}
+
+/* overview tile: just the map, full size */
+.hodo-tile {
+  aspect-ratio: 1 / 1;
+  display: flex;
+  margin: -4px;
+}
+.hodo-check {
+  margin: 10px 0 0;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+.hodo-check.is-ok {
+  background: #e9f3ec;
+  color: #2f6e4a;
+}
+.hodo-check.is-bad {
+  background: #f8e9e9;
+  color: var(--h-danger);
+}
+@media (max-width: 1100px) {
+  .hodo-body {
+    flex-direction: column;
+    height: auto;
+  }
+  .hodo-triage {
+    width: auto;
+    max-height: 520px;
+  }
+}

@@ -1,24 +1,46 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { PostgresRepository } from "../server/postgres-repository.ts";
-import { generateHistory } from "../../scripts/generate-bt-history.ts";
+import {
+  generateHistory,
+  fixtureHash,
+} from "../../scripts/generate-bt-history.ts";
 import {
   readSnapshot,
   cachedSnapshot,
   invalidateSnapshot,
 } from "../src/snapshot-client.ts";
 
-test("cold fixture opens in one database request, concurrent readers share it", async () => {
+test("sessions share one hash-checked baseline; each session costs one small overlay read", async () => {
   const fixture = generateHistory();
-  let calls = 0;
+  const hash = fixtureHash(fixture),
+    datasetId = `${fixture.datasetVersion}/${fixture.variant}/${fixture.seed}`;
+  const reads: string[] = [];
   const db = Object.assign(
-    async () => {
+    async (parts: TemplateStringsArray) => {
+      const text = parts.join("?");
+      if (text.includes("exists(select 1 from runtime.sessions")) {
+        reads.push("baseline");
+        return [{ hash, ready: true }];
+      }
+      if (text.includes("payload->>'origin'='eve'")) {
+        reads.push("overlay");
+        return [
+          {
+            variant: "canonical",
+            dataset_id: datasetId,
+            content_hash: hash,
+            events: [],
+            conversations: [],
+            messages: [],
+          },
+        ];
+      }
       throw Error("Unexpected extra database read");
     },
     {
       unsafe: async () => {
-        calls++;
-        return [{ fixture }];
+        throw Error("The full per-session history should not be read");
       },
     },
   );
@@ -26,7 +48,10 @@ test("cold fixture opens in one database request, concurrent readers share it", 
   const [a, b] = await Promise.all([repo.fixture("one"), repo.fixture("one")]);
   assert.equal(a, b);
   assert.equal(a.events.length, 2829);
-  assert.equal(calls, 1);
+  assert.deepEqual(reads.sort(), ["baseline", "overlay"]);
+  const c = await repo.fixture("two");
+  assert.equal(c, a, "an unchanged session reuses the baseline object");
+  assert.deepEqual(reads.sort(), ["baseline", "overlay", "overlay"]);
 });
 
 test("session reads deduplicate, preserve a loaded chapter, and invalidate after a write", async (t) => {

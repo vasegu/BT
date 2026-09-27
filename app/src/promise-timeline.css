@@ -1,0 +1,156 @@
+.promise-timeline {
+  margin: 0 0 16px;
+  padding: 16px 18px 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.promise-timeline > header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 20px;
+  margin-bottom: 8px;
+}
+.promise-timeline h3 {
+  margin: 4px 0 0;
+  font: 600 22px/1.2 var(--sans);
+  letter-spacing: -0.02em;
+}
+.pt-status {
+  display: flex;
+  gap: 6px;
+}
+.pt-status span {
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font: 10.5px var(--mono);
+}
+.pt-status .is-met {
+  border-color: #bfe3d6;
+  background: #e3f4ee;
+  color: #0f7b5f;
+}
+.pt-status .is-open {
+  border-color: #dccdf3;
+  background: var(--soft);
+  color: var(--brand);
+}
+.promise-timeline svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.pt-band {
+  fill: var(--surface);
+}
+.pt-band.is-alt {
+  fill: #faf9fb;
+}
+.pt-lane {
+  fill: var(--muted);
+  font: 500 10px var(--mono);
+  letter-spacing: 0.06em;
+}
+.pt-lane.is-human {
+  fill: var(--ink);
+  font: 600 13px var(--sans);
+  letter-spacing: 0;
+}
+.pt-rail {
+  stroke: #ece8f0;
+}
+.pt-tick {
+  stroke: #f3f1f5;
+}
+.pt-time {
+  fill: var(--muted);
+  font: 10px var(--mono);
+}
+.pt-now {
+  stroke: var(--brand);
+  stroke-dasharray: 3 3;
+  opacity: 0.5;
+}
+.pt-now-label {
+  fill: var(--brand);
+  font: 600 10px var(--mono);
+}
+.pt-thread-promise {
+  fill: none;
+  stroke: var(--brand);
+  stroke-width: 3;
+  stroke-dasharray: 2 6;
+  stroke-linecap: round;
+}
+.pt-thread-promise.is-kept {
+  stroke-dasharray: none;
+  stroke-width: 2.2;
+}
+.pt-thread-restore {
+  fill: none;
+  stroke: #0f7b5f;
+  stroke-width: 2.2;
+}
+.pt-thread-message {
+  fill: none;
+  stroke: var(--brand);
+  stroke-width: 1.2;
+  opacity: 0.35;
+}
+.pt-open {
+  fill: var(--brand);
+  font: 10.5px var(--mono);
+}
+.pt-quiet {
+  fill: #a15c07;
+  font: italic 12px var(--sans);
+}
+.pt-mark circle {
+  stroke-width: 2.5;
+  fill: currentColor;
+  stroke: currentColor;
+}
+.pt-mark circle.is-hollow {
+  fill: #fff;
+}
+.pt-mark.is-link {
+  cursor: pointer;
+}
+.pt-mark.is-link:hover .pt-label {
+  text-decoration: underline;
+}
+.tone-network,
+.tone-system,
+.tone-human,
+.tone-promise,
+.tone-customer {
+  color: var(--brand);
+}
+.tone-restore {
+  color: #0f7b5f;
+}
+.tone-alert {
+  color: #d4145a;
+}
+.tone-customer circle {
+  fill: #fff;
+}
+.pt-mark:has(.pt-star) circle {
+  fill: var(--ink);
+  stroke: var(--ink);
+}
+.pt-star {
+  fill: #fff;
+  font: 600 12px var(--sans);
+}
+.pt-label {
+  fill: var(--ink);
+  font: 600 11.5px var(--sans);
+}
+.pt-sub {
+  fill: var(--muted);
+  font: 9.5px var(--mono);
+}

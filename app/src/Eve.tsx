@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { VoiceBeam, getAudioContext } from "voice-glow";
+import { BorderBeam } from "border-beam";
 import { EveCall, evePost, recentMessages } from "./eve-client";
 import type { EveReply, Message } from "./eve-client";
 import type { PersonId, Snapshot } from "./types";
@@ -274,8 +275,9 @@ export function Eve({
       borderRadius={0}
       idle={voice === "on" ? 0.4 : 0}
       paused={reducedMotion.current}
-      active={thinking || activeVoice}
-      processing={thinking || voice === "connecting"}
+      // The phone-wide glow belongs to voice. Text uses the chat-input glow on the composer.
+      active={activeVoice}
+      processing={activeVoice && (thinking || voice === "connecting")}
       stream={
         voiceCaption?.role === "assistant" && outputStream
           ? outputStream
@@ -487,8 +489,8 @@ export function Eve({
           </div>
         )}
         <div className="eve-input-area">
-          <div className="eve-composer">
-            {activeVoice ? (
+          {activeVoice ? (
+            <div className="eve-composer">
               <div className="eve-call-controls">
                 <button
                   aria-label={muted ? "Unmute microphone" : "Mute microphone"}
@@ -531,7 +533,19 @@ export function Eve({
                   </svg>
                 </button>
               </div>
+            </div>
             ) : (
+              // Text chat: a border beam travels round the composer while Eve writes her reply.
+              <BorderBeam
+                className="eve-input-beam"
+                size="md"
+                theme="light"
+                colorVariant="ocean"
+                strength={0.9}
+                duration={2.2}
+                active={thinking && !reducedMotion.current}
+              >
+              <div className="eve-composer">
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
@@ -582,8 +596,9 @@ export function Eve({
                   </div>
                 </div>
               </form>
+              </div>
+              </BorderBeam>
             )}
-          </div>
           <div className="eve-input-meta">
             <span>
               {activeVoice

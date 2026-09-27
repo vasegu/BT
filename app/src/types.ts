@@ -161,6 +161,8 @@ export type Snapshot = {
     outcomes: OutcomeEpisode[];
     incident: { id: string; affected: PersonId[]; status: string } | null;
     slots: { time: string; owner: string | null; person: PersonId | null }[];
+    /** Present when the store holds the operational tables (Supabase). */
+    network?: NetworkView;
   };
   nextStep: Step | null;
 };
@@ -202,3 +204,38 @@ export type OutcomeCheck = {
   nextDecision: string;
 };
 export type OutcomeEpisode = OutcomeContract & { check: OutcomeCheck };
+
+export type NetworkService = {
+  person: PersonId | null;
+  reference: string;
+  product: string;
+  lifecycle: string;
+  incident: "affected" | "excluded" | null;
+};
+export type NetworkView = {
+  nodes: {
+    reference: string;
+    kind: string;
+    incident: { reference: string; status: "open" | "resolved" } | null;
+    services: NetworkService[];
+  }[];
+  unattached: NetworkService[];
+  cases: {
+    reference: string;
+    person: PersonId | null;
+    owner: string;
+    status: "open" | "closed";
+    description: string;
+    openedAt: string;
+    closedAt: string | null;
+    diagnostics: { test: string; result: string; at: string }[];
+  }[];
+  promises: { case: string | null; owner: string; kind: string; dueAt: string; kept: boolean }[];
+  slots: { startsAt: string; endsAt: string; owner: string | null; heldFor: string | null; state: "past" | "held" | "free" }[];
+  households: {
+    label: string;
+    person: PersonId | null;
+    members: { name: string; since: string }[];
+    services: { reference: string; product: string; lifecycle: string; since: string }[];
+  }[];
+};

@@ -251,6 +251,8 @@ export function BehaviourSpace({
     stacks.set(key, [...(stacks.get(key) || []), r]);
   }
   const hasModel = !!selected.probabilities;
+  // Tall enough for every action row plus the footnote.
+  const height = Math.max(292, Math.ceil(76 + actions.length * 23.1));
   return (
     <>
       <div className="cs-pickers">
@@ -288,9 +290,9 @@ export function BehaviourSpace({
           </select>
         </label>
       </div>
-      <div className="cs-stage">
+      <div className="cs-stage" style={{ aspectRatio: `650 / ${height}` }}>
         <svg
-          viewBox="0 0 650 292"
+          viewBox={`0 0 650 ${height}`}
           role="group"
           aria-label="Factual context neighbourhood connected to recorded action distributions"
         >
@@ -505,7 +507,7 @@ export function BehaviourSpace({
             stroke="white"
             strokeWidth="2"
           />
-          <text x="246" y="282" className="cs-svg-small">
+          <text x="246" y={height - 10} className="cs-svg-small">
             {hasModel
               ? "Width = recorded model probability · × = B policy excludes"
               : "Policy-only run · model probabilities unavailable"}

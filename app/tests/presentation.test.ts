@@ -1,12 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { Engine, steps } from "../server/engine.ts";
-import {
-  presentationBeats,
-  presentationCursor,
-  panelSnapshot,
-  householdOutcome,
-} from "../src/presentation.ts";
+import { momentView, moments, householdOutcome } from "../src/presentation.ts";
+import { clocks } from "../server/engine.ts";
 import type { Snapshot } from "../src/types.ts";
 async function replay() {
   const engine = new Engine(":memory:");
@@ -23,59 +19,64 @@ async function replay() {
     engine.close();
   }
 }
-test("each household has sourced beats without future proof", async () => {
-  for (const s of await replay())
-    for (const person of ["daniel", "sam", "maya"] as const) {
-      const beats = presentationBeats(s, person);
-      assert.ok(beats.every((b) => b.person === person));
-      for (const b of beats)
-        for (const id of b.evidenceIds)
-          assert.ok(
-            s.events.some((e) => e.id === id && e.revision <= s.cutoff),
-            id,
-          );
-    }
+test("the spine's clock labels match the engine's recorded clocks", () => {
+  assert.equal(moments.length, clocks.length);
+  clocks.forEach((iso, i) =>
+    assert.equal(
+      moments[i].time,
+      new Date(iso).toLocaleTimeString("en-GB", {
+        timeZone: "Europe/London",
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    ),
+  );
 });
-test("a pending or failed revision cannot borrow the previous decision for its presentation", async () => {
+test("every moment reads all three homes at once from recorded decisions only", async () => {
+  for (const s of await replay()) {
+    const view = momentView(s);
+    assert.deepEqual(
+      view.lanes.map((l) => l.person),
+      ["daniel", "sam", "maya"],
+    );
+    for (const lane of view.lanes) {
+      if (lane.decision) assert.ok(lane.decision.revision <= s.cutoff);
+      if (lane.message) assert.equal(lane.message.revision, s.cutoff);
+    }
+    for (const e of view.signals) assert.equal(e.revision, s.cutoff);
+  }
+});
+test("the same signal produces different responses: Maya is watched, not messaged", async () => {
+  const s = (await replay())[1];
+  const view = momentView(s);
+  const lane = (p: string) => view.lanes.find((l) => l.person === p)!;
+  assert.equal(view.signals.length, 3, "one heartbeat signal per home");
+  assert.ok(lane("daniel").message && lane("sam").message);
+  assert.equal(lane("maya").message, null);
+  assert.equal(lane("maya").decision?.disposition, "watch");
+  assert.ok(lane("maya").panels.includes("arbiter"));
+});
+test("the incident moment changes the decision and flags the shared context only for homes in scope", async () => {
+  const s = (await replay())[2];
+  const view = momentView(s);
+  const daniel = view.lanes.find((l) => l.person === "daniel")!;
+  const maya = view.lanes.find((l) => l.person === "maya")!;
+  assert.ok(daniel.changed && daniel.previous);
+  assert.notEqual(daniel.previous!.title, daniel.decision!.title);
+  assert.ok(daniel.involved && daniel.inIncident);
+  assert.equal(maya.inIncident, false);
+  assert.equal(maya.involved, false, "outside the incident, nothing new for Maya");
+});
+test("a pending or failed revision never borrows the previous decision", async () => {
   const s = (await replay())[2];
   for (const status of [
     { pendingJobs: 1, failedJobs: 0 },
     { pendingJobs: 0, failedJobs: 1 },
   ]) {
-    const beats = presentationBeats({ ...s, ...status });
-    assert.equal(beats.length, 1);
-    assert.equal(beats[0].kind, "waiting");
+    const view = momentView({ ...s, ...status });
+    assert.notEqual(view.status, "ready");
+    assert.ok(view.lanes.every((l) => l.decision === null));
   }
-});
-test("the phone keeps the prior state until its beat; navigation is read-only and scoped to session", async () => {
-  const run = await replay();
-  const s = run[1],
-    before = run[0],
-    copy = JSON.stringify(s),
-    beats = presentationBeats(s);
-  const phone = beats.findIndex(
-    (b) => b.person === "daniel" && b.panel === "phone",
-  );
-  assert.ok(phone > 0);
-  assert.equal(
-    panelSnapshot(s, before, beats, phone - 1, "phone", "daniel"),
-    before,
-  );
-  assert.equal(panelSnapshot(s, before, beats, phone, "phone", "daniel"), s);
-  assert.equal(
-    panelSnapshot(
-      s,
-      { ...before, session: { ...before.session, id: "other" } },
-      beats,
-      0,
-      "phone",
-      "daniel",
-    ),
-    null,
-  );
-  assert.equal(JSON.stringify(s), copy);
-  assert.equal(presentationCursor(beats, "maya", "invalid"), 0);
-  assert.equal(presentationCursor(beats, "sam", "999"), beats.length - 1);
 });
 test("the final comparison keeps three proof types separate and preserves unresolved legacy activation", async () => {
   const run = await replay();
@@ -90,26 +91,3 @@ test("the final comparison keeps three proof types separate and preserves unreso
   assert.equal(householdOutcome(legacy, "sam").state, "waiting");
 });
 
-test("each persona owns a continuous walkthrough; comparisons cannot interrupt their intermediate beats", async () => {
-  const snapshots = await replay();
-  for (const person of ["daniel", "sam", "maya"] as const) {
-    for (const s of snapshots) {
-      const beats = presentationBeats(s, person);
-      assert.ok(beats.length > 0);
-      assert.ok(
-        beats.every((b) => b.person === person),
-        `${person} at ${s.cutoff} stays in their story`,
-      );
-      assert.equal(
-        beats.some((b) => b.kind === "comparison"),
-        s.cutoff === 5,
-      );
-    }
-  }
-});
-
-test('a delivered update reveals its receipt before the customer sees it',async()=>{
- const s=(await replay())[1], beats=presentationBeats(s,'daniel');
- const receipt=beats.findIndex(b=>b.panel==='actions'), phone=beats.findIndex(b=>b.panel==='phone');
- assert.ok(receipt>=0&&receipt<phone);
-});

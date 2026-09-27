@@ -20,9 +20,19 @@ export function database(admin = false) {
   }
   if (!url)
     throw new Error("Configure the private BT database connection first.");
+  if (!admin) {
+    // Supabase's session-mode pooler (5432) caps the whole project at 15 clients, which
+    // local dev, scripts and every Vercel instance share. Transaction mode (6543) is built
+    // for this; prepare:false below is what it requires.
+    const parsed = new URL(url);
+    if (parsed.hostname.endsWith(".pooler.supabase.com") && parsed.port === "5432") {
+      parsed.port = "6543";
+      url = parsed.href;
+    }
+  }
   return postgres(url, {
     ssl: "require",
-    max: process.env.VERCEL ? 2 : 4,
+    max: process.env.VERCEL ? 2 : 8,
     idle_timeout: process.env.VERCEL ? 10 : 300,
     connect_timeout: 15,
     prepare: false,

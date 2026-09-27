@@ -1,5 +1,5 @@
-import { ActionOutcomes } from "./ActionOutcomes";
-import { OperationalMemory } from "./OperationalMemory";
+import { ActionsView } from "./ActionsView";
+import { OperationsView } from "./OperationsView";
 import { ArbiterWorkbench } from "./ArbiterWorkbench";
 import { CustomerMemory } from "./CustomerMemory";
 import type { ReactNode } from "react";
@@ -9,6 +9,7 @@ import type {
   Decision,
   DemoAction,
   SourceEvent,
+  PersonId,
 } from "./types";
 
 const time = (iso: string) =>
@@ -35,9 +36,11 @@ export function SectionView({
   phone,
   inspect,
   onCutoff,
+  onPerson,
 }: {
   panel: string;
   onCutoff: (at: number) => void;
+  onPerson: (person: PersonId) => void;
   h: Household;
   snapshot: Snapshot;
   decision: Decision | undefined;
@@ -57,12 +60,12 @@ export function SectionView({
     );
   if (panel === "operations")
     return (
-      <OperationalMemory
-        key={h.id}
+      <OperationsView
         h={h}
         snapshot={snapshot}
         inspect={inspect}
         onCutoff={onCutoff}
+        onPerson={onPerson}
       />
     );
   if (panel === "arbiter")
@@ -77,12 +80,12 @@ export function SectionView({
     );
   if (panel === "actions")
     return (
-      <ActionOutcomes
-        key={h.id}
+      <ActionsView
         h={h}
         snapshot={snapshot}
         inspect={inspect}
         onCutoff={onCutoff}
+        onPerson={onPerson}
       />
     );
   return (

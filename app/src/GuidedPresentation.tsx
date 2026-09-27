@@ -1,262 +1,298 @@
 import type { Snapshot, PersonId, SourceEvent } from "./types";
-import { householdNames, householdOutcome } from "./presentation";
-import type { PresentationBeat, PresentationPanel } from "./presentation";
+import { householdNames, moments } from "./presentation";
+import type { MomentLane, momentView } from "./presentation";
 import "./presentation.css";
-const panels: Record<PresentationPanel, string> = {
-  customer: "Customer memory",
-  operations: "Operational memory",
-  arbiter: "Arbiter",
-  actions: "Actions & outcomes",
-  phone: "Customer experience",
-};
-const roles = {
+
+const roles: Record<PersonId, string> = {
   daniel: "Recovery + a promise",
   sam: "A first connection",
   maya: "A quiet evening",
 };
-const people: PersonId[] = ["daniel", "sam", "maya"];
-export function PresentationRail({
-  person: selected,
-  beats,
-  index,
-  onPerson,
-}: {
-  person: PersonId;
-  beats: PresentationBeat[];
-  index: number;
-  onPerson: (person: PersonId) => void;
-}) {
-  return (
-    <nav className="story-rail" aria-label="Household stories">
-      {people.map((person) => {
-        return (
-          <button
-            key={person}
-            onClick={() => onPerson(person)}
-            aria-pressed={selected === person}
-          >
-            <span className="story-avatar">
-              {householdNames[person]
-                .split(" ")
-                .map((w) => w[0])
-                .join("")}
-            </span>
-            <span>
-              <strong>{householdNames[person]}</strong>
-              <small>{roles[person]}</small>
-            </span>
-            <span className="story-position">
-              {selected === person ? "In focus" : "Open story"}
-              <i aria-hidden="true" />
-            </span>
-          </button>
-        );
-      })}
-    </nav>
-  );
-}
-export function PresentationCue({
+const initials = (person: PersonId) =>
+  householdNames[person]
+    .split(" ")
+    .map((w) => w[0])
+    .join("");
+const first = (person: PersonId) => householdNames[person].split(" ")[0];
+const quietByDesign = (lane: MomentLane) =>
+  lane.decision?.disposition === "watch" ||
+  lane.decision?.disposition === "suppress";
+
+/** The clock is the presenter's only navigation: each stop is one signal. */
+export function MomentSpine({
   snapshot,
-  beat,
-  index,
-  total,
+  status,
   busy,
+  onGo,
   onNext,
   onBack,
-  onOpen,
+  onExplore,
+  onRestart,
+}: {
+  snapshot: Snapshot | null;
+  status: ReturnType<typeof momentView>["status"] | null;
+  busy: boolean;
+  onGo: (at: number) => void;
+  onNext: () => void;
+  onBack: () => void;
+  onExplore: () => void;
+  onRestart: () => void;
+}) {
+  const at = snapshot?.cutoff ?? 0;
+  const recorded = snapshot?.session.revision ?? 0;
+  const last = at === moments.length - 1;
+  return (
+    <div className="spine" role="navigation" aria-label="Scenario clock">
+      <div className="spine-clock">
+        <span>THREE QUIET ROUTERS</span>
+        <strong>{snapshot ? moments[at].time : "--:--"}</strong>
+      </div>
+      <ol className="spine-track">
+        {moments.map((m, i) => (
+          <li
+            key={m.time}
+            className={
+              i === at ? "is-current" : i < at ? "is-past" : i <= recorded ? "is-recorded" : ""
+            }
+          >
+            <button
+              disabled={!snapshot || busy || i > recorded}
+              aria-current={i === at ? "step" : undefined}
+              onClick={() => onGo(i)}
+              title={i > recorded ? "Not played yet" : m.title}
+            >
+              <time>{m.time}</time>
+              <span>{m.title}</span>
+            </button>
+          </li>
+        ))}
+      </ol>
+      <div className="spine-controls">
+        <button onClick={onBack} disabled={!snapshot || busy || at === 0} aria-label="Previous moment">
+          ←
+        </button>
+        <button
+          className="primary"
+          onClick={onNext}
+          disabled={!snapshot || busy || last || status !== "ready"}
+        >
+          {status === "deciding" || busy
+            ? "Deciding…"
+            : last
+              ? "End of story"
+              : `${moments[at + 1].time} →`}
+        </button>
+      </div>
+      <div className="spine-meta">
+        <button className="link" onClick={onExplore}>
+          Explore
+        </button>
+        <button className="link" onClick={onRestart} disabled={busy} title="Start a fresh run of the scenario from 20:45">
+          ↺ Restart
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export function MomentLanes({
+  snapshot,
+  view,
+  focus,
+  onFocus,
   onInspect,
 }: {
   snapshot: Snapshot;
-  beat: PresentationBeat;
-  index: number;
-  total: number;
-  busy: boolean;
-  onNext: () => void;
-  onBack: () => void;
-  onOpen: (panel: PresentationPanel) => void;
+  view: ReturnType<typeof momentView>;
+  focus: PersonId;
+  onFocus: (person: PersonId) => void;
   onInspect: (e: SourceEvent) => void;
 }) {
-  const evidence = beat.evidenceIds
-    .map((id) => snapshot.events.find((e) => e.id === id))
-    .filter((e): e is SourceEvent => !!e);
+  const { moment, lanes, status, signals } = view;
+  const final = snapshot.cutoff === moments.length - 1;
   return (
-    <section
-      className="presentation-cue"
-      aria-label="Current presentation beat"
-    >
-      <div className="cue-count">
-        <span>MOMENT {String(snapshot.cutoff + 1).padStart(2, "0")}</span>
-        <strong>
-          {String(index + 1).padStart(2, "0")}
-          <small> / {String(total).padStart(2, "0")}</small>
-        </strong>
-      </div>
-      <div className="cue-copy" aria-live="polite">
-        <div className="cue-location">
-          {beat.person ? householdNames[beat.person] : "All three households"}
-          <span> / </span>
-          {beat.panel ? panels[beat.panel] : "Compare the outcomes"}
+    <section className="moment" aria-live="polite">
+      <header className="moment-head">
+        <span className="eyebrow">
+          {moment.time} · Moment {snapshot.cutoff + 1} of {moments.length}
+        </span>
+        <div className="moment-title-row">
+          <h1>{moment.title}</h1>
+          {signals.length > 0 && (
+            <div className="moment-signals" aria-label="Source signals at this moment">
+              {[...new Set(signals.map((e) => e.type))].map((type) => [type, signals.filter((e) => e.type === type)] as const).map(([type, events]) => (
+                <span key={type} className="signal-chip">
+                  <i className={`sig sig-${events[0].subject}`} />
+                  <code>{type}</code>
+                  {events.map((e) => (
+                    <button key={e.id} onClick={() => onInspect(e)} title={e.description}>
+                      {e.subject === "shared" ? "operations" : first(e.subject as PersonId)}
+                    </button>
+                  ))}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
-        <h1>{beat.title}</h1>
-        <p>{beat.detail}</p>
-        {beat.change && (
-          <div className="cue-diff">
-            <span>{beat.change.label}</span>
-            <del>{beat.change.before}</del>
-            <span aria-hidden="true">→</span>
-            <strong>{beat.change.after}</strong>
-          </div>
-        )}
-        {evidence.length > 0 && (
-          <div className="cue-evidence">
-            {evidence.slice(0, 2).map((e) => (
-              <button
-                key={e.id}
-                title={e.description}
-                onClick={() => onInspect(e)}
-              >
-                {e.type}
-                <span>↗</span>
-              </button>
-            ))}
-            {evidence.length > 2 && (
-              <span>+{evidence.length - 2} linked records</span>
-            )}
-          </div>
-        )}
-      </div>
-      <div className="cue-controls">
-        <div>
-          <button
-            onClick={onBack}
-            disabled={busy || (!snapshot.cutoff && !index)}
-            aria-label="Previous presentation beat"
-          >
-            ←
-          </button>
-          <button
-            className="primary"
-            onClick={onNext}
-            disabled={busy || beat.kind === "waiting"}
-          >
-            {busy
-              ? "Recording…"
-              : index < total - 1
-                ? "Next beat"
-                : snapshot.cutoff === 5
-                  ? beat.person === "daniel"
-                    ? "Sam’s story"
-                    : beat.person === "sam"
-                      ? "Maya’s story"
-                      : "Daniel’s story"
-                  : "Continue story"}
-            <span>→</span>
-          </button>
+        <p>{moment.lead}</p>
+      </header>
+      {status === "failed" && (
+        <div className="moment-alert" role="alert">
+          A decision job failed. The source events are kept and the worker retries up to three times.
+          Switch to Explore to inspect it.
         </div>
-        {beat.panel && (
-          <button className="cue-inspect" onClick={() => onOpen(beat.panel!)}>
-            Inspect {panels[beat.panel].toLowerCase()} ↗
-          </button>
-        )}
-        <small>← → to move · Enter to inspect</small>
+      )}
+      <div className="lanes">
+        {lanes.map((lane) => (
+          <Lane
+            key={lane.person}
+            lane={lane}
+            deciding={status === "deciding"}
+            final={final}
+            focused={focus === lane.person}
+            opening={snapshot.cutoff === 0}
+            onFocus={() => onFocus(lane.person)}
+          />
+        ))}
       </div>
     </section>
   );
 }
-export function PresentationComparison({
-  snapshot,
-  person,
-  onOpen,
+
+function Lane({
+  lane,
+  deciding,
+  final,
+  focused,
+  opening,
+  onFocus,
 }: {
-  snapshot: Snapshot;
-  person: PersonId;
-  onOpen: (person: PersonId) => void;
+  lane: MomentLane;
+  deciding: boolean;
+  final: boolean;
+  focused: boolean;
+  opening: boolean;
+  onFocus: () => void;
 }) {
+  const { person, decision, previous, changed, message, lastMessage, outcome } = lane;
+  const state = deciding
+    ? "deciding"
+    : opening
+      ? "context"
+      : !lane.involved
+        ? "unchanged"
+        : changed || message
+          ? "changed"
+          : "touched";
   return (
-    <section
-      className="story-comparison story-outcome"
-      aria-label="Household story outcome"
+    <article
+      className={`lane lane-${person} is-${state}${focused ? " is-focused" : ""}`}
+      onClick={onFocus}
     >
       <header>
-        <span className="eyebrow">
-          {snapshot.cutoff === 5
-            ? "What changed / what is proven"
-            : "Pause / compare the three contexts"}
+        <span className="lane-avatar">{initials(person)}</span>
+        <div>
+          <strong>{householdNames[person]}</strong>
+          <small>{roles[person]}</small>
+        </div>
+        <span className={`lane-tag tag-${state}`}>
+          {
+            {
+              deciding: "Deciding",
+              context: "History",
+              unchanged: "No change",
+              changed: changed ? "New decision" : "Message sent",
+              touched: "Evidence",
+            }[state]
+          }
         </span>
-        <h2>{householdNames[person].split(" ")[0]}’s outcome</h2>
       </header>
-      <div className="comparison-grid">
-        {[person].map((person) => {
-          const h = snapshot.households.find((h) => h.id === person)!;
-          const o = householdOutcome(snapshot, person);
-          const d = snapshot.decisions
-            .filter(
-              (d) => d.person === person && d.revision === snapshot.cutoff,
-            )
-            .at(-1);
-          const relevant =
-            person === "daniel"
-              ? ["service", "callback", "confirmation"]
-              : person === "sam"
-                ? ["activation"]
-                : ["watch"];
-          return (
-            <article
-              key={person}
-              className={`comparison-household outcome-${o.state}`}
-            >
-              <div className="comparison-identity">
-                <span className="story-avatar">
-                  {h.name
-                    .split(" ")
-                    .map((w) => w[0])
-                    .join("")}
-                </span>
-                <div>
-                  <strong>{h.name}</strong>
-                  <small>{roles[person]}</small>
-                </div>
-                <span className="proof-state">
-                  {o.state === "met"
-                    ? "Verified"
-                    : o.state === "contradicted"
-                      ? "Reassess"
-                      : "Open"}
-                </span>
-              </div>
-              <h3>{o.title}</h3>
-              <p>{o.detail}</p>
-              <dl>
-                {o.proof
-                  .filter((p) => relevant.includes(p.goal))
-                  .map((p) => (
-                    <div key={p.id}>
-                      <dt>{p.title}</dt>
-                      <dd className={p.check.status}>
-                        {p.check.status === "met"
-                          ? "Observed"
-                          : p.check.status === "waiting"
-                            ? "Awaiting proof"
-                            : p.check.status}
-                      </dd>
-                    </div>
-                  ))}
-              </dl>
-              <div className="comparison-decision">
-                <span className="eyebrow">Recorded next move</span>
-                <strong>{d?.title || "Awaiting a source event"}</strong>
-              </div>
-              <button onClick={() => onOpen(person)}>
-                Inspect this household’s proof <span>↗</span>
-              </button>
-            </article>
-          );
-        })}
+
+      <p className="lane-reading">{outcome.title}</p>
+
+      <div className="lane-block">
+        <span className="eyebrow">Arbiter</span>
+        {deciding ? (
+          <div className="lane-thinking">
+            <i />
+            Assessing {first(person)}’s context…
+          </div>
+        ) : decision ? (
+          <>
+            {changed && previous && (
+              <del className="lane-was">{previous.title}</del>
+            )}
+            <strong className="lane-decision">{decision.title}</strong>
+            <p className="lane-reason">{decision.reason}</p>
+          </>
+        ) : (
+          <p className="lane-reason">No decision yet. The history is read when a signal arrives.</p>
+        )}
       </div>
-      <p className="comparison-footnote">
-        Synthetic observations · recorded decisions · simulated delivery.
-        Observed outcomes do not establish causal uplift.
-      </p>
+
+      <div className="lane-block">
+        <span className="eyebrow">{first(person)} sees</span>
+        {deciding ? (
+          <div className="lane-sees is-empty">—</div>
+        ) : message ? (
+          <div className="lane-sees">
+            <small>My BT · {moments[message.revision]?.time}</small>
+            <b>{message.title}</b>
+            <span>{message.body}</span>
+          </div>
+        ) : decision && quietByDesign(lane) ? (
+          <div className="lane-sees is-quiet">Nothing. The quiet is the right answer.</div>
+        ) : (
+          <div className="lane-sees is-empty">
+            No new message{lastMessage ? ` · last: “${lastMessage.title}”` : ""}
+          </div>
+        )}
+      </div>
+
+      {final && !deciding && (
+        <dl className="lane-proof">
+          {outcome.proof.slice(0, 3).map((p) => (
+            <div key={p.id}>
+              <dt>{p.title}</dt>
+              <dd className={p.check.status}>
+                {p.check.status === "met" ? "Observed" : p.check.status === "waiting" ? "Awaiting proof" : p.check.status}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      )}
+      <footer>{focused ? "Panels below show this home" : `Show ${first(person)} below ↓`}</footer>
+    </article>
+  );
+}
+
+/** Shown while the replay loads, in the same shape as the moment, so nothing old flashes. */
+export function MomentSkeleton() {
+  return (
+    <section className="moment is-loading" aria-busy="true" aria-label="Loading the scenario">
+      <header className="moment-head">
+        <div>
+          <span className="skel skel-eyebrow" />
+          <span className="skel skel-title" />
+          <span className="skel skel-line" />
+        </div>
+      </header>
+      <div className="lanes">
+        {(["daniel", "sam", "maya"] as PersonId[]).map((p) => (
+          <article key={p} className={`lane lane-${p} is-skeleton`}>
+            <header>
+              <span className="lane-avatar">{initials(p)}</span>
+              <div>
+                <strong>{householdNames[p]}</strong>
+                <small>{roles[p]}</small>
+              </div>
+            </header>
+            <span className="skel skel-line" />
+            <span className="skel skel-block" />
+            <span className="skel skel-block" />
+          </article>
+        ))}
+      </div>
     </section>
   );
 }
