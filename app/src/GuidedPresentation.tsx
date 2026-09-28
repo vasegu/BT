@@ -135,6 +135,12 @@ export function MomentLanes({
           )}
         </div>
         <p>{moment.lead}</p>
+        {moment.proves && (
+          <p className="moment-proves">
+            <span>{moment.proves.component}</span>
+            {moment.proves.detail}
+          </p>
+        )}
       </header>
       {status === "failed" && (
         <div className="moment-alert" role="alert">
@@ -155,6 +161,16 @@ export function MomentLanes({
           />
         ))}
       </div>
+      {final && status === "ready" && (
+        <footer className="moment-close">
+          <span className="eyebrow">One system, not five projects</span>
+          <p>
+            Memory that persists, a reasoning engine that reads it, a governed action a named
+            human owns, and a loop that writes the outcome back. Each is close to useless without
+            the others — which is why this is one architecture, not five initiatives.
+          </p>
+        </footer>
+      )}
     </section>
   );
 }

@@ -221,6 +221,42 @@
   color: var(--muted);
   font-size: 14px;
 }
+.moment-proves {
+  margin: 10px 0 0;
+  max-width: 640px;
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+.moment-proves span {
+  display: inline-block;
+  margin-right: 9px;
+  padding: 1px 9px;
+  border-radius: 999px;
+  background: var(--soft);
+  color: var(--brand);
+  font: 600 10px/1.7 var(--mono);
+  letter-spacing: 0.02em;
+  vertical-align: 1px;
+}
+.moment-close {
+  margin-top: 18px;
+  padding: 15px 18px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--brand);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--soft) 55%, var(--surface));
+}
+.moment-close .eyebrow {
+  color: var(--brand);
+}
+.moment-close p {
+  margin: 5px 0 0;
+  max-width: 720px;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.55;
+}
 .moment-signals {
   display: flex;
   flex-wrap: wrap;

@@ -62,12 +62,42 @@ export function householdOutcome(s: Snapshot, person: PersonId) {
 }
 /** The clock is the spine: each stop is one source signal, read across all three homes at once. */
 export const moments = [
-  { time: "20:45", title: "Before the signal", lead: "Three homes, three histories. Nothing has happened yet." },
-  { time: "21:00", title: "Three routers go quiet", lead: "The same heartbeat is overdue in all three homes at the same minute." },
-  { time: "21:03", title: "A network incident is confirmed", lead: "The affected-service register names exactly which homes are in scope." },
-  { time: "21:12", title: "The line comes back", lead: "Fresh evidence arrives. A working line does not close every thread." },
-  { time: "21:15", title: "A promise is kept", lead: "The named adviser makes the call she promised, on time." },
-  { time: "21:18", title: "The customers confirm", lead: "The loop closes with each customer's own evidence." },
+  {
+    time: "20:45",
+    title: "Before the signal",
+    lead: "Three homes, three histories. Nothing has happened yet.",
+    proves: { component: "Customer memory", detail: "Three histories already known — usable in the moment, not a report pulled up afterwards." },
+  },
+  {
+    time: "21:00",
+    title: "Three routers go quiet",
+    lead: "The same heartbeat is overdue in all three homes at the same minute.",
+    proves: { component: "The reasoning engine", detail: "One identical signal. What memory holds makes it three different right answers." },
+  },
+  {
+    time: "21:03",
+    title: "A network incident is confirmed",
+    lead: "The affected-service register names exactly which homes are in scope.",
+    proves: { component: "Operational memory", detail: "Shared scope is declared explicitly — which homes are in, which are not. No guessing." },
+  },
+  {
+    time: "21:12",
+    title: "The line comes back",
+    lead: "Fresh evidence arrives. A working line does not close every thread.",
+    proves: { component: "The loop stays open", detail: "A restored line is not a kept promise. Fresh evidence keeps the thread open." },
+  },
+  {
+    time: "21:15",
+    title: "A promise is kept",
+    lead: "The named adviser makes the call she promised, on time.",
+    proves: { component: "Governed action", detail: "A named adviser acts — accountable and on time, not an automated guess." },
+  },
+  {
+    time: "21:18",
+    title: "The customers confirm",
+    lead: "The loop closes with each customer's own evidence.",
+    proves: { component: "The loop closes", detail: "Each outcome is written back to memory. The capability compounds." },
+  },
 ];
 // Continuous telemetry and chat are context, not the moment's signal.
 const ambient = new Set([
