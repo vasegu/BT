@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p /Users/v.eguren/Documents/GitHub/BT/.claude)",
+      "Bash(python3 -c ' *)",
+      "Bash(scutil --nc list)",
+      "Bash(python3 -)",
+      "Bash(npx tsc *)",
+      "Bash(python3 -c \"import sys,json;d=json.load\\(sys.stdin\\);print\\('decoded ok, events',len\\(d['events']\\)\\)\")",
+      "Bash(vercel deploy *)"
+    ]
+  }
+}
