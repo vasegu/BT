@@ -37,9 +37,12 @@ mkdirSync(dirname(dbPath), { recursive: true });
 const localDatabaseConfig = existsSync(resolve(root, ".env.database.local"))
   ? parseEnv(readFileSync(resolve(root, ".env.database.local"), "utf8"))
   : {};
+// Supabase is the single backend everywhere: the deployed app already runs on it, and using
+// the same store locally keeps one code path and stops the demo from writing throwaway SQLite
+// files into the working tree. BT_STORAGE=sqlite remains an explicit offline escape hatch.
 const storage = hosted
   ? "supabase"
-  : process.env.BT_STORAGE || localDatabaseConfig.BT_STORAGE || "sqlite";
+  : process.env.BT_STORAGE || localDatabaseConfig.BT_STORAGE || "supabase";
 const workerDisabled =
   process.env.BT_DISABLE_WORKER === "1" ||
   localDatabaseConfig.BT_DISABLE_WORKER === "1";
