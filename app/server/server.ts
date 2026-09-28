@@ -300,12 +300,15 @@ export async function handler(req: IncomingMessage, res: ServerResponse) {
       if (req.method !== "POST")
         throw new DomainError("Method not allowed", 405);
       const origin = req.headers.origin;
-      if (!requestOriginAllowed(origin, host, hosted, port))
+      const fetchSite = req.headers["sec-fetch-site"];
+      // A same-origin (or origin-less) fetch provably comes from the app's own
+      // document, so it can't be a cross-site driver regardless of the host it
+      // is served from (localhost, a preview tunnel, or production). Only fall
+      // back to the explicit host allowlist when the browser can't vouch for it.
+      const sameOrigin = fetchSite === "same-origin" || fetchSite === "none";
+      if (!sameOrigin && !requestOriginAllowed(origin, host, hosted, port))
         throw new DomainError("Cross-origin mutation rejected", 403);
-      if (
-        req.headers["sec-fetch-site"] === "cross-site" ||
-        req.headers["x-bt-demo"] !== "1"
-      )
+      if (fetchSite === "cross-site" || req.headers["x-bt-demo"] !== "1")
         throw new DomainError("Local presenter header required", 403);
       if (!req.headers["content-type"]?.startsWith("application/json"))
         throw new DomainError("JSON body required", 415);

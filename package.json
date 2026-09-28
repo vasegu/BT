@@ -1,1 +1,14 @@
-{"name":"bt-presenter-host","private":true,"type":"module","engines":{"node":"24.x"}}
+{
+  "name": "bt-presenter-host",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "dev": "npm --prefix app install --no-audit --no-fund && npm --prefix app run dev",
+    "build": "npm --prefix app install --no-audit --no-fund && npm --prefix app run build",
+    "start": "npm --prefix app run start",
+    "test": "npm --prefix app test"
+  }
+}
