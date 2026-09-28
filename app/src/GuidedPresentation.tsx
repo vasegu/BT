@@ -73,13 +73,13 @@ export function MomentSpine({
         </button>
         <button
           className="primary"
-          onClick={onNext}
-          disabled={!snapshot || busy || last || status !== "ready"}
+          onClick={last ? onRestart : onNext}
+          disabled={!snapshot || busy || status !== "ready"}
         >
           {status === "deciding" || busy
             ? "Deciding…"
             : last
-              ? "End of story"
+              ? "↺ Run it again"
               : `${moments[at + 1].time} →`}
         </button>
       </div>
