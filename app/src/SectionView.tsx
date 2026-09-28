@@ -1,7 +1,9 @@
 import { ActionsView } from "./ActionsView";
 import { OperationsView } from "./OperationsView";
 import { ArbiterWorkbench } from "./ArbiterWorkbench";
-import { CustomerMemory } from "./CustomerMemory";
+import { CustomerMemoryView } from "./CustomerMemoryView";
+import { FocusHeader } from "./FocusHeader";
+import { GovernanceView } from "./GovernanceView";
 import type { ReactNode } from "react";
 import type {
   Snapshot,
@@ -50,12 +52,13 @@ export function SectionView({
 }) {
   if (panel === "customer")
     return (
-      <CustomerMemory
-        key={h.id}
+      <CustomerMemoryView
         h={h}
         snapshot={snapshot}
         decision={decision}
         inspect={inspect}
+        onCutoff={onCutoff}
+        onPerson={onPerson}
       />
     );
   if (panel === "operations")
@@ -68,16 +71,30 @@ export function SectionView({
         onPerson={onPerson}
       />
     );
+  const first = h.name.split(" ")[0];
+  const chosen = decision?.trace?.candidates.find((c) => c.id === decision.trace?.selectedId);
   if (panel === "arbiter")
     return (
-      <ArbiterWorkbench
-        key={h.id}
-        h={h}
-        snapshot={snapshot}
-        decision={decision}
-        inspect={inspect}
-      />
+      <div className="av aw-page">
+        <FocusHeader
+          panel="Arbiter"
+          question={`What should happen for ${first}, if anything?`}
+          snapshot={snapshot}
+          person={h.id}
+          onPerson={onPerson}
+          onCutoff={onCutoff}
+        />
+        <ArbiterWorkbench
+          key={h.id}
+          h={h}
+          snapshot={snapshot}
+          decision={decision}
+          inspect={inspect}
+        />
+      </div>
     );
+  if (panel === "governance")
+    return <GovernanceView h={h} snapshot={snapshot} inspect={inspect} onCutoff={onCutoff} onPerson={onPerson} />;
   if (panel === "actions")
     return (
       <ActionsView
@@ -89,17 +106,45 @@ export function SectionView({
       />
     );
   return (
+    <div className="av">
+      <FocusHeader
+        panel="Customer experience"
+        question={`What does ${first} actually see, and why?`}
+        snapshot={snapshot}
+        person={h.id}
+        stat={{ value: actions.length, label: actions.length === 1 ? "update delivered" : "updates delivered" }}
+        onPerson={onPerson}
+        onCutoff={onCutoff}
+      />
     <div className="full-section channel-section">
       <div className="channel-context">
-        <span className="eyebrow">Customer channel / My BT</span>
-        <h2>{h.name.split(" ")[0]}’s side of the story.</h2>
-        <p>
-          Service updates carry through from the shared state. Eve reads the
-          same customer history and operational context for chat and voice
-          support.
-        </p>
+        <span className="eyebrow">Behind the screen</span>
+        {decision ? (
+          <>
+            <h3 className="channel-decision">{decision.title}</h3>
+            <p className="channel-reason">{decision.reason}</p>
+            <div className="av-governance">
+              {decision.moment && (
+                <span className={`av-moment is-${decision.moment.kind}`}>
+                  {decision.moment.kind === "routine" ? "Routine moment" : "Load-bearing moment"}
+                </span>
+              )}
+              {chosen?.authority && (
+                <span className={`av-auth is-${chosen.authority.mode}`}>
+                  {chosen.authority.mode === "autonomous"
+                    ? "Ran on its own"
+                    : chosen.authority.mode === "human-led"
+                      ? `Led by ${chosen.authority.role}`
+                      : `Signed off by ${chosen.authority.role}`}
+                </span>
+              )}
+              {decision.moment && <p>{decision.moment.why}</p>}
+            </div>
+          </>
+        ) : (
+          <p>Nothing has happened yet. The phone shows what {first} would see today.</p>
+        )}
         <div className="full-fields">
-          <Field label="Updates delivered">{actions.length}</Field>
           <Field label="Current service state">{h.serviceState}</Field>
           <Field label="Named owner">{h.owner || "No open case"}</Field>
         </div>
@@ -132,6 +177,7 @@ export function SectionView({
           Demonstrator channel · no external message is sent.
         </p>
       </div>
+    </div>
     </div>
   );
 }

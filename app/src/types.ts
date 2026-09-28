@@ -20,7 +20,7 @@ export type SourceEvent = {
   payload: Record<string, unknown>;
 };
 export type Household = {
-  linkedServices?: {reference:string;product:string;state:string}[];
+  linkedServices?: { reference: string; product: string; state: string; recent?: { id: string; at: string; description: string } }[];
   memory?: { hash: string; items: import('../server/memory.ts').MemoryItem[] };
   id: PersonId;
   name: string;
@@ -40,6 +40,9 @@ export type Household = {
   contactAllowed: boolean;
   evidence: SourceEvent[];
 };
+export type Authority = { mode: "autonomous" | "sign-off" | "human-led"; role: string; why: string };
+/** Routine: removing friction is a pure win. Load-bearing: the customer needs a person visibly accountable. */
+export type MomentKind = { kind: "routine" | "load-bearing"; why: string };
 export type Decision = {
   id: string;
   person: PersonId;
@@ -52,6 +55,7 @@ export type Decision = {
   evidenceIds: string[];
   held: { title: string; reason: string; wake: string }[];
   policyVersion: string;
+  moment?: MomentKind;
   trace?: ArbitrationTrace;
 };
 export type ProposalCheck = {
@@ -70,7 +74,10 @@ export type Proposal = {
   reason: string;
   wake: string;
   effect: string;
-  status: "selected" | "held" | "blocked" | "merged";
+  /** awaiting = eligible on the evidence, but only a named person may authorise it */
+  status: "selected" | "held" | "blocked" | "merged" | "awaiting";
+  /** Who may authorise this action: the system on its own, a named person's sign-off, or a person leading it. */
+  authority?: Authority;
   priority: number;
   factors: { label: string; value: number }[];
   checks: ProposalCheck[];

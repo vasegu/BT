@@ -149,6 +149,13 @@ function Chain({
     ? created
     : [...outcomes].sort((a, b) => Number(a.check.status === "met") - Number(b.check.status === "met"));
   const quiet = shown.disposition === "watch" || shown.disposition === "suppress";
+  // Governance: who authorised this, and what is waiting for (or no longer needs) a person.
+  const chosen = shown.trace?.candidates.find((c) => c.id === shown.trace?.selectedId);
+  const awaiting = shown.trace?.candidates.filter((c) => c.status === "awaiting") ?? [];
+  const before = snapshot.decisions.filter((d) => d.person === who.id && d.revision < shown.revision).at(-1);
+  const withdrawn = (before?.trace?.candidates ?? [])
+    .filter((c) => c.status === "awaiting")
+    .flatMap((c) => shown.trace?.candidates.filter((x) => x.id === c.id && x.status !== "awaiting") ?? []);
   return (
     <div className="av-chain">
       <Step n="01" title="From context to action" className="av-step-space">
@@ -182,6 +189,36 @@ function Chain({
         </span>
         <strong className="av-decision">{shown.title}</strong>
         <p className="av-reason">{shown.reason}</p>
+        {(shown.moment || chosen?.authority) && (
+          <div className="av-governance">
+            {shown.moment && (
+              <span className={`av-moment is-${shown.moment.kind}`} title={shown.moment.why}>
+                {shown.moment.kind === "routine" ? "Routine moment" : "Load-bearing moment"}
+              </span>
+            )}
+            {chosen?.authority && (
+              <span className={`av-auth is-${chosen.authority.mode}`} title={chosen.authority.why}>
+                {chosen.authority.mode === "autonomous" ? "Ran on its own" : chosen.authority.mode === "human-led" ? `Led by ${chosen.authority.role}` : `Signed off by ${chosen.authority.role}`}
+              </span>
+            )}
+            {shown.moment && <p>{shown.moment.why}</p>}
+          </div>
+        )}
+        {awaiting.map((c) => (
+          <div key={c.id} className="av-signoff">
+            <small>Waiting for a person · {c.authority?.role}</small>
+            <b>{c.title}</b>
+            <span>{c.reason}</span>
+            <em>{c.authority?.why} Nothing is booked until they approve.</em>
+          </div>
+        ))}
+        {withdrawn.map((c) => (
+          <div key={c.id} className="av-signoff is-withdrawn">
+            <small>Withdrawn at {moments[shown.revision].time} · never booked</small>
+            <b>{c.title}</b>
+            <span>{c.reason}</span>
+          </div>
+        ))}
         {action ? (
           <div className="av-message">
             <small>My BT · {at(action.time)} · receipt {action.receiptId?.slice(0, 8) || "pending"}</small>

@@ -360,6 +360,7 @@ export function applyAssessment(
       effect:
         "Retain existing cases and commitments. Do not dispatch a new customer message.",
       status: "selected",
+      authority: { mode: "human-led", role: "Human escalation lead", why: "Nothing new runs automatically; a person reviews before anything is sent." },
       priority: 0,
       factors: [],
       checks: [
@@ -379,7 +380,7 @@ export function applyAssessment(
     if (c.status === "selected") c.status = "held";
     if (c.id === selected.id) c.status = "selected";
   }
-  const order = { selected: 0, merged: 1, held: 2, blocked: 3 };
+  const order = { selected: 0, merged: 1, awaiting: 2, held: 3, blocked: 4 };
   trace.candidates.sort(
     (a, b) => order[a.status] - order[b.status] || b.priority - a.priority,
   );

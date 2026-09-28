@@ -12,7 +12,8 @@
     "start": "node server/server.ts",
     "test": "node --test tests/*.test.ts",
     "test:lab": "node ../scripts/verify-lab.mjs",
-    "build:sway": "node ../scripts/build-context-sway.ts"
+    "build:sway": "node ../scripts/build-context-sway.ts",
+    "build:memory": "node ../scripts/build-memory-map.ts"
   },
   "dependencies": {
     "@huggingface/transformers": "^3.8.1",

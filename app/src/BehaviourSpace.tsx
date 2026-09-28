@@ -26,6 +26,7 @@ export const actionNames: Record<string, string> = {
   restart: "Restart hub",
   watch: "Observe quietly",
   offer: "Make an offer",
+  engineer: "Engineer visit (sign-off)",
   defer: "Hold / review",
 };
 const actionName = (id: string) => actionNames[id] || id;

@@ -17,6 +17,7 @@ import { SectionView } from "./SectionView";
 import { PhoneExperience } from "./PhoneExperience";
 import { Rhythm } from "./Rhythm";
 import { SwayTile, SwayReview } from "./SwayReview";
+import { GovernanceTile } from "./GovernanceView";
 import type { Snapshot, PersonId, SourceEvent, Step } from "./types";
 
 import { momentView } from "./presentation";
@@ -44,6 +45,7 @@ const panelNames = {
   arbiter: "Arbiter",
   actions: "Actions & outcomes",
   review: "Agent review",
+  governance: "Governance",
 };
 type PanelId = keyof typeof panelNames;
 async function api<T>(path: string, body?: unknown): Promise<T> {
@@ -176,6 +178,7 @@ function Panel({
                 arbiter: "04",
                 actions: "05",
                 review: "06",
+                governance: "07",
               }[id]
             }
           </span>
@@ -805,6 +808,11 @@ export function App() {
         <SwayTile />
       </Panel>
     );
+    const governancePanel = h && snapshot && (
+      <Panel id="governance" panel={panel} onOpen={openPanel}>
+        <GovernanceTile snapshot={snapshot} />
+      </Panel>
+    );
     return {
       h,
       decision,
@@ -817,6 +825,7 @@ export function App() {
       arbiter,
       actionPanel,
       reviewPanel,
+      governancePanel,
     };
   };
   const {
@@ -831,6 +840,7 @@ export function App() {
     arbiter,
     actionPanel,
     reviewPanel,
+    governancePanel,
   } = renderPanels(snapshot);
   return (
     <>
@@ -1056,11 +1066,11 @@ export function App() {
         id="workspace"
         className={
           focused
-            ? `focused-workspace${panel === "customer" ? " customer-focus" : panel === "phone" ? " phone-focus" : panel === "arbiter" ? " arbiter-focus" : panel === "operations" ? " operations-focus" : panel === "actions" || review ? " actions-focus" : ""}`
+            ? `focused-workspace${panel === "customer" ? " customer-focus" : panel === "phone" ? " phone-focus" : panel === "arbiter" ? " arbiter-focus" : panel === "operations" ? " operations-focus" : panel === "actions" || panel === "governance" || review ? " actions-focus" : ""}`
             : `account-workspace${presenting ? " presentation-workspace" : ""}`
         }
       >
-        {(!presenting || focused) && panel !== "review" && panel !== "actions" && panel !== "operations" && (
+        {(!presenting || focused) && !["review", "actions", "operations", "customer", "arbiter", "phone", "governance"].includes(panel ?? "") && (
           <div className="workspace-intro">
             <div>
               <p className="eyebrow">
@@ -1086,7 +1096,7 @@ export function App() {
             </div>
           </div>
         )}
-        {focused && (panel === "review" || panel === "actions" || panel === "operations") ? null : focused ? (
+        {focused && ["review", "actions", "operations", "customer", "arbiter", "phone", "governance"].includes(panel ?? "") ? null : focused ? (
           <div className="focused-context">
             <strong>{review ? "Replay corpus" : names[person]}</strong>
             <code>
@@ -1290,6 +1300,7 @@ export function App() {
               <div className="panel-stack left-stack">
                 {customer}
                 {operations}
+                {governancePanel}
               </div>
               {phone}
               <div className="panel-stack right-stack">

@@ -149,3 +149,44 @@ test('an activation case does not inherit the recovery persona’s reported line
  assert.equal(sam.serviceState,'Open service case');
  assert.match(sam.activation,/unconfirmed/);
 });
+
+test("an engineer visit waits for a named sign-off and is withdrawn when the incident explains the fault", () => {
+  const run = replay();
+  const decide = (at: number, alias: string) => {
+    const h = run[at].households.find((x) => x.id === alias)!;
+    return arbitrate(h, run[Math.max(0, at - 1)].households.find((x) => x.id === alias)!, run[at] as Snapshot);
+  };
+  const at2100 = decide(1, "daniel");
+  const visit = at2100.trace!.candidates.find((c) => c.id === "engineer")!;
+  assert.equal(visit.status, "awaiting");
+  assert.equal(visit.authority?.mode, "sign-off");
+  assert.notEqual(at2100.trace!.selectedId, "engineer");
+  assert.equal(decide(2, "daniel").trace!.candidates.find((c) => c.id === "engineer")!.status, "blocked");
+  // Sam's first-week activation and Maya's quiet night never qualify for a visit.
+  for (const alias of ["sam", "maya"]) assert.equal(decide(1, alias).trace!.candidates.find((c) => c.id === "engineer")!.status, "blocked");
+});
+
+test("routine and load-bearing moments: a named person stays accountable where the customer needs one", () => {
+  const run = replay();
+  const kind = (at: number, alias: string) =>
+    arbitrate(run[at].households.find((x) => x.id === alias)!, run[at].households.find((x) => x.id === alias)!, run[at] as Snapshot).moment!.kind;
+  assert.equal(kind(1, "daniel"), "load-bearing");
+  assert.equal(kind(1, "sam"), "routine");
+  assert.equal(kind(1, "maya"), "routine");
+  assert.equal(kind(5, "daniel"), "routine");
+});
+
+test("one household, several products: Maya's linked mobile informs the broadband watch without entering its evidence", () => {
+  const run = replay();
+  const maya = run[1].households.find((x) => x.id === "maya")!;
+  assert.ok(!maya.evidence.some((e) => e.type === "mobile.activity_observed"), "broadband evidence stays scoped");
+  const recent = maya.linkedServices?.find((s) => s.recent)?.recent;
+  assert.ok(recent);
+  const d = arbitrate(maya, maya, run[1] as Snapshot);
+  assert.equal(d.trace!.selectedId, "watch");
+  assert.match(d.reason, /linked mobile/);
+  assert.ok(d.evidenceIds.includes(recent.id));
+  // Before the mobile signal is known, the watch still holds on the stated habit alone.
+  const before = run[0].households.find((x) => x.id === "maya")!;
+  assert.ok(!before.linkedServices?.some((s) => s.recent));
+});

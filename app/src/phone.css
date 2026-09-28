@@ -402,3 +402,124 @@
     transition: none !important;
   }
 }
+
+/* AI disclosure + "Why am I seeing this?" (Article 50: say when AI shaped it, and explain) */
+.phone-ai-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 7px;
+  border-top: 1px solid #eee8f3;
+  font-size: 10px;
+  color: #8a8196;
+}
+.phone-ai-line button {
+  border: 0;
+  padding: 0;
+  background: none;
+  color: #5514b4;
+  font-size: 10.5px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.phone-native {
+  position: relative;
+}
+.why-sheet {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  z-index: 30;
+  max-height: 78%;
+  overflow-y: auto;
+  padding: 10px 16px 14px;
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 -8px 30px rgba(30, 10, 50, 0.22);
+  animation: why-up 220ms ease both;
+  font-size: 12px;
+  color: #231f29;
+}
+.why-grab {
+  width: 36px;
+  height: 4px;
+  margin: 0 auto 8px;
+  border-radius: 2px;
+  background: #ddd6e6;
+}
+.why-sheet header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.why-sheet header strong {
+  font-size: 15px;
+}
+.why-sheet header button {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 0;
+  background: #f3f0f7;
+  font-size: 15px;
+  line-height: 1;
+}
+.why-sheet h4 {
+  margin: 12px 0 5px;
+  color: #8a8196;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.why-sheet ol {
+  margin: 0;
+  padding-left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  line-height: 1.4;
+}
+.why-sheet p {
+  margin: 0;
+  line-height: 1.45;
+  color: #3d3746;
+}
+.why-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.why-chips span {
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #f1ebfa;
+  color: #5514b4;
+  font-size: 10.5px;
+}
+.why-sheet footer {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #eee8f3;
+}
+.why-sheet footer span {
+  font-weight: 600;
+  color: #5514b4;
+}
+.why-sheet footer small {
+  color: #a39bae;
+  font-size: 9.5px;
+}
+@keyframes why-up {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+}

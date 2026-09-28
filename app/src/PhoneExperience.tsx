@@ -1,7 +1,7 @@
 import btLogo from "./assets/bt-logo.png";
 import { useState } from "react";
 import { Eve } from "./Eve";
-import type { Snapshot, Household, DemoAction } from "./types";
+import type { Snapshot, Household, DemoAction, SourceEvent } from "./types";
 import "./phone.css";
 
 export function PhoneIcon({
@@ -50,6 +50,99 @@ const time = (iso: string) =>
     minute: "2-digit",
   });
 const tabs = ["Home", "Services", "Help", "Account"] as const;
+const day = (iso: string) =>
+  new Date(iso).toLocaleDateString("en-GB", { timeZone: "Europe/London", day: "numeric", month: "short" });
+
+/** A customer-language reason for each record a decision relied on. */
+function because(e: SourceEvent, h: Household): { text: string; used: string } | null {
+  const p = e.payload as Record<string, unknown>;
+  switch (e.type) {
+    case "router.heartbeat_overdue":
+      return { text: `Your hub stopped checking in with us at ${time(e.occurredAt)}.`, used: "Your hub’s status signal" };
+    case "router.heartbeat_received":
+      return { text: `Your hub checked in again at ${time(e.occurredAt)}.`, used: "Your hub’s status signal" };
+    case "incident.confirmed":
+      return h.incident
+        ? { text: "Your line is part of a confirmed network fault in your area.", used: "Our network fault register" }
+        : { text: "A nearby network fault does not include your line.", used: "Our network fault register" };
+    case "diagnostic.completed":
+      return p.result === "not_resolved" || p.result === "intermittent"
+        ? { text: `A ${String(p.test ?? "test").replace("_", " ")} at ${time(e.occurredAt)} didn’t fix it, so we won’t ask you to repeat it.`, used: "Tests already run on your line" }
+        : { text: `We ran a ${String(p.test ?? "test").replace("_", " ")} on your line at ${time(e.occurredAt)}.`, used: "Tests already run on your line" };
+    case "service.restored_observed":
+      return { text: `A line test at ${time(e.occurredAt)} shows your connection is back.`, used: "Tests already run on your line" };
+    case "promise.created":
+      return { text: `${h.owner ?? "Your adviser"} promised to call you at ${time(String(p.dueAt ?? e.occurredAt))}, and that still stands.`, used: "Your open case" };
+    case "promise.fulfilled":
+      return { text: `${h.owner ?? "Your adviser"} made the call promised for ${time(e.occurredAt)}.`, used: "Your open case" };
+    case "case.opened":
+      return { text: `You reported this on ${day(e.occurredAt)}.`, used: "Your open case" };
+    case "order.delivered":
+      return { text: `Your hub was delivered on ${day(e.occurredAt)}.`, used: "Your order" };
+    case "activation.pending":
+    case "activation.confirmed":
+      return { text: e.type === "activation.pending" ? "Your line isn’t switched on yet." : "Your line is now switched on.", used: "Your order" };
+    case "activation.first_use_observed":
+      return { text: "We saw your connection being used for the first time.", used: "Your hub’s status signal" };
+    case "customer.confirmed_working":
+      return { text: "You told us it’s working again.", used: "What you told us" };
+    case "preference.stated":
+      return { text: `You told us: ${e.description}`, used: "What you told us" };
+    default:
+      return null;
+  }
+}
+
+/** "Why am I seeing this?" — the decision behind a message, in the customer's language. */
+function WhySheet({ action, snapshot, h, onClose }: { action: DemoAction; snapshot: Snapshot; h: Household; onClose: () => void }) {
+  const decision = snapshot.decisions.find((d) => d.id === action.decisionId);
+  const used = (decision?.evidenceIds ?? [])
+    .map((id) => snapshot.events.find((e) => e.id === id))
+    .filter((e): e is SourceEvent => !!e)
+    // Old orders are real evidence but noise to a customer; only mention recent ones.
+    .filter((e) => !/^(order|activation)\./.test(e.type) || Date.parse(snapshot.clock) - Date.parse(e.occurredAt) < 30 * 864e5)
+    .map((e) => because(e, h))
+    .filter((x): x is { text: string; used: string } => !!x);
+  const reasons = [...new Map(used.map((u) => [u.text, u])).values()];
+  const sources = [...new Set(used.map((u) => u.used))];
+  const held = h.evidence.filter((e) => e.subject === h.id && !(decision?.evidenceIds ?? []).includes(e.id)).length;
+  return (
+    <div className="why-sheet" role="dialog" aria-label="Why am I seeing this?">
+      <div className="why-grab" />
+      <header>
+        <strong>Why am I seeing this?</strong>
+        <button onClick={onClose} aria-label="Close">×</button>
+      </header>
+      <h4>We sent this because</h4>
+      <ol>
+        {reasons.slice(0, 4).map((r) => (
+          <li key={r.text}>{r.text}</li>
+        ))}
+        {!reasons.length && <li>{decision?.reason ?? "It relates to your service."}</li>}
+      </ol>
+      <h4>What we used</h4>
+      <div className="why-chips">
+        {sources.map((u) => (
+          <span key={u}>{u}</span>
+        ))}
+      </div>
+      <h4>What we didn’t use</h4>
+      <p>
+        {held} other records we hold about your service. Other people and products in your household are not used for
+        service messages.
+      </p>
+      <h4>Who’s accountable</h4>
+      <p>
+        {h.owner ? `${h.owner}, your named BT adviser.` : "The BT service team."} This message was chosen by our service
+        system with AI assistance and checked against our service policy{decision ? ` (${decision.policyVersion})` : ""}.
+      </p>
+      <footer>
+        <span>You can ask for a person at any time.</span>
+        <small>Ref {action.decisionId.slice(0, 8)} · demo · no real message sent</small>
+      </footer>
+    </div>
+  );
+}
 
 export function PhoneExperience({
   snapshot,
@@ -72,6 +165,19 @@ export function PhoneExperience({
     startChat ? "Help" : "Home",
   );
   const messages = [...actions].reverse();
+  const [why, setWhy] = useState<DemoAction | null>(null);
+  // The headline follows the household's actual state rather than a marketing line.
+  const headline = h.confirmed
+    ? "All sorted."
+    : h.firstUseObserved
+      ? "You’re connected."
+      : h.restored
+        ? "Your connection is back."
+        : h.incident
+          ? "We’re on it."
+          : h.activation.includes("unconfirmed")
+            ? "Let’s get you connected."
+            : "Your home, connected.";
   const open = (next: typeof page) => {
     if (next === "Help") onSupport();
     setPage(next);
@@ -106,6 +212,7 @@ export function PhoneExperience({
         className={`phone phone-native ${page === "Help" ? "phone-conversation" : ""}`}
       >
         <div className="island" aria-hidden="true" />
+        {why && page === "Home" && <WhySheet action={why} snapshot={snapshot} h={h} onClose={() => setWhy(null)} />}
         <div className="phone-status">
           <strong>{time(snapshot.clock)}</strong>
           <span>
@@ -142,11 +249,7 @@ export function PhoneExperience({
                   <p className="phone-greeting">
                     Good evening, {h.name.split(" ")[0]}
                   </p>
-                  <h2>
-                    Your home,
-                    <br />
-                    connected.
-                  </h2>
+                  <h2>{headline}</h2>
                   <button
                     className="phone-service"
                     onClick={() => setPage("Services")}
@@ -192,6 +295,17 @@ export function PhoneExperience({
                             </h3>
                           </summary>
                           <p>{a.body}</p>
+                          <div className="phone-ai-line">
+                            <span>Sent automatically · AI-assisted</span>
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setWhy(a);
+                              }}
+                            >
+                              Why am I seeing this?
+                            </button>
+                          </div>
                           {i === 0 &&
                             h.id === "daniel" &&
                             snapshot.nextStep === "confirm" &&

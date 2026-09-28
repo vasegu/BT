@@ -47,7 +47,7 @@ test("sessions share one hash-checked baseline; each session costs one small ove
   const repo = new PostgresRepository(db as any);
   const [a, b] = await Promise.all([repo.fixture("one"), repo.fixture("one")]);
   assert.equal(a, b);
-  assert.equal(a.events.length, 2829);
+  assert.equal(a.events.length, 2830);
   assert.deepEqual(reads.sort(), ["baseline", "overlay"]);
   const c = await repo.fixture("two");
   assert.equal(c, a, "an unchanged session reuses the baseline object");

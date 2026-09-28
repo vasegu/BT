@@ -3,6 +3,17 @@ import type { PersonId, Snapshot } from "./types";
 import { moments, householdNames } from "./presentation";
 import "./actions-view.css";
 
+/** Where each panel sits in the five-part architecture, and who is accountable for it. */
+export const ARCHITECTURE: Record<string, { component: string; owner: string }> = {
+  "Customer memory": { component: "1 · Customer memory, the moat", owner: "Memory & Trust Officer" },
+  "Operational memory": { component: "Live signals into the reasoning engine", owner: "Service operations" },
+  Arbiter: { component: "2 · Reasoning & planning engine", owner: "AgentOps lead" },
+  "Actions & outcomes": { component: "3 · Governed action · 4 · Closing the loop", owner: "Human escalation lead" },
+  "Customer experience": { component: "The customer moment", owner: "Chief Customer Officer" },
+  "Agent review": { component: "5 · Governance · how agents behave in production", owner: "AgentOps lead" },
+  Governance: { component: "5 · Governance · the policy layer", owner: "Memory & Trust Officer" },
+};
+
 /** Shared header for expanded panels: the panel's question, household switch and the moment strip. */
 export function FocusHeader({
   panel,
@@ -35,6 +46,14 @@ export function FocusHeader({
             {showMoments && ` · ${moments[snapshot.cutoff].time} · ${moments[snapshot.cutoff].title}`}
           </span>
           <h2>{question}</h2>
+          {ARCHITECTURE[panel] && (
+            <p className="av-arch">
+              <span>Architecture</span>
+              {ARCHITECTURE[panel].component}
+              <span>Accountable</span>
+              {ARCHITECTURE[panel].owner}
+            </p>
+          )}
         </div>
         <div className="av-people" role="group" aria-label="Household">
           {(["daniel", "sam", "maya"] as PersonId[]).map((p) => (

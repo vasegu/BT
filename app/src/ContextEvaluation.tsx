@@ -20,6 +20,7 @@ const names: Record<string, string> = {
   callback: "Arrange callback",
   restart: "Restart hub",
   offer: "Make an offer",
+  engineer: "Engineer visit (sign-off)",
   defer: "Hold / review",
 };
 const pct = (p: number | undefined) =>

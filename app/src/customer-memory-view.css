@@ -1,0 +1,213 @@
+.cm-hint {
+  margin-left: auto;
+  color: var(--muted);
+  font: italic 10.5px var(--sans);
+}
+.cm-layers {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.cm-layer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 11px 13px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+}
+.cm-layer header {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--line);
+}
+.cm-layer header b {
+  color: var(--brand);
+  font-size: 13px;
+}
+.cm-layer header small {
+  color: var(--muted);
+  font-size: 11px;
+}
+.cm-layer ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.cm-layer li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+.cm-layer li button {
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  color: var(--ink);
+  font: inherit;
+}
+.cm-layer li button:hover {
+  color: var(--brand);
+  text-decoration: underline;
+}
+.cm-layer li em {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font: normal 10px var(--mono);
+}
+.cm-tag {
+  padding: 0 6px;
+  border-radius: 4px;
+  font: normal 600 9px var(--mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.cm-tag.is-stated {
+  background: #eef3ff;
+  color: #2849a8;
+}
+.cm-tag.is-observed {
+  background: #e3f4ee;
+  color: #0f7b5f;
+}
+.cm-tag.is-derived {
+  background: #fbf0de;
+  color: #a15c07;
+}
+.cm-none {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-style: italic;
+}
+.cm-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+.cm-said {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+.cm-said li {
+  display: grid;
+  grid-template-columns: 118px 104px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: baseline;
+  padding: 7px 0;
+  border-top: 1px solid var(--line);
+  font-size: 12.5px;
+}
+.cm-said li:first-child {
+  border-top: 0;
+}
+.cm-said time {
+  color: var(--muted);
+  font: 10.5px var(--mono);
+}
+.cm-channel {
+  justify-self: start;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--soft);
+  color: var(--brand);
+  font: 10px var(--mono);
+  text-transform: capitalize;
+}
+.cm-said button {
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  font: inherit;
+  color: var(--ink);
+}
+.cm-said button:hover {
+  color: var(--brand);
+}
+.cm-said small {
+  color: var(--muted);
+  font: 10px var(--mono);
+}
+.cm-decision {
+  margin: 0;
+  font-size: 13px;
+}
+.cm-decision b {
+  color: var(--brand);
+}
+.cm-label {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  font: 600 9.5px var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.cm-used {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.cm-used button {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font: 10.5px var(--mono);
+  color: var(--brand);
+}
+.cm-memories,
+.cm-held {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.cm-memories li {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+}
+.cm-held li {
+  padding-left: 12px;
+  position: relative;
+  color: var(--muted);
+}
+.cm-held li::before {
+  content: "–";
+  position: absolute;
+  left: 0;
+}
+.cm-atlas summary {
+  cursor: pointer;
+  font: 600 13px var(--sans);
+}
+.cm-atlas summary span {
+  margin-right: 6px;
+  color: var(--brand);
+  font: 600 10px var(--mono);
+}
+@media (max-width: 1100px) {
+  .cm-layers,
+  .cm-pair {
+    grid-template-columns: 1fr;
+  }
+}

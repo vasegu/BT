@@ -1,0 +1,224 @@
+.mm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.mm-panels {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.mm-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 10px 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.mm-panel.is-focus {
+  border-color: #cdbbe9;
+  box-shadow: 0 0 0 3px #f4effb;
+}
+.mm-panel figcaption {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.mm-panel figcaption button {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: 600 10.5px var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink, #1c1a22);
+  cursor: pointer;
+}
+.mm-panel.is-focus figcaption button {
+  color: var(--brand);
+}
+.mm-panel figcaption small,
+.mm-muted {
+  font: 9.5px var(--mono);
+  color: var(--muted);
+}
+.mm-space {
+  position: relative;
+}
+.mm-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  cursor: crosshair;
+}
+.mm-frame {
+  fill: #fcfbfd;
+  stroke: var(--line);
+}
+.mm-grid {
+  stroke: var(--line);
+  stroke-width: 0.5;
+  opacity: 0.6;
+}
+.mm-dot {
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+.mm-link {
+  stroke: #1c1a22;
+  stroke-width: 0.7;
+}
+.mm-trail {
+  fill: none;
+  stroke: #1c1a22;
+  stroke-width: 0.7;
+  stroke-dasharray: 1.5 2.5;
+  opacity: 0.55;
+}
+.mm-past {
+  fill: #fff;
+  stroke: #1c1a22;
+  stroke-width: 0.7;
+}
+.mm-star {
+  fill: #1c1a22;
+  stroke: #fff;
+  stroke-width: 1;
+}
+.mm-star-label {
+  font: 600 6px var(--mono);
+  fill: #1c1a22;
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 2.2px;
+}
+.mm-tip {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 4px 14px rgba(20, 10, 40, 0.08);
+  font: 9px var(--mono);
+  color: var(--muted);
+  pointer-events: none;
+}
+.mm-tip span,
+.mm-reminds small {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.mm-tip i,
+.mm-reminds i {
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+}
+.mm-tip b {
+  font: 500 11.5px/1.35 var(--sans);
+  color: var(--ink, #1c1a22);
+}
+.mm-reminds {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-height: 62px;
+  padding-top: 6px;
+  border-top: 1px solid var(--line);
+}
+.mm-reminds button {
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  font: 500 12px/1.4 var(--sans);
+  color: var(--ink, #1c1a22);
+  cursor: pointer;
+}
+.mm-reminds button:hover {
+  color: var(--brand);
+}
+.mm-reminds small {
+  font: 9.5px var(--mono);
+  color: var(--muted);
+}
+.mm-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+.mm-layers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.mm-layers button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  font: 10px var(--mono);
+  color: var(--muted);
+  cursor: pointer;
+}
+.mm-layers button i {
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+}
+.mm-layers button.is-on {
+  border-color: var(--brand);
+  color: var(--brand);
+  background: #f4effb;
+}
+.mm-legend {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  font: 9.5px var(--mono);
+  color: var(--muted);
+}
+.mm-ring {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1.4px #1c1a22;
+}
+.mm-method {
+  flex-basis: 100%;
+}
+.mm-method summary {
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--muted);
+}
+.mm-method p {
+  margin: 6px 0 0;
+  max-width: 80ch;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+@media (max-width: 900px) {
+  .mm-panels {
+    grid-template-columns: 1fr;
+  }
+}

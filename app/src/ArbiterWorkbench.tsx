@@ -15,6 +15,7 @@ const time = (iso: string) =>
     minute: "2-digit",
   });
 const short = (id: string) => id.slice(0, 8);
+const authorityLabel = { autonomous: "Runs on its own", "sign-off": "Needs sign-off", "human-led": "Person-led" } as const;
 const labels: Record<string, string> = {
   router_simulator: "Hub telemetry",
   diagnostics_simulator: "Diagnostics",
@@ -367,6 +368,7 @@ export function ArbiterWorkbench({
     held: "Held",
     blocked: "Blocked",
     merged: "Merged",
+    awaiting: "Awaiting",
   };
   return (
     <div className="arbiter-workbench">
@@ -382,6 +384,12 @@ export function ArbiterWorkbench({
                 : "Rule-derived · decision recorded"}
           </small>
         </div>
+        {run.moment && (
+          <div className={`aw-moment is-${run.moment.kind}`} title={run.moment.why}>
+            <span>{run.moment.kind === "routine" ? "Routine moment" : "Load-bearing moment"}</span>
+            <small>{run.moment.why}</small>
+          </div>
+        )}
         <div className="aw-run-id">
           <span>RUN</span>
           <code>{short(run.id)}</code>
@@ -509,7 +517,10 @@ export function ArbiterWorkbench({
                 className={`aw-proposal ${c.id === selected.id ? "is-inspected" : ""}`}
               >
                 <span className="aw-proposal-name">
-                  <code>{c.agent}</code>
+                  <code>
+                    {c.agent}
+                    {c.authority && <em className={`aw-auth is-${c.authority.mode}`}>{authorityLabel[c.authority.mode]}</em>}
+                  </code>
                   <strong>{c.title}</strong>
                 </span>
                 <span className="aw-score">
@@ -594,6 +605,20 @@ export function ArbiterWorkbench({
               <h3>{selected.title}</h3>
               <p>{selected.reason}</p>
             </div>
+            {selected.authority && (
+              <div className={`aw-authority is-${selected.authority.mode}`}>
+                <span className="aw-kicker">WHO MAY AUTHORISE THIS</span>
+                <strong>
+                  {authorityLabel[selected.authority.mode]} · {selected.authority.role}
+                </strong>
+                <p>{selected.authority.why}</p>
+                {selected.status === "awaiting" && (
+                  <p className="aw-awaiting">
+                    Eligible on the evidence. It waits for {selected.authority.role}; nothing is booked until a person approves.
+                  </p>
+                )}
+              </div>
+            )}
             {assessment && <ModelReadout assessment={assessment} />}
             <div className="aw-checks">
               <div className="aw-subhead">

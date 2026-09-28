@@ -39,6 +39,9 @@ export function generateHistory(
   const seed = options.seed ?? stories.seed,
     version = options.datasetVersion ?? stories.datasetVersion,
     variant = options.variant ?? "canonical";
+  // Later dataset versions add checkpoints; earlier versions stay byte-for-byte reproducible.
+  const minor = (v: string) => Number(/v1\.(\d+)/.exec(v)?.[1] ?? 0);
+  const since = (v: string) => minor(version) >= minor(`v${v}`);
   if (!Object.hasOwn(stories.variants, variant))
     throw new Error("Unknown history variant");
   const f: HouseholdFixture = {
@@ -321,6 +324,19 @@ export function generateHistory(
     );
     e.serviceId = id("service-maya-mobile");
   }
+  // One household, several products: the linked mobile is in normal use at home while the hub
+  // is quiet. It says nothing about broadband health, only that the household is not cut off.
+  if (since("1.3"))
+    emit(
+      "maya",
+      "maya-mobile-activity-2026-09-25",
+      "mobile.activity_observed",
+      "2026-09-25T19:56:00Z",
+      "Linked mobile in normal use on the home cell. Says nothing about broadband health.",
+      { cell: "home", usage: "normal" },
+      null,
+      "network",
+    ).serviceId = id("service-maya-mobile");
   // Household membership alone does not authorise the account.
   put("customer.people", "person-maya-guest", {
     alias: "maya_guest",
@@ -805,7 +821,7 @@ export function generateHistory(
     { statement: "It’s working again, thank you." },
     "daniel-case",
   );
-  if (version === "bt-households-v1.2") {
+  if (since("1.2")) {
     emit("sam", "sam-provisioned", "activation.confirmed", "2026-09-25T20:16:00Z",
       "Provisioning completed. Successful first use still requires a separate observation.", {}, "sam-case", "orders");
     const firstUse = emit("sam", "sam-first-use", "activation.first_use_observed", "2026-09-25T20:17:00Z",

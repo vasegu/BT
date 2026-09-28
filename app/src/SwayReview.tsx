@@ -16,6 +16,7 @@ import {
 } from "./hodoscope-specs";
 import "./actions-view.css";
 import "./sway.css";
+import { ARCHITECTURE } from "./FocusHeader";
 
 // Visual language follows the Jio CX Hodoscope action map: warm neutrals, hairlines,
 // letterspaced mono labels, square equal-aspect plot, KDE contour bands.
@@ -28,9 +29,10 @@ export const actionLabels: Record<string, string> = {
   "first-use": "Confirm first use",
   watch: "Observe quietly",
   no_plan: "No eligible plan",
+  engineer: "Engineer visit (sign-off)",
   defer: "Hold / review",
 };
-const ACTION_TINT: Record<string, string> = {
+export const ACTION_TINT: Record<string, string> = {
   // The app's own palette: brand purple, the household/status colours used across the panels.
   incident: "#c2416b",
   recovery: "#5514b4",
@@ -40,6 +42,7 @@ const ACTION_TINT: Record<string, string> = {
   "first-use": "#0e9aa7",
   watch: "#8a8494",
   no_plan: "#3b3544",
+  engineer: "#b0103f",
   defer: "#b9b3c1",
 };
 const PERSON_TINT: Record<PersonId, string> = { daniel: "#5514b4", sam: "#0f7b5f", maya: "#a15c07" };
@@ -557,6 +560,12 @@ function Review({ data, onLegacy }: { data: SwayData; onLegacy: () => void }) {
         <div>
           <span className="eyebrow">Agent review · all three customers · every moment</span>
           <h2>Did anything unexpected sway the action?</h2>
+          <p className="av-arch">
+            <span>Architecture</span>
+            {ARCHITECTURE["Agent review"].component}
+            <span>Accountable</span>
+            {ARCHITECTURE["Agent review"].owner}
+          </p>
         </div>
         <div className="av-verified">
           <strong>{data.points.length}</strong>

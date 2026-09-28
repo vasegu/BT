@@ -1,7 +1,9 @@
 import { randomUUID } from "node:crypto";
+import { authorityFor } from "../src/governance.ts";
 import type {
   Decision,
   Household,
+  MomentKind,
   Proposal,
   ProposalCheck,
   Snapshot,
@@ -54,6 +56,8 @@ export function arbitrate(
   const failure = latest('service.failure_observed');
   const recovery = latest('service.restored_observed');
   const contraryTest = !!failure && (!recovery || Date.parse(failure.occurredAt) > Date.parse(recovery.occurredAt));
+  // One household, several products: another product's recent signal can inform this one.
+  const linked = h.linkedServices?.find((s) => s.recent);
   const candidates: Proposal[] = [];
   function propose(
     id: string,
@@ -303,13 +307,14 @@ export function arbitrate(
       ? "A current case, promise or incident can override the usual pattern. Quiet observation is not eligible on this context."
       : h.restored
         ? "A fresh heartbeat ended the watch. No customer interruption was needed."
-        : `The missing heartbeat matches a stated quiet habit. No open case or promise. ${operations.incident ? `This service is outside ${incidentId}.` : "No incident membership is established."}`,
+        : `The missing heartbeat matches a stated quiet habit. No open case or promise. ${operations.incident ? `This service is outside ${incidentId}.` : "No incident membership is established."}${linked ? " The household’s linked mobile is in normal use at home in the same window, so they are not cut off." : ""}`,
     "A fresh heartbeat, a new fault report or changed incident membership.",
     "Retain an internal watch; send no service notification.",
     [
       ["Observation", 25],
       ["Stated preference", h.habit ? 20 : 0],
       ["No contrary evidence", quiet ? 15 : 0],
+      ["Linked mobile active at home", linked ? 10 : 0],
     ],
     [
       gate(
@@ -332,7 +337,7 @@ export function arbitrate(
         "incident.confirmed",
       ),
     ],
-    [...signalRefs, ...refs("pattern.recorded")],
+    [...signalRefs, ...refs("pattern.recorded"), ...(linked?.recent ? [linked.recent.id] : [])],
   );
   propose(
     "callback",
@@ -446,6 +451,76 @@ export function arbitrate(
     ],
     [],
   );
+  propose(
+    "engineer",
+    "field.dispatch",
+    "Book an engineer visit",
+    "field",
+    "hold",
+    h.incident
+      ? `${incidentId} explains the fault. A home visit would not fix a network issue, so the request is withdrawn before anyone has to decline it.`
+      : open && h.restartTried
+        ? "Repeat drops, the earlier restart failed and the cause is unconfirmed. A home visit is the next useful test."
+        : "No repeat fault after a failed local test. A visit is not justified.",
+    "A named approver signs off, or new evidence removes the need.",
+    "Reserve a field slot only after sign-off. Nothing is booked automatically.",
+    [
+      ["Repeat fault", open && h.restartTried ? 30 : 0],
+      ["Failed local test", h.restartTried ? 20 : 0],
+      ["Field cost", -20],
+    ],
+    [
+      gate(
+        "repeat",
+        "Repeat fault after a failed local test",
+        open && h.restartTried,
+        open && h.restartTried ? "Open case with a failed restart on record." : "No failed local test on an open case.",
+        "case.opened",
+        "diagnostic.completed",
+      ),
+      gate(
+        "local",
+        "Fault not explained by the network",
+        !h.incident,
+        h.incident ? `Service is inside ${incidentId}.` : "No confirmed incident covers this service.",
+        "incident.confirmed",
+      ),
+      gate(
+        "unresolved",
+        "Service not yet restored",
+        !h.restored,
+        h.restored ? "A fresh restoration observation removes the need." : "No restoration observed.",
+        "service.restored_observed",
+      ),
+      gate(
+        "signoff",
+        "Named sign-off",
+        null,
+        `Only ${h.owner || "the case owner"} with the field scheduling lead may book a visit.`,
+      ),
+    ],
+    refs("diagnostic.completed", "case.opened"),
+  );
+  // Eligible on the evidence, but only a person may authorise it: it waits rather than runs.
+  for (const c of candidates)
+    if (c.checks.find((k) => k.id === "signoff") && c.checks.every((k) => k.id === "signoff" || k.state === "pass")) c.status = "awaiting";
+  const owner = h.owner || "the care team";
+  // Authority comes from the policy register, resolved to the named owner.
+  for (const c of candidates) c.authority = authorityFor(c.id, h.owner, !!obligation);
+  // Routine moments: removing friction is a pure win. Load-bearing: a person must be visibly accountable.
+  const moment: MomentKind = contraryTest
+    ? { kind: "load-bearing", why: "The customer’s word and the latest test disagree. A person reconciles them." }
+    : h.confirmed
+      ? { kind: "routine", why: "The customer confirmed it works. Closing the loop is routine; the history stays attached." }
+      : obligation
+        ? { kind: "load-bearing", why: `${owner} promised a ${due} callback. A named person stays accountable; automation supports them rather than replacing them.` }
+        : open && h.restartTried
+          ? { kind: "load-bearing", why: "A repeat fault the customer has already chased. A named owner stays on it." }
+          : quiet
+            ? { kind: "routine", why: "Normal for this household. Removing friction here means saying nothing." }
+            : delivered
+              ? { kind: "routine", why: "A first-week activation check. Fast and automatic is the win; nobody needs to call." }
+              : { kind: "routine", why: "No commitment or repeat fault is open. Keep it simple and automatic." };
 
   candidates.sort((a, b) => b.priority - a.priority);
   const winner = candidates.find((c) => c.status === "held");
@@ -460,7 +535,7 @@ export function arbitrate(
     )
       c.status = "merged";
   }
-  const order = { selected: 0, merged: 1, held: 2, blocked: 3 };
+  const order = { selected: 0, merged: 1, awaiting: 2, held: 3, blocked: 4 };
   candidates.sort(
     (a, b) => order[a.status] - order[b.status] || b.priority - a.priority,
   );
@@ -494,7 +569,8 @@ export function arbitrate(
     held: candidates
       .filter((c) => c.status !== "selected")
       .map((c) => ({ title: c.title, reason: c.reason, wake: c.wake })),
-    policyVersion: "bt-context-v2.0",
+    policyVersion: "bt-context-v2.1",
+    moment,
     trace: {
       version: 1,
       triggerIds,

@@ -173,6 +173,18 @@ export function buildContext(input: {
       )
         ? "Activation recorded"
         : "Activation unconfirmed",
+      // Latest activity on the other product within the past two hours, if any.
+      recent: (() => {
+        const e = available
+          .filter(
+            (x) =>
+              x.serviceId === s.id &&
+              x.type === "mobile.activity_observed" &&
+              Date.parse(cutoff) - Date.parse(x.occurredAt) <= 2 * 3600e3,
+          )
+          .at(-1);
+        return e ? { id: e.id, at: e.occurredAt, description: e.description } : undefined;
+      })(),
     }));
   if (!currentCase && household.activation === "Activation confirmed") {
     household.caseStatus = "none";

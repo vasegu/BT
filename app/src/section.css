@@ -669,3 +669,13 @@
     margin-top: 20px;
   }
 }
+.channel-decision {
+  margin: 10px 0 0;
+  font: 600 20px/1.25 var(--sans);
+  letter-spacing: -0.02em;
+}
+.channel-context > .channel-reason {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.55;
+}
