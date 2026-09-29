@@ -4,6 +4,7 @@ import { ACTION_POLICY } from "./governance";
 import { FocusHeader } from "./FocusHeader";
 import { moments, householdNames } from "./presentation";
 import { useSway } from "./SwayReview";
+import { ScopeTag, StandingBand } from "./Scope";
 import "./governance.css";
 
 // Governance, the fifth component: the explicit policy layer. What the system may do on its
@@ -205,6 +206,7 @@ export function GovernanceView({
       setTimeout(() => setCopied(false), 1500);
     } catch {}
   };
+  const totals = [...counts.values()].reduce((a, t) => ({ ran: a.ran + t.ran, waiting: a.waiting + t.waiting }), { ran: 0, waiting: 0 });
   return (
     <div className="av gv">
       <FocusHeader
@@ -224,75 +226,17 @@ export function GovernanceView({
         onPerson={onPerson}
         onCutoff={onCutoff}
       />
-      <section className="av-step">
-        <header>
-          <span>01</span>
-          <h3>The policy register</h3>
-          <small className="cm-hint">what each action may do, who authorises it · counts are all three homes up to {moments[snapshot.cutoff].time}</small>
-        </header>
-        <table className="gv-register">
-          <thead>
-            <tr>
-              <th>Action</th>
-              <th>Authority</th>
-              <th>Who</th>
-              <th>Customer sees it</th>
-              <th>Tonight</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ACTION_POLICY.map((a) => {
-              const t = counts.get(a.id) ?? { ran: 0, waiting: 0, held: 0 };
-              return (
-                <tr key={a.id}>
-                  <td>
-                    <b>{a.title}</b>
-                    <small>{a.why}</small>
-                  </td>
-                  <td>
-                    <span className={`gv-mode is-${a.mode}`}>{modeLabel[a.mode]}</span>
-                  </td>
-                  <td>{a.role}</td>
-                  <td>{a.visible ? (a.reversible ? "Yes" : "Yes · commits BT") : "No"}</td>
-                  <td className="gv-counts">
-                    {t.ran > 0 && <em className="is-ran">{t.ran} ran</em>}
-                    {t.waiting > 0 && <em className="is-waiting">{t.waiting} waited</em>}
-                    {t.held > 0 && <em>{t.held} held</em>}
-                    {!t.ran && !t.waiting && !t.held && <em>—</em>}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </section>
       <div className="cm-pair">
         <section className="av-step">
           <header>
-            <span>02</span>
-            <h3>Data-use rules, and the evidence they held</h3>
-          </header>
-          <ul className="gv-rules">
-            {rs.map((r) => (
-              <li key={r.rule} className={r.held === false ? "is-broken" : r.held === null ? "is-unknown" : ""}>
-                <i>{r.held === false ? "×" : r.held === null ? "?" : "✓"}</i>
-                <div>
-                  <b>{r.rule}</b>
-                  <small>{r.evidence}</small>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </section>
-        <section className="av-step">
-          <header>
-            <span>03</span>
+            <span>01</span>
             <h3>Where a person was in the loop</h3>
+            <ScopeTag scope="moment" snapshot={snapshot} person={h.id} />
           </header>
           {people.length ? (
             <ol className="gv-people">
               {people.map((x, i) => (
-                <li key={i} className={`is-${x.kind}`}>
+                <li key={i} className={`is-${x.kind}${x.d.person === h.id ? " is-focus" : ""}`}>
                   <time>{moments[x.d.revision].time}</time>
                   <div>
                     <small>
@@ -308,12 +252,35 @@ export function GovernanceView({
             <p className="cm-none">No decision yet. The first signal arrives at 21:00.</p>
           )}
         </section>
+        <section className="av-step">
+          <header>
+            <span>02</span>
+            <h3>Did every rule hold?</h3>
+            <ScopeTag scope="moment" snapshot={snapshot} person={h.id} />
+          </header>
+          <p className="gv-tally">
+            Tonight so far, all three homes: <b>{totals.ran}</b> actions ran · <b>{totals.waiting}</b> waited for a person ·{" "}
+            <b>{rs.filter((r) => r.held === false).length}</b> rules broken
+          </p>
+          <ul className="gv-rules">
+            {rs.map((r) => (
+              <li key={r.rule} className={r.held === false ? "is-broken" : r.held === null ? "is-unknown" : ""}>
+                <i>{r.held === false ? "×" : r.held === null ? "?" : "✓"}</i>
+                <div>
+                  <b>{r.rule}</b>
+                  <small>{r.evidence}</small>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
       </div>
       <section className="av-step">
         <header>
-          <span>04</span>
+          <span>03</span>
           <h3>Decision record · {first(h.id)}</h3>
           <small className="cm-hint">the explanation BT can show a regulator or the customer (EU AI Act Article 50)</small>
+          <ScopeTag scope="both" snapshot={snapshot} person={h.id} />
         </header>
         {d && record ? (
           <>
@@ -342,6 +309,40 @@ export function GovernanceView({
           <p className="cm-none">No decision recorded for {first(h.id)} yet.</p>
         )}
       </section>
+      <StandingBand note="The policy itself. The same for every customer at every moment; sections above show how it was applied.">
+        <section className="av-step">
+          <header>
+            <span>04</span>
+            <h3>The policy register</h3>
+            <small className="cm-hint">what each action may do, and who may authorise it</small>
+          </header>
+          <table className="gv-register">
+            <thead>
+              <tr>
+                <th>Action</th>
+                <th>Authority</th>
+                <th>Who</th>
+                <th>Customer sees it</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ACTION_POLICY.map((a) => (
+                <tr key={a.id}>
+                  <td>
+                    <b>{a.title}</b>
+                    <small>{a.why}</small>
+                  </td>
+                  <td>
+                    <span className={`gv-mode is-${a.mode}`}>{modeLabel[a.mode]}</span>
+                  </td>
+                  <td>{a.role}</td>
+                  <td>{a.visible ? (a.reversible ? "Yes" : "Yes · commits BT") : "No"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      </StandingBand>
     </div>
   );
 }

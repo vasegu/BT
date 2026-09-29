@@ -146,7 +146,7 @@ test("v1.1 remains reproducible after adding the v1.2 first-use checkpoint", () 
 
 test('an activation case does not inherit the recovery persona’s reported line faults',()=>{
  const sam=replay()[0].households.find(h=>h.id==='sam')!;
- assert.equal(sam.serviceState,'Open service case');
+ assert.equal(sam.serviceState,'Activation case open');
  assert.match(sam.activation,/unconfirmed/);
 });
 
@@ -189,4 +189,38 @@ test("one household, several products: Maya's linked mobile informs the broadban
   // Before the mobile signal is known, the watch still holds on the stated habit alone.
   const before = run[0].households.find((x) => x.id === "maya")!;
   assert.ok(!before.linkedServices?.some((s) => s.recent));
+});
+
+test("every home starts the evening un-recovered: a routine morning heartbeat is not a restoration", () => {
+  const run = replay();
+  for (const h of run[0].households) {
+    assert.equal(h.restored, false, `${h.id} must not start 20:45 as "connection is back"`);
+    assert.equal(h.confirmed, false);
+  }
+  // Maya's heartbeat returning after tonight's gap is still a restoration.
+  const maya = (at: number) => run[at].households.find((x) => x.id === "maya")!;
+  assert.equal(maya(1).restored, false);
+  assert.equal(maya(3).restored, true);
+});
+
+test("Sam's evening follows: setting up, hold off, go ahead, connected", () => {
+  const run = replay();
+  const sam = (at: number) => run[at].households.find((x) => x.id === "sam")!;
+  const step = (at: number) => {
+    const d = arbitrate(sam(at), sam(Math.max(0, at - 1)), run[at] as Snapshot);
+    return { id: d.trace!.selectedId, message: serviceMessage(sam(at), d) };
+  };
+  // 21:00 · he switches the hub on for the first time; it can't connect. Not a "quiet router".
+  assert.ok(sam(1).evidence.some((e) => e.type === "router.setup_attempted"));
+  assert.ok(!sam(1).evidence.some((e) => e.type === "router.heartbeat_overdue"));
+  assert.deepEqual([step(1).id, step(1).message?.title], ["activation", "We can see you’re setting up"]);
+  // 21:03 · the incident covers his area: hold off.
+  assert.deepEqual([step(2).id, step(2).message?.title], ["incident", "Hold off setting up for now"]);
+  // 21:12 · the incident clears: tell him to go ahead, as a new message.
+  assert.equal(sam(3).incidentCleared, true);
+  assert.deepEqual([step(3).id, step(3).message?.key], ["activation", "setup-go"]);
+  // 21:18 · first use observed.
+  assert.equal(step(5).id, "first-use");
+  // Maya is outside the incident: the clear never reaches her evidence.
+  assert.ok(!run[3].households.find((x) => x.id === "maya")!.evidence.some((e) => e.type === "incident.cleared"));
 });

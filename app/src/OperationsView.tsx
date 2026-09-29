@@ -4,6 +4,7 @@ import "leaflet/dist/leaflet.css";
 import type { Household, NetworkView, PersonId, Snapshot, SourceEvent } from "./types";
 import { householdNames } from "./presentation";
 import { FocusHeader } from "./FocusHeader";
+import { ScopeTag } from "./Scope";
 import { LiveNotNightly, RouterTelemetry, Provisioning, Households } from "./OperationsPanels";
 import "./operations-view.css";
 
@@ -99,6 +100,7 @@ export function OperationsView({
         <header>
           <span>01</span>
           <h3>Operational context now</h3>
+          <ScopeTag scope="highlight" snapshot={snapshot} person={h.id} />
         </header>
         <p className="av-note">What the feeds add up to. This is the shared picture the arbiter reads for every household.</p>
         {net ? (
@@ -112,6 +114,7 @@ export function OperationsView({
           <span>02</span>
           <h3>Operational feeds</h3>
           <small className="ov-hint">Arrivals over the last 24 hours · the band is tonight</small>
+          <ScopeTag scope="highlight" snapshot={snapshot} person={h.id} />
         </header>
         <div className="ov-feed-axis" aria-hidden="true">
           <span />
@@ -167,6 +170,7 @@ export function OperationsView({
             <span>03</span>
             <h3>Live, not nightly</h3>
             <small className="ov-hint">“a memory which only updates in a nightly batch decays into a liability”</small>
+            <ScopeTag scope="standing" snapshot={snapshot} person={h.id} />
           </header>
           <LiveNotNightly snapshot={snapshot} inspect={inspect} />
         </section>
@@ -174,6 +178,7 @@ export function OperationsView({
           <header>
             <span>04</span>
             <h3>Router telemetry · every connected router</h3>
+            <ScopeTag scope="highlight" snapshot={snapshot} person={h.id} />
           </header>
           <RouterTelemetry snapshot={snapshot} focus={h.id} />
         </section>
@@ -184,6 +189,7 @@ export function OperationsView({
             <span>05</span>
             <h3>Orders & provisioning</h3>
             <small className="ov-hint">non-activation is a trigger, not a month-end report</small>
+            <ScopeTag scope="highlight" snapshot={snapshot} person={h.id} />
           </header>
           <Provisioning snapshot={snapshot} focus={h.id} />
         </section>
@@ -192,6 +198,7 @@ export function OperationsView({
             <span>06</span>
             <h3>Households & products</h3>
             <small className="ov-hint">one household, several products</small>
+            <ScopeTag scope="highlight" snapshot={snapshot} person={h.id} />
           </header>
           {net ? <Households net={net} focus={h.id} /> : <p className="av-note">Household records are held in the Supabase runtime.</p>}
         </section>
@@ -210,6 +217,7 @@ export function OperationsView({
                 {feedOf(feed)?.name} ×
               </button>
             )}
+            <ScopeTag scope="highlight" snapshot={snapshot} person={h.id} />
           </header>
           <div className="ov-rows" role="list">
             {stream.map((e) => {
@@ -243,6 +251,7 @@ export function OperationsView({
           <header>
             <span>08</span>
             <h3>Workforce · callback rota</h3>
+            <ScopeTag scope="standing" snapshot={snapshot} person={h.id} />
           </header>
           {net ? <Rota net={net} clock={snapshot.clock} /> : <p className="av-note">No rota in this data store.</p>}
           <p className="av-note">A free slot lets the arbiter propose a callback. It only becomes a promise once it is booked with the customer.</p>
@@ -252,7 +261,7 @@ export function OperationsView({
   );
 }
 
-type Pulse = "quiet" | "back" | "never" | "ok";
+type Pulse = "quiet" | "back" | "never" | "ok" | "setup" | "first";
 function pulse(snapshot: Snapshot, person: PersonId): Pulse {
   const mine = snapshot.events.filter((e) => e.subject === person && e.revision > 0);
   const last = (types: string[]) => mine.filter((e) => types.includes(e.type)).at(-1);
@@ -261,11 +270,20 @@ function pulse(snapshot: Snapshot, person: PersonId): Pulse {
   const everSeen = snapshot.events.some(
     (e) => e.subject === person && e.type === "router.observation_window" && (e.payload as { coverage?: string }).coverage !== "no_telemetry",
   );
+  // A hub that was never online connects for the first time; it doesn't come "back".
+  if (last(["activation.first_use_observed"]) && !everSeen) return "first";
   if (back && (!overdue || Date.parse(back.occurredAt) >= Date.parse(overdue.occurredAt))) return "back";
-  if (!everSeen) return "never";
+  if (!everSeen) return last(["router.setup_attempted"]) ? "setup" : "never";
   return overdue ? "quiet" : "ok";
 }
-const pulseLabel: Record<Pulse, string> = { quiet: "quiet", back: "back", never: "never online", ok: "online" };
+const pulseLabel: Record<Pulse, string> = {
+  quiet: "quiet",
+  back: "back",
+  never: "never online",
+  ok: "online",
+  setup: "switched on · no sync",
+  first: "connected for the first time",
+};
 
 // Illustrative placement on a real slice of Hammersmith, W6. The topology (which home hangs off
 // which access node, and incident membership) comes from the dataset; the locations do not.
@@ -384,7 +402,7 @@ function WestLondonMap({
           }),
         })
           .bindTooltip(
-            `<b>${householdNames[p]}</b><span>${home.address}</span><em class="is-${state}">● ${pulseLabel[state]}</em><small>${s.product}${extra.length ? ` + ${extra.join(", ")}` : ""}${s.incident === "affected" ? " · in " + (n.incident?.reference ?? "incident") : s.incident === "excluded" ? " · outside the incident" : ""}</small>`,
+            `<b>${householdNames[p]}</b><span>${home.address}</span><em class="is-${state}">● ${pulseLabel[state]}</em><small>${s.product}${extra.length ? ` + ${extra.join(", ")}` : ""}${s.incident === "affected" ? (n.incident?.status === "resolved" ? ` · ${n.incident.reference} cleared` : " · in " + (n.incident?.reference ?? "incident")) : s.incident === "excluded" ? " · outside the incident" : ""}</small>`,
             {
               permanent: true,
               direction: p === "maya" ? "bottom" : p === "daniel" ? "left" : "right",

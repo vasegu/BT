@@ -45,7 +45,13 @@ export function householdOutcome(s: Snapshot, person: PersonId) {
       state: h.firstUseObserved && met("activation") ? "met" : "waiting",
       title: h.firstUseObserved
         ? "First use has its own proof."
-        : "Delivered is not connected.",
+        : h.incident && h.incidentCleared
+          ? "Cleared to set up. Told to go ahead."
+          : h.incident
+            ? "Setup paused by a network issue."
+            : h.evidence.some((e) => e.type === "router.setup_attempted")
+              ? "Switched on, not connected yet."
+              : "Delivered is not connected.",
       detail: h.firstUseObserved
         ? "Successful first use observed. The effect of outreach on activation is not measured."
         : "Delivery is recorded. Successful first use is still unconfirmed; the activation team retains ownership.",
@@ -55,17 +61,19 @@ export function householdOutcome(s: Snapshot, person: PersonId) {
     state: met("watch") ? "met" : "waiting",
     title: met("watch")
       ? "The watch ended. The evening stayed quiet."
-      : "Watch the signal. Respect the routine.",
+      : s.cutoff === 0
+        ? "A normal evening so far."
+        : "Watch the signal. Respect the routine.",
     detail: `${messages} customer messages · ${met("watch") ? "a returning heartbeat fulfils the watch" : h.incident ? "incident evidence overrides the routine" : h.caseStatus !== "none" ? "current care evidence requires review" : "waiting for fresh telemetry; the routine is context, not proof"}.`,
     proof: outcomes,
   };
 }
 /** The clock is the spine: each stop is one source signal, read across all three homes at once. */
 export const moments = [
-  { time: "20:45", title: "Before the signal", lead: "Three homes, three histories. Nothing has happened yet." },
-  { time: "21:00", title: "Three routers go quiet", lead: "The same heartbeat is overdue in all three homes at the same minute." },
+  { time: "20:45", title: "Before the signal", lead: "No network signal yet, but each home already has a history. Daniel’s line has dropped again and Aisha has promised to call at 21:15, though his hub still looks healthy." },
+  { time: "21:00", title: "Three homes, one minute", lead: "Daniel’s and Maya’s routers miss the same heartbeat. Sam switches on his new hub for the first time, and it won’t connect." },
   { time: "21:03", title: "A network incident is confirmed", lead: "The affected-service register names exactly which homes are in scope." },
-  { time: "21:12", title: "The line comes back", lead: "Fresh evidence arrives. A working line does not close every thread." },
+  { time: "21:12", title: "The line comes back", lead: "The incident clears and fresh evidence arrives. A working line does not close every thread." },
   { time: "21:15", title: "A promise is kept", lead: "The named adviser makes the call she promised, on time." },
   { time: "21:18", title: "The customers confirm", lead: "The loop closes with each customer's own evidence." },
 ];

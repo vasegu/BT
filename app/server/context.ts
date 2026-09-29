@@ -81,7 +81,7 @@ export function buildContext(input: {
       (e.personId === personId && e.serviceId === serviceId) ||
       (!e.personId &&
         !e.serviceId &&
-        ["incident.confirmed", "capacity.recorded"].includes(e.type)),
+        ["incident.confirmed", "incident.cleared", "capacity.recorded"].includes(e.type)),
   );
   const cases = scoped.filter((e) => e.type === "case.opened");
   const currentCase = cases.at(-1)?.caseId;
@@ -154,6 +154,15 @@ export function buildContext(input: {
       : [];
     if (membership.membership === "affected") affected.push(alias);
     e.payload = { ...e.payload, affected };
+  }
+  // A cleared incident only concerns services that were inside it.
+  for (let i = evidence.length - 1; i >= 0; i--) {
+    const e = evidence[i];
+    if (e.type !== "incident.cleared") continue;
+    const inside = evidence.some(
+      (x) => x.type === "incident.confirmed" && x.payload.incidentId === e.payload.incidentId && Array.isArray(x.payload.affected) && x.payload.affected.includes(alias),
+    );
+    if (!inside) evidence.splice(i, 1);
   }
   const household = project({ id: alias, name: String(person.name) }, evidence);
   household.linkedServices = fixture.tables["customer.services"]

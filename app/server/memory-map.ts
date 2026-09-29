@@ -17,7 +17,7 @@ export function layerOf(e: Pick<FixtureEvent, "type" | "payload">): MemoryLayer 
   const t = e.type;
   if (t === "contact.authority_recorded" || t === "order.accepted") return "identity";
   if (t === "router.overnight_window" || t === "router.heartbeat_received" || t === "router.observation_window") return "behavioural";
-  if (t === "router.heartbeat_overdue" || t === "incident.confirmed") return "context";
+  if (t === "router.heartbeat_overdue" || t === "router.setup_attempted" || t === "incident.confirmed" || t === "incident.cleared") return "context";
   if (t.startsWith("order.") || t.startsWith("activation.") || t.startsWith("case.") || t.startsWith("diagnostic.") || t === "service.restored_observed")
     return "service";
   if (t === "conversation.message") return (e.payload as { speakerRole?: string }).speakerRole === "customer" ? "emotional" : null;
@@ -30,7 +30,9 @@ export async function buildMemoryMap(fixture: HouseholdFixture): Promise<MemoryM
   const alias = new Map(fixture.tables["customer.people"].map((p) => [String(p.id), String(p.alias)]));
   const service = (a: string) => fixture.tables["customer.services"].find((s) => s.reference === `svc_${a}_broadband`)!;
   const person = (a: string) => fixture.tables["customer.people"].find((p) => p.alias === a)!;
-  const concerns = (e: FixtureEvent, a: string) => alias.get(String(e.personId)) === a || (e.type === "incident.confirmed" && !e.personId);
+  // A shared incident is a household's memory only if its service is inside the incident.
+  const affected = (e: FixtureEvent, a: string) => Array.isArray(e.payload.affected) && (e.payload.affected as string[]).includes(a);
+  const concerns = (e: FixtureEvent, a: string) => alias.get(String(e.personId)) === a || (e.type.startsWith("incident.") && !e.personId && affected(e, a));
   // One row per distinct record text per household (identical routine records share a meaning).
   type Row = { e: FixtureEvent; ids: string[]; person: string; layer: MemoryLayer };
   const rows: Row[] = [];
@@ -127,7 +129,7 @@ export async function buildMemoryMap(fixture: HouseholdFixture): Promise<MemoryM
     return { ...q, x: xy.get(rows.length + j)![0], y: xy.get(rows.length + j)![1], neighbours };
   });
   const fingerprint = createHash("sha256")
-    .update(JSON.stringify(["memory-map-v9", fixture.datasetVersion, fixture.seed, texts]))
+    .update(JSON.stringify(["memory-map-v11", fixture.datasetVersion, fixture.seed, texts]))
     .digest("hex");
   return {
     fingerprint,

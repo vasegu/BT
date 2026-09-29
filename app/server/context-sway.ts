@@ -100,6 +100,7 @@ export function contextSway(snapshot: Snapshot, at: (revision: number) => Snapsh
           revision: rev,
           kind,
           flips: flips.map((f) => f.id),
+          ...(kind === "base" ? { known: FACTORS.filter((f) => !f.promptOnly && f.get(h)).map((f) => f.id) } : {}),
           action,
           title: kind === "recorded" && recorded ? recorded.title : (d?.title ?? "No eligible plan · held for a person"),
           reason:

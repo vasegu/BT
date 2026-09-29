@@ -641,3 +641,21 @@
     animation: none;
   }
 }
+/* What each home had already been through before tonight's first signal. */
+.lane-story {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.lane-story time {
+  display: inline-block;
+  min-width: 44px;
+  margin-right: 6px;
+  font: 10px var(--mono);
+  color: var(--muted);
+}

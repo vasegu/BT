@@ -79,9 +79,13 @@ export function project(
     restored: false,
     confirmed: false,
     incident: false,
+    incidentCleared: false,
     contactAllowed: false,
     evidence,
   };
+  // A returning heartbeat is a restoration only if we saw the gap open. A routine morning
+  // return after a household's usual overnight switch-off is normal, not a recovery.
+  let gapOpen = false;
   for (const e of evidence) {
     switch (e.type) {
       case "contact.authority_recorded":
@@ -96,7 +100,7 @@ export function project(
         h.restored = false;
         h.confirmed = false;
         h.owner = typeof e.payload.owner === "string" ? e.payload.owner : null;
-        h.serviceState = "Open service case";
+        h.serviceState = h.owner === "Activation team" ? "Activation case open" : "Open service case";
         break;
       case "diagnostic.completed":
         if (e.payload.test === "restart") h.restartTried = true;
@@ -144,10 +148,22 @@ export function project(
       case "router.heartbeat_overdue":
         h.serviceState = "Heartbeat overdue · cause unknown";
         h.restored = false; h.confirmed = false;
+        gapOpen = true;
         break;
       case "router.heartbeat_received":
         h.serviceState = "Heartbeat observed";
-        h.restored = true;
+        if (gapOpen) h.restored = true;
+        gapOpen = false;
+        break;
+      case "router.setup_attempted":
+        h.serviceState = "Hub switched on · not connected yet";
+        break;
+      case "incident.cleared":
+        if (h.incident) {
+          h.incidentCleared = true;
+          // A line already observed working keeps that state; the clear is only news if not.
+          if (!h.restored) h.serviceState = `${String(e.payload.incidentId)} cleared · own line not yet confirmed`;
+        }
         break;
       case "incident.confirmed":
         h.incident =
@@ -169,6 +185,7 @@ export function project(
         break;
       case "customer.confirmed_working":
         h.confirmed = true;
+        h.serviceState = "Working · confirmed by the customer";
         if (h.restored) h.caseStatus = "closed";
         break;
     }
@@ -214,7 +231,9 @@ export function projectOperations(
                 people.some((p) => p.id === id),
               )
             : [],
-          status: "Open · service restoration tracked separately",
+          status: events.some((e) => e.type === "incident.cleared")
+            ? "Cleared · each customer’s line confirmed separately"
+            : "Open · service restoration tracked separately",
         }
       : null,
     slots,
@@ -468,14 +487,26 @@ export class Engine {
         inputs: EventInput[] = [];
       if (step === "heartbeat")
         for (const p of people)
-          inputs.push({
-            type: "router.heartbeat_overdue",
-            subject: p.id,
-            source: "router_simulator",
-            description:
-              "No heartbeat received in the expected window. Line state and cause remain unknown.",
-            payload: { overdueSeconds: 240, lineSyncStatus: "unknown" },
-          });
+          inputs.push(
+            p.id === "sam"
+              ? {
+                  // A hub that has never been online cannot go quiet: Sam is switching it on.
+                  type: "router.setup_attempted",
+                  subject: p.id,
+                  source: "router_simulator",
+                  description: "Hub switched on for the first time. It has not connected to the network.",
+                  payload: { firstPowerOn: true, lineSyncStatus: "no_sync" },
+                  occurredAt: "2026-09-25T19:58:00Z",
+                }
+              : {
+                  type: "router.heartbeat_overdue",
+                  subject: p.id,
+                  source: "router_simulator",
+                  description:
+                    "No heartbeat received in the expected window. Line state and cause remain unknown.",
+                  payload: { overdueSeconds: 240, lineSyncStatus: "unknown" },
+                },
+          );
       if (step === "incident")
         inputs.push({
           type: "incident.confirmed",
@@ -487,6 +518,14 @@ export class Engine {
         });
       if (step === "restore")
         inputs.push(
+          {
+            type: "incident.cleared",
+            subject: "shared",
+            source: "incident_simulator",
+            description:
+              "INC-017 cleared: the network is restored across the affected area. Each customer’s own line is confirmed separately.",
+            payload: { incidentId: "INC-017", affected: ["daniel", "sam"] },
+          },
           {
             type: "service.restored_observed",
             subject: "daniel",

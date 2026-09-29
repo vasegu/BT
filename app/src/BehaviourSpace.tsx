@@ -329,16 +329,6 @@ export function BehaviourSpace({
               <line x1="17" x2="186" y1={37 + 195 * v} y2={37 + 195 * v} />
             </g>
           ))}
-          {reference && (
-            <line
-              x1={xy(reference)[0]}
-              y1={xy(reference)[1]}
-              x2={xy(selected)[0]}
-              y2={xy(selected)[1]}
-              stroke="#aaa0b6"
-              strokeDasharray="3 3"
-            />
-          )}
           {[...stacks.values()].map((stack) => {
             const r =
                 stack.find((r) => r.id === selected.id) ||

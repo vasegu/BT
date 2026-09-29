@@ -211,3 +211,19 @@
     grid-template-columns: 1fr;
   }
 }
+.cm-checked {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+  color: var(--muted);
+}
+.cm-checked button {
+  padding: 1px 6px;
+  border: 1px dashed var(--line);
+  border-radius: 5px;
+  background: none;
+  font: 10.5px var(--mono);
+  color: var(--muted);
+  cursor: pointer;
+}

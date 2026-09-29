@@ -869,7 +869,8 @@
   animation: wl-ping 1.8s ease-out infinite;
 }
 .wl-pin.is-back span::before,
-.wl-pin.is-ok span::before {
+.wl-pin.is-ok span::before,
+.wl-pin.is-first span::before {
   content: "";
   position: absolute;
   right: -3px;
@@ -880,7 +881,8 @@
   background: #0f7b5f;
   border: 2px solid #fff;
 }
-.wl-pin.is-never span::before {
+.wl-pin.is-never span::before,
+.wl-pin.is-setup span::before {
   content: "";
   position: absolute;
   right: -3px;
@@ -929,4 +931,15 @@
   .wl-pin.is-quiet span::after {
     animation: none;
   }
+}
+/* A new hub being set up, and its first connection. */
+.ov-pulse.is-setup,
+.leaflet-tooltip.wl-tip em.is-setup {
+  fill: #a15c07;
+  color: #a15c07;
+}
+.ov-pulse.is-first,
+.leaflet-tooltip.wl-tip em.is-first {
+  fill: #0f7b5f;
+  color: #0f7b5f;
 }

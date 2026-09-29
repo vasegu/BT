@@ -713,16 +713,31 @@ export function generateHistory(
     source_event_id: capacity.id,
   });
   for (const a of ["daniel", "sam", "maya"])
-    emit(
-      a,
-      `${a}-signal`,
-      "router.heartbeat_overdue",
-      "2026-09-25T20:00:00Z",
-      "No heartbeat received in the expected window. Line state and cause remain unknown.",
-      { lastReceivedAt: "2026-09-25T19:55:00Z", overdueSeconds: 240 },
-      a === "maya" ? null : `${a}-case`,
-      "router",
-    );
+    // From v1.4 Sam's 21:00 signal is his first attempt to set up the hub, not a heartbeat:
+    // a hub that has never been online cannot go quiet.
+    if (a === "sam" && since("1.4")) {
+      const e = emit(
+        a,
+        `${a}-signal`,
+        "router.setup_attempted",
+        "2026-09-25T19:58:00Z",
+        "Hub switched on for the first time. It has not connected to the network.",
+        { firstPowerOn: true, lineSyncStatus: "no_sync" },
+        `${a}-case`,
+        "router",
+      );
+      e.knownAt = "2026-09-25T20:00:00Z";
+    } else
+      emit(
+        a,
+        `${a}-signal`,
+        "router.heartbeat_overdue",
+        "2026-09-25T20:00:00Z",
+        "No heartbeat received in the expected window. Line state and cause remain unknown.",
+        { lastReceivedAt: "2026-09-25T19:55:00Z", overdueSeconds: 240 },
+        a === "maya" ? null : `${a}-case`,
+        "router",
+      );
   const incident = emit(
     null,
     "incident-confirmed",
@@ -742,9 +757,21 @@ export function generateHistory(
     status: "open",
     description: incident.description,
     opened_at: incident.occurredAt,
-    resolved_at: null,
+    resolved_at: since("1.4") ? "2026-09-25T20:12:00Z" : null,
     source_event_id: incident.id,
   });
+  // v1.4: the network team clears the incident, so anyone waiting on it can be told.
+  if (since("1.4"))
+    emit(
+      null,
+      "incident-cleared",
+      "incident.cleared",
+      "2026-09-25T20:12:00Z",
+      "INC-017 cleared: the network is restored across the affected area. Each customer’s own line is confirmed separately.",
+      { incidentId: "INC-017", affected: ["daniel", "sam"] },
+      null,
+      "network",
+    );
   for (const a of ["daniel", "sam", "maya"])
     put("operations.incident_services", `incident-${a}`, {
       incident_id: id("incident"),

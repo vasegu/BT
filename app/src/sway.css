@@ -647,3 +647,18 @@
   color: var(--h-faint);
   font: 10px var(--h-mono);
 }
+/* What-if tests are labelled as such, so nobody reads them as a customer's record. */
+.hodo-whatif {
+  margin: 0 0 12px;
+  padding: 9px 11px;
+  border: 1px dashed #e7a3b6;
+  border-radius: 8px;
+  background: #fff8fa;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.hodo-whatif.is-real {
+  border-style: solid;
+  border-color: var(--h-border);
+  background: var(--h-raised);
+}

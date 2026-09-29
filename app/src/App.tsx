@@ -495,8 +495,14 @@ export function App() {
               h.caseStatus === "none"
                 ? "No open case"
                 : h.caseStatus === "closed"
-                  ? "Closed · confirmed"
-                  : "Open service case",
+                  ? h.confirmed
+                    ? "Closed · confirmed by the customer"
+                    : h.firstUseObserved
+                      ? "Closed · first use observed"
+                      : "Closed"
+                  : h.owner === "Activation team"
+                    ? "Open activation case"
+                    : "Open service case",
             ],
             ["Owner", h.owner || "None assigned"],
             [
@@ -562,7 +568,9 @@ export function App() {
               "This service",
               snapshot.operations.incident
                 ? h.incident
-                  ? "Confirmed in scope"
+                  ? h.incidentCleared
+                    ? "In scope · incident cleared"
+                    : "Confirmed in scope"
                   : "Confirmed outside scope"
                 : "Membership not established",
             ],
@@ -676,8 +684,10 @@ export function App() {
                 [
                   "Scope",
                   h.incident
-                    ? `${snapshot.operations.incident?.id || "Incident"} / confirmed`
-                    : "No verified incident impact",
+                    ? `${snapshot.operations.incident?.id || "Incident"} / ${h.incidentCleared ? "cleared" : "confirmed"}`
+                    : snapshot.operations.incident
+                      ? `Outside ${snapshot.operations.incident.id}`
+                      : "No verified incident impact",
                 ],
                 [
                   "Contact authority",
@@ -903,7 +913,7 @@ export function App() {
       {!focused && !presenting && (
         <div className="replay-bar">
           <div className="scenario-time">
-            <span>THREE QUIET ROUTERS</span>
+            <span>THREE HOMES, ONE EVENING</span>
             <strong>{snapshot ? formatTime(snapshot.clock) : "20:45"}</strong>
           </div>
           <div className="replay-main">

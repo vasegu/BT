@@ -50,11 +50,13 @@ export function PromiseTimeline({
   const at = (e: SourceEvent) => Date.parse(e.occurredAt);
   const mine = snapshot.events.filter((e) => e.subject === person.id && at(e) >= start);
   const shared = snapshot.events.filter(
-    (e) => e.subject === "shared" && e.type === "incident.confirmed" && person.incident,
+    (e) => e.subject === "shared" && (e.type === "incident.confirmed" || e.type === "incident.cleared") && person.incident,
   );
   const marks: Mark[] = [];
   const net: Record<string, [string, Mark["tone"]]> = {
     "router.heartbeat_overdue": ["Heartbeat lost", "alert"],
+    "router.setup_attempted": ["Hub switched on · no sync", "alert"],
+    "incident.cleared": ["Incident cleared", "restore"],
     "router.heartbeat_received": ["Heartbeat back", "restore"],
     "service.restored_observed": ["Line test passed", "restore"],
     "activation.first_use_observed": ["First use observed", "restore"],
@@ -81,19 +83,54 @@ export function PromiseTimeline({
   const kept = mine.find((e) => e.type === "promise.fulfilled");
   const restored = mine.find((e) => e.type === "service.restored_observed" || e.type === "router.heartbeat_received" || e.type === "activation.first_use_observed");
   const confirmed = mine.find((e) => e.type === "customer.confirmed_working");
-  const headline = promise
-    ? restored && !kept
-      ? "The line is back. The promise is still open."
-      : kept && confirmed
-        ? "Fixed, kept, and confirmed by the customer."
-        : kept
-          ? "The promise is kept. Waiting for the customer’s word."
-          : "A promise is running alongside the fault."
-    : quiet
-      ? "Nothing sent. The quiet was the right answer."
-      : restored
-        ? "Recovered. Confirmation is its own proof."
-        : "Signal received. Nothing is closed yet.";
+  // Each home teaches a different lesson; the headline and status follow that home's story.
+  const kind = promise ? "promise" : person.activation !== "Activation confirmed" || person.firstUseObserved ? "setup" : "quiet";
+  const signal = mine.some((e) => e.revision > 0);
+  const switchedOn = mine.some((e) => e.type === "router.setup_attempted");
+  const clearedNow = !!person.incidentCleared;
+  const headline =
+    kind === "promise"
+      ? restored && !kept
+        ? "The line is back. The promise is still open."
+        : kept && confirmed
+          ? "Fixed, kept, and confirmed by the customer."
+          : kept
+            ? "The promise is kept. Waiting for the customer’s word."
+            : "A promise is running alongside the fault."
+      : kind === "setup"
+        ? person.firstUseObserved
+          ? "Connected for the first time. First use is its own proof."
+          : clearedNow
+            ? "Told to go ahead once the network cleared."
+            : person.incident
+              ? "Setup paused by a network issue."
+              : switchedOn
+                ? "Switched on, not connected yet."
+                : "Delivered, not connected yet."
+        : !signal
+          ? "A normal evening so far."
+          : restored
+            ? "The hub came back on its own. Nothing was sent."
+            : "Nothing sent. The quiet was the right answer.";
+  const lesson = { promise: "Fixed isn’t the same as kept", setup: "Delivered isn’t the same as connected", quiet: "Quiet isn’t the same as broken" }[kind];
+  const status: [string, boolean][] =
+    kind === "promise"
+      ? [
+          [`Line ${restored ? "back" : "not verified"}`, !!restored],
+          [`Promise ${kept ? "kept" : "open"}`, !!kept],
+          [`Customer ${confirmed ? "confirmed" : "not yet"}`, !!confirmed],
+        ]
+      : kind === "setup"
+        ? [
+            [`Hub ${person.firstUseObserved ? "connected" : switchedOn ? "switched on" : "not switched on"}`, !!person.firstUseObserved],
+            [`Go-ahead ${clearedNow ? "sent" : person.incident ? "on hold" : "not needed yet"}`, clearedNow],
+            [`First use ${person.firstUseObserved ? "observed" : "not yet"}`, !!person.firstUseObserved],
+          ]
+        : [
+            [`Hub ${!signal ? "normal" : restored ? "back" : "quiet"}`, !signal || !!restored],
+            [`Messages sent ${actions.length}`, actions.length === 0],
+            ["Nothing owed", true],
+          ];
 
   // Stagger labels above/below so near-simultaneous marks stay readable.
   const placed = [...marks].sort((a, b) => a.lane - b.lane || a.t - b.t).map((m) => ({ ...m, up: true }));
@@ -110,15 +147,15 @@ export function PromiseTimeline({
     <section className="promise-timeline" aria-label="Promise timeline">
       <header>
         <div>
-          <span className="eyebrow">Fixed isn’t the same as kept · {person.name}</span>
+          <span className="eyebrow">{lesson} · {person.name}</span>
           <h3>{headline}</h3>
         </div>
         <div className="pt-status">
-          <span className={restored ? "is-met" : ""}>Line {restored ? "back" : "not verified"}</span>
-          <span className={!promise ? "is-none" : kept ? "is-met" : "is-open"}>
-            Promise {!promise ? "none" : kept ? "kept" : "open"}
-          </span>
-          <span className={confirmed ? "is-met" : ""}>Customer {confirmed ? "confirmed" : "not yet"}</span>
+          {status.map(([text, met]) => (
+            <span key={text} className={met ? "is-met" : ""}>
+              {text}
+            </span>
+          ))}
         </div>
       </header>
       <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={headline}>

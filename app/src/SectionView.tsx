@@ -79,13 +79,14 @@ export function SectionView({
         <FocusHeader
           panel="Arbiter"
           question={`What should happen for ${first}, if anything?`}
+          scope="both"
           snapshot={snapshot}
           person={h.id}
           onPerson={onPerson}
           onCutoff={onCutoff}
         />
         <ArbiterWorkbench
-          key={h.id}
+          key={`${h.id}/${snapshot.cutoff}`}
           h={h}
           snapshot={snapshot}
           decision={decision}
@@ -110,6 +111,7 @@ export function SectionView({
       <FocusHeader
         panel="Customer experience"
         question={`What does ${first} actually see, and why?`}
+        scope="both"
         snapshot={snapshot}
         person={h.id}
         stat={{ value: actions.length, label: actions.length === 1 ? "update delivered" : "updates delivered" }}

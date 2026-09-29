@@ -61,6 +61,10 @@ function because(e: SourceEvent, h: Household): { text: string; used: string } |
       return { text: `Your hub stopped checking in with us at ${time(e.occurredAt)}.`, used: "Your hub’s status signal" };
     case "router.heartbeat_received":
       return { text: `Your hub checked in again at ${time(e.occurredAt)}.`, used: "Your hub’s status signal" };
+    case "router.setup_attempted":
+      return { text: `You switched on your new hub at ${time(e.occurredAt)}, and it hasn’t connected yet.`, used: "Your hub’s status signal" };
+    case "incident.cleared":
+      return { text: "The network fault in your area has been fixed.", used: "Our network fault register" };
     case "incident.confirmed":
       return h.incident
         ? { text: "Your line is part of a confirmed network fault in your area.", used: "Our network fault register" }
@@ -165,30 +169,65 @@ export function PhoneExperience({
     startChat ? "Help" : "Home",
   );
   const messages = [...actions].reverse();
+  // Today's conversation with a person at BT is part of this customer's own story.
+  const clockDay = new Date(snapshot.clock).toDateString();
+  const chat = snapshot.events
+    .filter(
+      (e) =>
+        e.subject === h.id &&
+        e.type === "conversation.message" &&
+        Date.parse(e.receivedAt) <= Date.parse(snapshot.clock) &&
+        new Date(e.occurredAt).toDateString() === clockDay,
+    )
+    .map((e) => {
+      const p = e.payload as { speakerRole?: string; speaker?: string };
+      return { who: p.speakerRole === "customer" ? "You" : p.speaker ?? "BT", text: e.description, at: e.occurredAt };
+    });
   const [why, setWhy] = useState<DemoAction | null>(null);
-  // The headline follows the household's actual state rather than a marketing line.
+  // The headline follows the household's actual state rather than a marketing line. A recovery
+  // is only news to a customer we told about the problem; a quiet watch stays quiet.
+  // An open service case with a named owner is live before tonight's first signal.
+  const openCase = h.caseStatus === "open" && !!h.owner && !h.activation.includes("unconfirmed");
   const headline = h.confirmed
     ? "All sorted."
     : h.firstUseObserved
       ? "You’re connected."
-      : h.restored
+      : h.restored && actions.length
         ? "Your connection is back."
-        : h.incident
-          ? "We’re on it."
+        : h.incident && h.incidentCleared && h.activation.includes("unconfirmed")
+          ? "Ready when you are."
+          : h.incident && !h.incidentCleared
+          ? h.activation.includes("unconfirmed")
+            ? "Hold off for now."
+            : "We’re on it."
           : h.activation.includes("unconfirmed")
             ? "Let’s get you connected."
-            : "Your home, connected.";
+            : openCase
+              ? "We’re looking into your connection."
+              : "Your home, connected.";
   const open = (next: typeof page) => {
     if (next === "Help") onSupport();
     setPage(next);
   };
   const service = h.confirmed
     ? "Working · confirmed by you"
-    : h.firstUseObserved ? "Connected · first use observed" : h.restored
-      ? "Connection observed"
-      : snapshot.cutoff && h.id !== "maya"
-        ? "Your service team has the context"
-        : "Your home broadband";
+    : h.firstUseObserved
+      ? "Connected · first use observed"
+      : h.restored && actions.length && h.promise && h.owner
+        ? h.promiseFulfilled
+          ? `Line back · ${h.owner} called you`
+          : `Line back · ${h.owner} will still call at ${time(h.promise)}`
+        : h.restored && actions.length
+          ? "Connection observed"
+      : openCase && h.promise
+        ? h.promiseFulfilled
+          ? `Case open · ${h.owner} called you`
+          : `Case open · ${h.owner} will call at ${time(h.promise)}`
+        : openCase
+          ? `Case open · ${h.owner} has it`
+          : h.activation.includes("unconfirmed")
+            ? "Hub delivered · not connected yet"
+            : "Your home broadband";
   const eveEntry = (
     <button className="phone-eve-entry" onClick={() => open("Help")}>
       <i className="eve-entry-icon" aria-hidden="true">
@@ -329,7 +368,7 @@ export function PhoneExperience({
                           )}
                         </details>
                       ))
-                    ) : (
+                    ) : chat.length ? null : (
                       <div className="phone-quiet">
                         <span className="phone-quiet-check">
                           <PhoneIcon kind="check" />
@@ -340,6 +379,16 @@ export function PhoneExperience({
                           <br />
                           Eve is here whenever you need a hand.
                         </p>
+                      </div>
+                    )}
+                    {chat.length > 0 && (
+                      <div className="phone-chat">
+                        <small>Your chat with {chat.find((m) => m.who !== "You")?.who ?? "BT"} · {time(chat[0].at)}</small>
+                        {chat.map((m, i) => (
+                          <p key={i} className={m.who === "You" ? "is-you" : ""}>
+                            <b>{m.who}</b> {m.text}
+                          </p>
+                        ))}
                       </div>
                     )}
                   </div>
@@ -369,7 +418,9 @@ export function PhoneExperience({
                         {h.caseStatus === "none"
                           ? "No open case"
                           : h.caseStatus === "closed"
-                            ? "Closed · confirmed"
+                            ? h.confirmed
+                              ? "Closed · you confirmed it works"
+                              : "Closed · connection observed"
                             : "Open"}
                       </dd>
                     </div>

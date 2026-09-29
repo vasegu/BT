@@ -101,3 +101,17 @@
     animation: none;
   }
 }
+/* Days with a reported fault: what the customer and diagnostics said, not the heartbeat. */
+.rhythm-faults {
+  display: grid;
+  gap: 2px;
+  height: 7px;
+  margin: 3px 0 0 28px;
+}
+.rhythm-faults i.is-fault {
+  background: #d4145a;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+.rhythm-axis .is-fault {
+  color: #b0103f;
+}

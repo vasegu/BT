@@ -58,6 +58,8 @@ export function arbitrate(
   const contraryTest = !!failure && (!recovery || Date.parse(failure.occurredAt) > Date.parse(recovery.occurredAt));
   // One household, several products: another product's recent signal can inform this one.
   const linked = h.linkedServices?.find((s) => s.recent);
+  // The network team has cleared the incident this service was in.
+  const cleared = !!h.incidentCleared;
   const candidates: Proposal[] = [];
   function propose(
     id: string,
@@ -208,10 +210,12 @@ export function arbitrate(
       gate(
         "unresolved",
         "Service not yet restored",
-        !h.restored && (!h.confirmed || contraryTest),
+        !h.restored && !cleared && (!h.confirmed || contraryTest),
         h.restored
           ? "A later recovery observation supersedes incident-only guidance."
-          : "No later restoration observation.",
+          : cleared
+            ? `${incidentId} is cleared; incident guidance no longer applies.`
+            : "No later restoration observation.",
         "service.restored_observed",
         "router.heartbeat_received",
         "customer.confirmed_working",
@@ -252,10 +256,12 @@ export function arbitrate(
       gate(
         "local",
         "Independent investigation useful",
-        !h.incident,
-        h.incident
-          ? "Merge this care work into the confirmed incident plan."
-          : "No confirmed shared incident supersedes the investigation.",
+        !h.incident || cleared,
+        cleared
+          ? `${incidentId} is cleared; any remaining fault is this service’s own.`
+          : h.incident
+            ? "Merge this care work into the confirmed incident plan."
+            : "No confirmed shared incident supersedes the investigation.",
         "incident.confirmed",
       ),
     ],
@@ -264,10 +270,12 @@ export function arbitrate(
   propose(
     "activation",
     "activation.provisioning",
-    "Check activation status",
+    cleared ? "Tell the customer setup can go ahead" : "Check activation status",
     "activation",
     "investigate",
-    "Equipment is delivered. Activation and first use are unconfirmed. Check provisioning before setup advice.",
+    cleared
+      ? `${incidentId} is cleared. Setup was paused for the incident; the hub can connect now.`
+      : "Equipment is delivered. Activation and first use are unconfirmed. Check provisioning before setup advice.",
     "Provisioning result or confirmed first use.",
     "Publish an activation update; retain the activation team's ownership.",
     [
@@ -288,10 +296,12 @@ export function arbitrate(
       gate(
         "local",
         "Provisioning can proceed independently",
-        !h.incident,
-        h.incident
-          ? "Coordinate this work under the confirmed network incident."
-          : "No confirmed shared incident to merge into.",
+        !h.incident || cleared,
+        cleared
+          ? `${incidentId} is cleared; setup can go ahead.`
+          : h.incident
+            ? "Coordinate this work under the confirmed network incident."
+            : "No confirmed shared incident to merge into.",
         "incident.confirmed",
       ),
     ],
@@ -618,12 +628,30 @@ export function serviceMessage(
         body: `We can see your line has recovered.${callback} Let us know whether everything is working for you.`,
       };
     case "incident":
+      if (h.activation.includes("unconfirmed"))
+        return {
+          key: "incident",
+          title: "Hold off setting up for now",
+          body: "A network issue in your area is stopping new connections. There’s nothing wrong with your hub. We’ll tell you as soon as you can go ahead.",
+        };
       return {
         key: "incident",
         title: "We’ve linked this to a network issue",
         body: `A confirmed network issue affects your service.${callback}${h.restartTried ? " There’s no need to repeat your earlier restart." : " Your care team is coordinating the next steps."}`,
       };
     case "activation":
+      if (h.incidentCleared)
+        return {
+          key: "setup-go",
+          title: "You can set up your hub now",
+          body: "The network issue in your area is fixed. Switch your hub off and on again and it should connect within a few minutes. We’ll confirm once we can see it working.",
+        };
+      if (h.evidence.some((e) => e.type === "router.setup_attempted"))
+        return {
+          key: "activation",
+          title: "We can see you’re setting up",
+          body: "Your new hub is switched on but hasn’t connected yet. We’re checking your line is ready before asking you to try anything else. Your activation team has the case.",
+        };
       return {
         key: "activation",
         title: "Let’s get your connection started",

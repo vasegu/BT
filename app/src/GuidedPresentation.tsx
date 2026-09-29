@@ -44,7 +44,7 @@ export function MomentSpine({
   return (
     <div className="spine" role="navigation" aria-label="Scenario clock">
       <div className="spine-clock">
-        <span>THREE QUIET ROUTERS</span>
+        <span>THREE HOMES, ONE EVENING</span>
         <strong>{snapshot ? moments[at].time : "--:--"}</strong>
       </div>
       <ol className="spine-track">
@@ -93,6 +93,28 @@ export function MomentSpine({
       </div>
     </div>
   );
+}
+
+/** The human events behind each home before tonight's signal, from the records themselves. */
+const STORY_TYPES = new Set(["case.opened", "diagnostic.completed", "conversation.message", "order.delivered"]);
+function storySoFar(snapshot: Snapshot, person: PersonId) {
+  const clock = Date.parse(snapshot.clock);
+  const today = new Date(clock).toDateString();
+  const fmt = (iso: string) => {
+    const d = new Date(iso);
+    const opts = { timeZone: "Europe/London" } as const;
+    return d.toDateString() === today
+      ? d.toLocaleTimeString("en-GB", { ...opts, hour: "2-digit", minute: "2-digit" })
+      : d.toLocaleDateString("en-GB", { ...opts, day: "numeric", month: "short" });
+  };
+  return snapshot.events
+    .filter((e) => e.subject === person && STORY_TYPES.has(e.type) && Date.parse(e.receivedAt) <= clock)
+    .slice(-3)
+    .map((e) => {
+      const p = e.payload as { speakerRole?: string; speaker?: string };
+      const who = e.type === "conversation.message" ? (p.speakerRole === "customer" ? first(person) : p.speaker ?? "BT") : null;
+      return { at: fmt(e.occurredAt), text: who ? `${who}: “${e.description}”` : e.description };
+    });
 }
 
 export function MomentLanes({
@@ -151,6 +173,7 @@ export function MomentLanes({
             final={final}
             focused={focus === lane.person}
             opening={snapshot.cutoff === 0}
+            story={storySoFar(snapshot, lane.person)}
             onFocus={() => onFocus(lane.person)}
           />
         ))}
@@ -165,6 +188,7 @@ function Lane({
   final,
   focused,
   opening,
+  story,
   onFocus,
 }: {
   lane: MomentLane;
@@ -172,6 +196,7 @@ function Lane({
   final: boolean;
   focused: boolean;
   opening: boolean;
+  story: { at: string; text: string }[];
   onFocus: () => void;
 }) {
   const { person, decision, previous, changed, message, lastMessage, outcome } = lane;
@@ -226,7 +251,17 @@ function Lane({
             <p className="lane-reason">{decision.reason}</p>
           </>
         ) : (
-          <p className="lane-reason">No decision yet. The history is read when a signal arrives.</p>
+          <>
+            <p className="lane-reason">No decision yet. So far:</p>
+            <ol className="lane-story">
+              {story.map((x, i) => (
+                <li key={i}>
+                  <time>{x.at}</time>
+                  {x.text}
+                </li>
+              ))}
+            </ol>
+          </>
         )}
       </div>
 

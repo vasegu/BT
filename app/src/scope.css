@@ -1,0 +1,112 @@
+/* Scope tags: which sections move with the customer or the moment, and which stand still. */
+.scope-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font: 600 9px var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  background: #ece2fa;
+  color: var(--brand);
+}
+.scope-tag i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.scope-tag.is-moment {
+  background: #e7f0fb;
+  color: #2a78d6;
+}
+.scope-tag.is-customer i {
+  border-radius: 1px;
+}
+.scope-tag.is-standing {
+  background: #f1eff3;
+  color: #77707f;
+}
+.scope-tag.is-standing i {
+  background: none;
+  box-shadow: inset 0 0 0 1.4px currentColor;
+}
+/* A short highlight when the customer or moment this section depends on changes. */
+.av-step:has(> header .scope-pulse) {
+  position: relative;
+}
+.scope-pulse {
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: 0 0 0 2px var(--brand);
+  opacity: 0;
+  animation: scope-pulse 1.1s ease-out;
+}
+@keyframes scope-pulse {
+  0% {
+    opacity: 0.55;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scope-pulse {
+    animation: none;
+  }
+}
+.standing-band {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 10px;
+  padding: 14px;
+  border: 1px dashed #d8d2de;
+  border-radius: 12px;
+  background: repeating-linear-gradient(135deg, #faf9fb 0 6px, #f6f4f8 6px 7px);
+}
+.standing-band > header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.standing-band > header .scope-tag {
+  margin-left: 0;
+}
+.standing-band > header small {
+  color: var(--muted);
+  font-size: 11.5px;
+}
+.standing-band .av-step {
+  background: #fdfcfe;
+  box-shadow: none;
+}
+.scope-tag {
+  font-style: normal;
+}
+.cm-hint + .scope-tag,
+.ov-hint + .scope-tag {
+  margin-left: 10px;
+}
+.scope-tag.is-highlight {
+  background: #f1eff3;
+  color: var(--brand);
+}
+.scope-tag.is-highlight i {
+  background: none;
+  box-shadow: inset 0 0 0 1.4px #77707f, 0 0 0 1.5px var(--brand);
+  width: 5px;
+  height: 5px;
+}
+.av-arch .scope-tag {
+  margin-left: 12px;
+}
+/* The page-level tag sits in the header; the header pulses rather than a section. */
+.av-arch .scope-pulse {
+  display: none;
+}

@@ -523,3 +523,35 @@
     opacity: 0;
   }
 }
+/* Today's chat with a person at BT, so a promise has its context. */
+.phone-chat {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid #ece7f2;
+  border-radius: 14px;
+  background: #faf8fc;
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+.phone-chat small {
+  font-size: 10px;
+  color: #8a8494;
+}
+.phone-chat p {
+  margin: 0;
+  padding: 6px 9px;
+  border-radius: 10px;
+  background: #fff;
+  max-width: 88%;
+}
+.phone-chat p.is-you {
+  align-self: flex-end;
+  background: #efe7fb;
+}
+.phone-chat b {
+  display: block;
+  font-size: 10px;
+  color: #5514b4;
+}

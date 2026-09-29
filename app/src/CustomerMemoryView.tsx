@@ -2,6 +2,7 @@ import type { Decision, Household, PersonId, Snapshot, SourceEvent } from "./typ
 import { FocusHeader } from "./FocusHeader";
 import { Rhythm, rhythmGrid } from "./Rhythm";
 import { MemoryMap } from "./MemoryMap";
+import { ScopeTag } from "./Scope";
 import "./customer-memory-view.css";
 
 // Customer memory, expanded. The pitch's common thread: given a signal, what does BT know
@@ -63,10 +64,35 @@ function layers(h: Household, snapshot: Snapshot): Record<Layer, Fact[]> {
     push("service", { text: d.description, how: "observed", at: d.receivedAt, event: d });
   const restored = last("service.restored_observed");
   push("service", restored && { text: restored.description, how: "observed", at: restored.receivedAt, event: restored });
+  // One household, several products: other services on the same account.
+  for (const l of h.linkedServices ?? [])
+    push("service", { text: `${l.product.replace(/^Fictional /, "")} · ${l.state.toLowerCase()} · same account`, how: "observed", at: snapshot.clock });
 
   // context
   const overdue = mine.filter((e) => e.type === "router.heartbeat_overdue" && e.revision > 0).at(-1);
   const back = mine.filter((e) => ["router.heartbeat_received", "service.restored_observed", "activation.first_use_observed"].includes(e.type) && e.revision > 0).at(-1);
+  // Before tonight's first signal, a failed test today is what's true right now.
+  const failedToday = all("diagnostic.completed")
+    .filter((e) => ["not_resolved", "failed", "intermittent"].includes(String((e.payload as { result?: string }).result)))
+    .filter((e) => new Date(e.occurredAt).toDateString() === new Date(snapshot.clock).toDateString())
+    .at(-1);
+  if (failedToday && !restored)
+    push("context", { text: `${failedToday.description} Line still dropping, per the customer.`, how: "observed", at: failedToday.receivedAt, event: failedToday });
+  // Another product's recent activity: the household is not cut off.
+  for (const l of h.linkedServices ?? [])
+    if (l.recent) {
+      const name = l.product.replace(/^Fictional /, "");
+      push("context", { text: `${name[0].toUpperCase()}${name.slice(1)} in normal use at home, ${time(l.recent.at)}`, how: "observed", at: l.recent.at });
+    }
+  // A hub that has never been online is being set up, not going quiet.
+  const setup = mine.filter((e) => e.type === "router.setup_attempted").at(-1);
+  if (setup)
+    push("context", {
+      text: back && Date.parse(back.occurredAt) >= Date.parse(setup.occurredAt) ? `Hub switched on at ${time(setup.occurredAt)}, first connection at ${time(back.occurredAt)}` : `Hub switched on at ${time(setup.occurredAt)} · not connected yet`,
+      how: "observed",
+      at: (back ?? setup).receivedAt,
+      event: back ?? setup,
+    });
   if (overdue)
     push("context", {
       text: back && Date.parse(back.occurredAt) >= Date.parse(overdue.occurredAt) ? `Router quiet at ${time(overdue.occurredAt)}, connection back at ${time(back.occurredAt)}` : `Router quiet since ${time(overdue.occurredAt)} · cause unknown`,
@@ -74,9 +100,17 @@ function layers(h: Household, snapshot: Snapshot): Record<Layer, Fact[]> {
       at: (back ?? overdue).receivedAt,
       event: back ?? overdue,
     });
+  // An incident is this household's memory only if its service is inside it. For anyone outside,
+  // the register was checked at decision time: an operational lookup, not something remembered.
   const incident = snapshot.events.filter((e) => e.type === "incident.confirmed").at(-1);
-  if (incident)
-    push("context", { text: h.incident ? "Inside confirmed incident INC-017" : "Outside INC-017 (explicitly excluded)", how: "observed", at: incident.receivedAt, event: incident });
+  const cleared = snapshot.events.filter((e) => e.type === "incident.cleared").at(-1);
+  if (incident && h.incident)
+    push(
+      "context",
+      h.incidentCleared && cleared
+        ? { text: `${String(incident.payload.incidentId)} cleared at ${time(cleared.occurredAt)}`, how: "observed", at: cleared.receivedAt, event: cleared }
+        : { text: `Inside confirmed incident ${String(incident.payload.incidentId)}`, how: "observed", at: incident.receivedAt, event: incident },
+    );
   push("context", { text: `${new Date(snapshot.clock).toLocaleDateString("en-GB", { weekday: "long", timeZone: "Europe/London" })} evening, ${time(snapshot.clock)}`, how: "observed", at: snapshot.clock });
 
   // emotional: the customer's own words
@@ -132,6 +166,9 @@ export function CustomerMemoryView({
   ].sort((a, b) => Date.parse(b.at) - Date.parse(a.at));
   // What the decision at this moment actually read, and what it left out.
   const used = (decision?.evidenceIds ?? []).map((id) => snapshot.events.find((e) => e.id === id)).filter((e): e is SourceEvent => !!e);
+  // Shared records (incident register, rota) are operational lookups, not this person's memory.
+  const own = used.filter((e) => e.subject === h.id);
+  const checked = used.filter((e) => e.subject !== h.id);
   const heldBack = mine.filter((e) => !decision?.evidenceIds.includes(e.id) && e.type !== "router.observation_window").length;
   const windows = mine.filter((e) => e.type === "router.observation_window").length;
   const household = snapshot.operations.network?.households.find((x) => x.person === h.id);
@@ -155,6 +192,7 @@ export function CustomerMemoryView({
           <span>01</span>
           <h3>What normal looks like</h3>
           <small className="cm-hint">the same quiet router means different things in different homes</small>
+          <ScopeTag scope="both" snapshot={snapshot} person={h.id} />
         </header>
         <Rhythm snapshot={snapshot} person={h.id} />
       </section>
@@ -163,6 +201,7 @@ export function CustomerMemoryView({
           <span>02</span>
           <h3>Six layers of memory</h3>
           <small className="cm-hint">each fact tagged by how we know it and how old it is · usable now, not after a nightly batch</small>
+          <ScopeTag scope="both" snapshot={snapshot} person={h.id} />
         </header>
         <div className="cm-layers">
           {LAYERS.map(([id, name, what]) => (
@@ -201,6 +240,7 @@ export function CustomerMemoryView({
           <span>03</span>
           <h3>Same signal, three memories</h3>
           <small className="cm-hint">each person’s memory as its own space, placed by meaning · the star is tonight’s signal, joined to what it reminds us of in their history</small>
+          <ScopeTag scope="moment" snapshot={snapshot} person={h.id} />
         </header>
         <MemoryMap h={h} snapshot={snapshot} inspect={inspect} onPerson={onPerson} />
       </section>
@@ -209,6 +249,7 @@ export function CustomerMemoryView({
           <header>
             <span>04</span>
             <h3>What’s already been said, and by which channel</h3>
+            <ScopeTag scope="both" snapshot={snapshot} person={h.id} />
           </header>
           <ol className="cm-said">
             {said.map((s, i) => (
@@ -232,20 +273,38 @@ export function CustomerMemoryView({
           <header>
             <span>05</span>
             <h3>What this decision used, and what it held back</h3>
+            <ScopeTag scope="both" snapshot={snapshot} person={h.id} />
           </header>
           {decision ? (
             <>
               <p className="cm-decision">
                 <b>{decision.title}</b> · {decision.revision ? `decided at ${time(decision.time)}` : ""}
               </p>
-              <span className="cm-label">Read · {used.length} records</span>
+              <span className="cm-label">Read from {first}’s memory · {own.length} records</span>
               <div className="cm-used">
-                {used.map((e) => (
+                {own.map((e) => (
                   <button key={e.id} onClick={() => inspect(e)}>
                     {e.type}
                   </button>
                 ))}
               </div>
+              {checked.length > 0 && (
+                <>
+                  <span className="cm-label">Checked in operational memory · not {first}’s memory</span>
+                  <ul className="cm-checked">
+                    {checked.map((e) => (
+                      <li key={e.id}>
+                        <button onClick={() => inspect(e)}>{e.type}</button>
+                        {e.type === "incident.confirmed"
+                          ? h.incident
+                            ? ` ${String(e.payload.incidentId)} register: ${first}’s service is inside it`
+                            : ` ${String(e.payload.incidentId)} register: ${first}’s service is outside it, so it plays no part`
+                          : ` ${e.description}`}
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
               {h.memory && h.memory.items.length > 0 && (
                 <>
                   <span className="cm-label">Memories retrieved for this moment · {h.memory.items.length}</span>

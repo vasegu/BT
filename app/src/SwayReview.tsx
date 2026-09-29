@@ -17,6 +17,7 @@ import {
 import "./actions-view.css";
 import "./sway.css";
 import { ARCHITECTURE } from "./FocusHeader";
+import { ScopeTag } from "./Scope";
 
 // Visual language follows the Jio CX Hodoscope action map: warm neutrals, hairlines,
 // letterspaced mono labels, square equal-aspect plot, KDE contour bands.
@@ -50,14 +51,28 @@ const KIND_TINT: Record<SwayPoint["kind"], string> = { recorded: "#2a2a2a", base
 const KIND_LABEL: Record<SwayPoint["kind"], string> = {
   recorded: "live decision",
   base: "policy replay",
-  single: "one fact flipped",
-  pair: "two facts flipped",
+  single: "what-if · one fact changed",
+  pair: "what-if · two facts changed",
 };
 const MOMENT_TINT = ["#E4DAF5", "#C9B5EC", "#A88BDC", "#8460C8", "#5514B4", "#3A0C80"];
 const nameOf = (a: string) => actionLabels[a] || a;
 const pct = (n: number) => `${Math.round(n * 100)}%`;
 const who = (p: SwayPoint) => householdNames[p.person].split(" ")[0];
 const when = (p: SwayPoint) => moments[p.revision]?.time ?? "";
+/** A what-if in plain English. Removing a fact the customer had, or adding one they didn't. */
+function whatIf(p: SwayPoint, base: SwayPoint | undefined, factors: SwayData["factors"], short = false) {
+  if (p.kind === "recorded") return short ? "live" : "The decision that actually ran.";
+  if (p.kind === "base") return short ? "replay" : "The same moment replayed through the policy, nothing changed.";
+  const name = who(p);
+  const parts = p.flips.map((id) => {
+    const f = factors.find((x) => x.id === id);
+    const label = (f?.label ?? id).replace(/^Customer claims /, "");
+    if (f?.promptOnly) return short ? "+ fake gamer claim" : `${name} had claimed ${label} (${name} never said this)`;
+    const had = base?.known?.includes(id);
+    return short ? `${had ? "−" : "+"} ${label.toLowerCase()}` : had ? `we had not known: ${label.toLowerCase()}` : `this had been true: ${label.toLowerCase()}`;
+  });
+  return short ? parts.join(" ") : `What if ${parts.join(", and ")}?`;
+}
 
 type ColorBy = "action" | "person" | "moment" | "kind" | "changed";
 
@@ -147,7 +162,7 @@ function grouping(colorBy: ColorBy, changed: (p: SwayPoint) => boolean) {
           : colorBy === "kind"
             ? KIND_LABEL[k as SwayPoint["kind"]]
             : k === "changed"
-              ? "action changed by the flip"
+              ? "action changed by the what-if"
               : "same action as replay";
   const color = (k: string) =>
     colorBy === "action"
@@ -408,8 +423,10 @@ function HowToRead() {
         <div className="hodo-pop" role="dialog" aria-label="How to read the context map" style={{ top: at.top, left: at.left }}>
           <div className="hodo-pop-title">Reading the context map</div>
           <p>
-            Each dot is one context the arbiter could face: a recorded moment, or the same moment with one or two facts
-            flipped. Position is UMAP over the 384-d embedding of <em>what the agent saw</em> (facts, latest observations,
+            Each dot is one context the arbiter could face: a recorded moment, or a <em>what-if test</em> of that
+            moment with one or two facts changed. What-if tests are not customer records: we remove a fact the customer
+            had, or add one they did not (even a fake one, like “I’m a gamer”), to see whether the policy would act
+            differently. Position is UMAP over the 384-d embedding of <em>what the agent saw</em> (facts, latest observations,
             task prompt). <em>Distance</em> = similarity of context, not of customer or time.
           </p>
           <p>
@@ -565,6 +582,7 @@ function Review({ data, onLegacy }: { data: SwayData; onLegacy: () => void }) {
             {ARCHITECTURE["Agent review"].component}
             <span>Accountable</span>
             {ARCHITECTURE["Agent review"].owner}
+            <ScopeTag scope="standing" />
           </p>
         </div>
         <div className="av-verified">
@@ -574,7 +592,7 @@ function Review({ data, onLegacy }: { data: SwayData; onLegacy: () => void }) {
       </header>
       <div className="hodo-stats">
         <Stat label="Moments" value={data.bases} />
-        <Stat label="Facts flipped" value={data.factors.length} />
+        <Stat label="Facts tested" value={data.factors.length} />
         <Stat label="Top sway" value={pct(top.sway)} sub={top.label.toLowerCase()} />
         {claim && <Stat label="Claim sway" value={pct(claim.sway)} sub="unverified claim" />}
         <Stat label="Live = replay" value={data.policyAgreement === null ? "—" : pct(data.policyAgreement)} />
@@ -615,7 +633,7 @@ function Review({ data, onLegacy }: { data: SwayData; onLegacy: () => void }) {
             )}
             <StackedSelect label="filter · fact" value={fact} onChange={setFact} options={[["all", "all"], ...data.factors.map((f): [string, string] => [f.id, f.label])]} />
             <StackedSelect label="filter · household" value={person} onChange={setPerson} options={[["all", "all"], ["daniel", "Daniel"], ["sam", "Sam"], ["maya", "Maya"]]} />
-            <StackedSelect label="filter · variant" value={kind} onChange={setKind} options={[["all", "all"], ["recorded", "live decisions"], ["base", "policy replays"], ["single", "one fact flipped"], ["pair", "two facts flipped"]]} />
+            <StackedSelect label="filter · variant" value={kind} onChange={setKind} options={[["all", "all"], ["recorded", "live decisions"], ["base", "policy replays"], ["single", "what-if · one fact"], ["pair", "what-if · two facts"]]} />
             <div className="hodo-count">{rows.length} / {data.points.length}</div>
             <div className="hodo-legend">
               <span className="hodo-label">Legend</span>
@@ -653,7 +671,7 @@ function Review({ data, onLegacy }: { data: SwayData; onLegacy: () => void }) {
               {hover && (
                 <div className="hodo-tip" style={{ left: hover.x + 14, top: hover.y + 10 }}>
                   <div className="hodo-tip-head">
-                    {who(hover.p).toLowerCase()} · {when(hover.p)} · {hover.p.flips.length ? `flipped ${hover.p.flips.join(" + ")}` : KIND_LABEL[hover.p.kind]}
+                    {who(hover.p).toLowerCase()} · {when(hover.p)} · {whatIf(hover.p, base.get(`${hover.p.person}/${hover.p.revision}`), data.factors, true)}
                   </div>
                   <div className="hodo-tip-body">{hover.p.title}</div>
                   <div className="hodo-tip-foot">
@@ -667,7 +685,7 @@ function Review({ data, onLegacy }: { data: SwayData; onLegacy: () => void }) {
           </div>
         </section>
         <section className="hodo-card hodo-triage">
-          <VerticalStep step="02 · triage" title="What sways the action" hint="ranked by single-fact flip rate" />
+          <VerticalStep step="02 · triage" title="What sways the action" hint="ranked by how often changing that one fact changes the action" />
           <div className="hodo-rail">
             {action !== "all" && (() => {
               const { typical, unusual } = triggers(data.points.filter((p) => p.action === action));
@@ -691,7 +709,7 @@ function Review({ data, onLegacy }: { data: SwayData; onLegacy: () => void }) {
                         <span>
                           <i style={{ background: ACTION_TINT[p.action] }} />#{i + 1} · {who(p).toUpperCase()} · {when(p)}
                         </span>
-                        <span>{p.kind === "recorded" ? "LIVE" : p.flips.join(" + ") || KIND_LABEL[p.kind]}</span>
+                        <span>{whatIf(p, base.get(`${p.person}/${p.revision}`), data.factors, true)}</span>
                       </div>
                       {diffs.slice(0, 3).map((d) => (
                         <p key={d.key} className="hodo-diff">
@@ -729,7 +747,7 @@ function Review({ data, onLegacy }: { data: SwayData; onLegacy: () => void }) {
                 </small>
               </button>
             ))}
-            <div className="hodo-rail-sep">Decisive flips to review · {decisive.length}</div>
+            <div className="hodo-rail-sep">What-ifs that changed the action · {decisive.length}</div>
             {decisive.map((p, i) => {
               const from = base.get(`${p.person}/${p.revision}`)!;
               return (
@@ -738,7 +756,7 @@ function Review({ data, onLegacy }: { data: SwayData; onLegacy: () => void }) {
                     <span>
                       <i style={{ background: ACTION_TINT[p.action] }} />#{i + 1} · {who(p).toUpperCase()} · {when(p)}
                     </span>
-                    <span>{p.flips[0]}</span>
+                    <span>{whatIf(p, from, data.factors, true)}</span>
                   </div>
                   <p>
                     {nameOf(from.action)} → {nameOf(p.action)}
@@ -761,7 +779,7 @@ function Review({ data, onLegacy }: { data: SwayData; onLegacy: () => void }) {
         <Drawer
           point={selected}
           from={base.get(`${selected.person}/${selected.revision}`)}
-          factorLabel={data.factors.find((f) => f.id === selected.flips[0])?.label}
+          whatIfText={whatIf(selected, base.get(`${selected.person}/${selected.revision}`), data.factors)}
           fingerprint={data.fingerprint}
           label={labels[selected.id]}
           onMark={(v) => mark(selected.id, v)}
@@ -776,7 +794,7 @@ function Review({ data, onLegacy }: { data: SwayData; onLegacy: () => void }) {
 function Drawer({
   point,
   from,
-  factorLabel,
+  whatIfText,
   fingerprint,
   label,
   onMark,
@@ -784,7 +802,7 @@ function Drawer({
 }: {
   point: SwayPoint;
   from?: SwayPoint;
-  factorLabel?: string;
+  whatIfText: string;
   fingerprint: string;
   label?: string;
   onMark: (v: string) => void;
@@ -807,12 +825,22 @@ function Drawer({
             {householdNames[point.person]} · {when(point)}
           </h3>
           <small>
-            {point.flips.length ? `flipped: ${point.flips.join(" + ")}` : KIND_LABEL[point.kind]} · outlier {pct(point.outlier)}
+            {KIND_LABEL[point.kind]} · outlier {pct(point.outlier)}
           </small>
         </div>
         <button onClick={onClose} aria-label="Close">×</button>
       </header>
       <div className="hodo-drawer-body">
+        {point.flips.length > 0 ? (
+          <p className="hodo-whatif">
+            <b>What-if test · not a real record.</b> {whatIfText} We changed this on purpose to test the policy; the
+            real {householdNames[point.person].split(" ")[0]} at {when(point)} is the live decision.
+          </p>
+        ) : (
+          <p className="hodo-whatif is-real">
+            <b>{point.kind === "recorded" ? "Real decision." : "Policy replay."}</b> {whatIfText}
+          </p>
+        )}
         <h4>Input the agent saw</h4>
         <pre>{point.text}</pre>
         <h4>Decision it made</h4>
@@ -820,10 +848,10 @@ function Drawer({
         <span className="hodo-chip" style={{ color: ACTION_TINT[point.action], background: `${ACTION_TINT[point.action]}1f` }}>
           {nameOf(point.action).toUpperCase()}
         </span>
-        <h4>What the flip changed</h4>
+        <h4>What changing it did</h4>
         {moved ? (
           <p className="hodo-quote">
-            “Flipping {factorLabel ? factorLabel.toLowerCase() : point.flips.join(" + ")} moved the plan from {nameOf(from!.action).toLowerCase()} to {nameOf(point.action).toLowerCase()}.”
+            “It moved the plan from {nameOf(from!.action).toLowerCase()} to {nameOf(point.action).toLowerCase()}.”
           </p>
         ) : (
           <p className="hodo-quote">
@@ -831,7 +859,7 @@ function Drawer({
               ? "“This is the decision that actually ran.”"
               : point.kind === "base"
                 ? "“Policy replay of the recorded context, with no facts changed.”"
-                : "“Same action as the recorded context: this flip did not sway the plan.”"}
+                : "“Same action as the real decision: this change did not sway the plan.”"}
           </p>
         )}
         <h4>Human review</h4>

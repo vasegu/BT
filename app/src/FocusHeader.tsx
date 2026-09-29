@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import type { PersonId, Snapshot } from "./types";
 import { moments, householdNames } from "./presentation";
 import "./actions-view.css";
+import { ScopeTag, type ScopeKind } from "./Scope";
 
 /** Where each panel sits in the five-part architecture, and who is accountable for it. */
 export const ARCHITECTURE: Record<string, { component: string; owner: string }> = {
@@ -25,6 +26,7 @@ export function FocusHeader({
   onCutoff,
   children,
   moments: showMoments = true,
+  scope,
 }: {
   panel: string;
   question: string;
@@ -36,6 +38,8 @@ export function FocusHeader({
   children?: ReactNode;
   /** Panels that are a standing picture rather than a replay can hide the moment strip. */
   moments?: boolean;
+  /** Pages that are uniform throughout show one scope for the whole page. */
+  scope?: ScopeKind;
 }) {
   return (
     <>
@@ -52,6 +56,7 @@ export function FocusHeader({
               {ARCHITECTURE[panel].component}
               <span>Accountable</span>
               {ARCHITECTURE[panel].owner}
+              {scope && <ScopeTag scope={scope} snapshot={snapshot} person={person} />}
             </p>
           )}
         </div>

@@ -37,6 +37,8 @@ export type Household = {
   restored: boolean;
   confirmed: boolean;
   incident: boolean;
+  /** The confirmed incident this service was in has been cleared by the network team. */
+  incidentCleared?: boolean;
   contactAllowed: boolean;
   evidence: SourceEvent[];
 };

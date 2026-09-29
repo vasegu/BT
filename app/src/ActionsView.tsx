@@ -5,6 +5,7 @@ import type { Household, PersonId, Snapshot, SourceEvent, Decision, OutcomeEpiso
 import { moments } from "./presentation";
 import { PromiseTimeline } from "./PromiseTimeline";
 import { FocusHeader } from "./FocusHeader";
+import { ScopeTag } from "./Scope";
 import "./actions-view.css";
 
 // Actions & outcomes, expanded. One question: what did we do for this customer, and did it work?
@@ -86,12 +87,13 @@ export function ActionsView({
   );
 }
 
-function Step({ n, title, children, className = "" }: { n: string; title: string; children: React.ReactNode; className?: string }) {
+function Step({ n, title, children, className = "", tag }: { n: string; title: string; children: React.ReactNode; className?: string; tag?: React.ReactNode }) {
   return (
     <section className={`av-step ${className}`}>
       <header>
         <span>{n}</span>
         <h3>{title}</h3>
+        {tag}
       </header>
       {children}
     </section>
@@ -158,7 +160,7 @@ function Chain({
     .flatMap((c) => shown.trace?.candidates.filter((x) => x.id === c.id && x.status !== "awaiting") ?? []);
   return (
     <div className="av-chain">
-      <Step n="01" title="From context to action" className="av-step-space">
+      <Step tag={<ScopeTag scope="both" snapshot={snapshot} person={h.id} />} n="01" title="From context to action" className="av-step-space">
         <div className="av-context-line">
           {!current && <span className="av-carried">No new decision at {moments[snapshot.cutoff].time}; showing {moments[shown.revision].time}.</span>}
           {fresh.map((e) => (
@@ -183,7 +185,7 @@ function Chain({
         )}
       </Step>
       <i className="av-arrow" aria-hidden="true" />
-      <Step n="02" title="What it did">
+      <Step tag={<ScopeTag scope="both" snapshot={snapshot} person={h.id} />} n="02" title="What it did">
         <span className="av-who">
           {who.name} · {moments[shown.revision].time}
         </span>
@@ -236,7 +238,7 @@ function Chain({
         )}
       </Step>
       <i className="av-arrow" aria-hidden="true" />
-      <Step n="03" title="Did it work?">
+      <Step tag={<ScopeTag scope="both" snapshot={snapshot} person={h.id} />} n="03" title="Did it work?">
         {checks.length ? (
           <ul className="av-checks">
             {checks.slice(0, 5).map((o) => (

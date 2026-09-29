@@ -6,6 +6,8 @@ export type SwayPoint = {
   /** recorded = the live decision; base = policy replay of it; single/pair = factor flips */
   kind: "recorded" | "base" | "single" | "pair";
   flips: string[];
+  /** base points only: the facts that were true for this household at this moment */
+  known?: string[];
   action: string;
   title: string;
   reason: string;

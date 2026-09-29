@@ -90,6 +90,7 @@ export function RouterTelemetry({ snapshot, focus }: { snapshot: Snapshot; focus
               e.subject === p &&
               Date.parse(e.receivedAt) <= clock &&
               (e.type === "router.heartbeat_received" ||
+                (e.type === "activation.first_use_observed" && e.revision > 0) ||
                 (e.type === "router.observation_window" && Number((e.payload as { received?: number }).received) > 0)),
           )
           .at(-1);
@@ -111,7 +112,13 @@ export function RouterTelemetry({ snapshot, focus }: { snapshot: Snapshot; focus
               </div>
             )}
             <p>{r?.summary.replace(" for 30 days", " all week").replace("last 30 nights", "last 7 nights")}</p>
-            <small>{lastHeard ? `last heartbeat ${day(lastHeard)} ${at(lastHeard)}` : "never heard from"}</small>
+            <small>
+              {heard?.type === "activation.first_use_observed"
+                ? `first connection ${day(heard.occurredAt)} ${at(heard.occurredAt)}`
+                : lastHeard
+                  ? `last heartbeat ${day(lastHeard)} ${at(lastHeard)}`
+                  : "never heard from"}
+            </small>
           </article>
         );
       })}
