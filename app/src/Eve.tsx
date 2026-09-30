@@ -262,36 +262,7 @@ export function Eve({
   const activeVoice = voice !== "off";
 
   return (
-    <VoiceBeam
-      type="mobile"
-      className="eve-mobile-beam"
-      theme={activeVoice ? "dark" : "light"}
-      colors={
-        activeVoice
-          ? ["#ac80df", "#708dcc", "#64a99b", "#c091a1", "#c8b28b"]
-          : ["#5514b4", "#9272be", "#7a9cae", "#bb87a2", "#b9a1d3"]
-      }
-      style={{ display: "flex", flex: 1, minHeight: 0, width: "100%" }}
-      hueRange={0}
-      strength={activeVoice ? 0.9 : 0.5}
-      scale={0.9}
-      bend={62}
-      bandOffset={18}
-      bandStrength={2.4}
-      borderRadius={0}
-      idle={voice === "on" ? 0.4 : 0}
-      paused={reducedMotion.current}
-      // The phone-wide glow belongs to voice. Text uses the chat-input glow on the composer.
-      active={activeVoice}
-      processing={activeVoice && (thinking || voice === "connecting")}
-      stream={
-        voiceCaption?.role === "assistant" && outputStream
-          ? outputStream
-          : muted
-            ? null
-            : stream
-      }
-    >
+    <div className="eve-mobile-beam" style={{ display: "flex", flex: 1, minHeight: 0, width: "100%" }}>
       <section
         className={`eve ${activeVoice ? "eve-voice-active" : ""}`}
         aria-label="Eve support conversation"
@@ -392,25 +363,6 @@ export function Eve({
           aria-live="polite"
           aria-relevant="additions text"
         >
-          {activeVoice && (
-            <div className="eve-voice-copy">
-              {voiceCaption && (
-                <small>{voiceCaption.role === "user" ? "You" : "Eve"}</small>
-              )}
-              <p>
-                {voice === "connecting"
-                  ? "A moment.\nConnecting you to Eve."
-                  : voice === "closing"
-                    ? "Back to your conversation."
-                    : voiceCaption
-                      ? voiceCaption.text.length > 240
-                        ? "…" +
-                          voiceCaption.text.slice(-230).replace(/^\S*\s/, "")
-                        : voiceCaption.text
-                      : "What’s on your mind?"}
-              </p>
-            </div>
-          )}
           {!activeVoice && !messages.length && (
             <div className="eve-welcome">
               <span className="eve-welcome-label">
@@ -440,8 +392,7 @@ export function Eve({
               </div>
             </div>
           )}
-          {!activeVoice &&
-            messages.map((m) => (
+          {messages.map((m) => (
               <article key={m.id} className={`eve-message ${m.role}`}>
                 <small>
                   {m.role === "user" ? "You" : "Eve"}
@@ -452,6 +403,25 @@ export function Eve({
                 <p>{m.content}</p>
               </article>
             ))}
+          {activeVoice && (
+            <div className="eve-voice-copy">
+              {voiceCaption && (
+                <small>{voiceCaption.role === "user" ? "You" : "Eve"}</small>
+              )}
+              <p>
+                {voice === "connecting"
+                  ? "Connecting to Eve…"
+                  : voice === "closing"
+                    ? "Back to your conversation."
+                    : voiceCaption
+                      ? voiceCaption.text.length > 240
+                        ? "…" +
+                          voiceCaption.text.slice(-230).replace(/^\S*\s/, "")
+                        : voiceCaption.text
+                      : "What’s on your mind?"}
+              </p>
+            </div>
+          )}
           {!activeVoice && thinking && (
             <div className="eve-thinking" role="status">
               <span>•••</span> Reading your context
@@ -495,6 +465,32 @@ export function Eve({
         )}
         <div className="eve-input-area">
           {activeVoice ? (
+    <VoiceBeam
+      type="mobile"
+      className="eve-voice-input-beam"
+      theme="light"
+      colors={["#ac80df", "#708dcc", "#64a99b", "#c091a1", "#c8b28b"]}
+      style={{ width: "100%" }}
+      hueRange={0}
+      strength={0.45}
+      scale={0.9}
+      bend={62}
+      bandOffset={18}
+      bandStrength={2.4}
+      borderRadius={20}
+      idle={voice === "on" ? 0.4 : 0}
+      paused={reducedMotion.current}
+      // Keep audio feedback inside the voice input bar.
+      active={activeVoice}
+      processing={activeVoice && (thinking || voice === "connecting")}
+      stream={
+        voiceCaption?.role === "assistant" && outputStream
+          ? outputStream
+          : muted
+            ? null
+            : stream
+      }
+    >
             <div className="eve-composer">
               <div className="eve-call-controls">
                 <button
@@ -539,6 +535,7 @@ export function Eve({
                 </button>
               </div>
             </div>
+            </VoiceBeam>
             ) : (
               // Text chat: a border beam travels round the composer while Eve writes her reply.
               <BorderBeam
@@ -613,6 +610,6 @@ export function Eve({
           </div>
         </div>
       </section>
-    </VoiceBeam>
+    </div>
   );
 }

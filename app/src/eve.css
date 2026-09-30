@@ -607,125 +607,22 @@
     background-color 240ms ease,
     color 240ms ease;
 }
-.phone.phone-native:has(.eve-voice-active),
-.phone-native .eve-voice-active {
-  background: #18171b;
-  color: #efedf2;
+/* Voice shares the same BT conversation surface; only the input changes. */
+.phone-native .eve.eve-voice-active .eve-thread {
+  background:transparent; border:0; border-radius:0; box-shadow:none;
+  display:flex; flex-direction:column; align-items:stretch; justify-content:flex-start;
+  padding:16px 18px; overflow:auto;
 }
-.phone-native:has(.eve-voice-active) .phone-status {
-  color: #e8e5ec;
-}
-.phone-native:has(.eve-voice-active) .home-indicator {
-  background: #eeeaf2;
-}
-.phone-native:has(.eve-voice-active) .battery:before,
-.phone-native:has(.eve-voice-active) .battery:after {
-  background: #e8e5ec;
-}
-.phone-native .eve-voice-active .eve-header {
-  background: none;
-}
-.eve-voice-active .eve-header strong {
-  font-weight: 500;
-  color: #e5e1ea;
-}
-.eve-voice-active .eve-header small {
-  color: #807b88;
-}
-.eve-voice-active .eve-back {
-  color: #b1a9bc;
-}
-.eve-voice-active .eve-mark {
-  background: #ffffff0c;
-  color: #b5a5c4;
-}
-.eve-voice-active .eve-context-toggle,
-.eve-voice-active .eve-context {
-  display: none;
-}
-.phone-native .eve-thread.eve-voice-transcript {
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding: 30px 25px 76px;
-  overflow: hidden;
-}
-.eve-voice-copy {
-  width: 100%;
-  text-align: center;
-  animation: eve-voice-appear 250ms ease both;
-}
-.eve-voice-copy > small {
-  display: block;
-  font-size: 9px;
-  letter-spacing: 0.03em;
-  color: #817b8c;
-  margin-bottom: 13px;
-}
-.eve-voice-copy > p {
-  font-size: 21px;
-  font-weight: 400;
-  letter-spacing: -0.4px;
-  line-height: 1.4;
-  color: #cfccd4;
-  white-space: pre-line;
-  overflow-wrap: anywhere;
-}
-.phone-native .eve-voice-active .eve-input-area {
-  padding: 0 17px 7px;
-}
-.phone-native .eve-voice-active .eve-composer {
-  background: none;
-  border: none;
-  box-shadow: none;
-  backdrop-filter: none;
-  overflow: visible;
-}
-.phone-native .eve-voice-active .eve-call-controls {
-  min-height: 59px;
-  padding: 4px 0;
-  gap: 11px;
-}
-.phone-native .eve-voice-active .eve-call-controls > span {
-  order: -1;
-  flex: 1;
-  text-align: left;
-  margin-left: 8px;
-  color: #b5aabd;
-  font-size: 10px;
-  font-weight: 400;
-}
-.phone-native .eve-voice-active .eve-call-controls > span small {
-  display: none;
-}
-.phone-native .eve-voice-active .eve-call-controls button {
-  width: 44px;
-  height: 44px;
-  background: #ffffff0c;
-  border: 1px solid #ffffff13;
-  color: #e8ddea;
-  box-shadow: 0 2px 9px #0000000a;
-  backdrop-filter: blur(20px);
-}
-.phone-native .eve-voice-active .eve-call-controls button:hover {
-  background: #ffffff19;
-}
-.phone-native .eve-voice-active .eve-call-controls button[aria-pressed="true"] {
-  background: #ffffff23;
-}
-.phone-native .eve-voice-active .eve-call-controls svg {
-  width: 20px;
-  height: 20px;
-}
-.phone-native .eve-voice-active .eve-input-meta {
-  color: #8c8495;
-  font-size: 8px;
-  padding-top: 9px;
-}
-.eve-voice-active .eve-error {
-  background: #33262d;
-  color: #d3afb9;
-}
+.eve-voice-copy { width:100%; margin-top:auto; padding:16px 0; animation:eve-voice-appear 250ms ease both; }
+.eve-voice-copy > small { display:block; color:var(--brand); font-size:10px; margin-bottom:7px; }
+.eve-voice-copy > p { margin:0; font:400 15px/1.5 var(--sans); color:#30243f; white-space:pre-line; overflow-wrap:anywhere; }
+.eve-voice-input-beam { border:1px solid #e5dbf1; border-radius:20px; overflow:hidden; }
+.phone-native .eve-voice-active .eve-composer { position:relative; z-index:5; background:transparent; border:0; box-shadow:none; }
+.phone-native .eve-voice-active .eve-call-controls { min-height:72px; padding:8px 12px; gap:10px; }
+.phone-native .eve-voice-active .eve-call-controls > span { color:#544265; font-size:12px; }
+.phone-native .eve-voice-active .eve-call-controls button { width:40px; height:40px; background:#fff; border:1px solid #e5dbf1; color:var(--brand); }
+.phone-native .eve-voice-active .eve-call-controls button[aria-pressed="true"] { background:#eee6f8; }
+.phone-native .eve-voice-active .eve-call-controls .eve-end { background:#eee6f8; color:var(--brand); }
 @keyframes eve-voice-appear {
   from {
     opacity: 0;
