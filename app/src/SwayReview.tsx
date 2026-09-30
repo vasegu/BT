@@ -564,6 +564,14 @@ function Review({ data, onLegacy }: { data: SwayData; onLegacy: () => void }) {
     .filter((p) => p.kind === "single" && changed(p))
     .sort((a, b) => (rank.get(a.flips[0])! - rank.get(b.flips[0])!) || a.revision - b.revision);
   const selected = data.points.find((p) => p.id === selectedId);
+  // The three questions a reviewer actually asks, answered from the replay.
+  const INTENDED = new Set(["incident", "case", "promise", "habit", "restart", "restored", "delivered", "confirmed", "contact"]);
+  const swaying = data.factors.filter((f) => !f.promptOnly && f.sway > 0);
+  const unexpected = swaying.filter((f) => !INTENDED.has(f.id));
+  // One example per fact, so a reviewer sees different kinds of risk rather than one repeated.
+  const handoffs = [
+    ...new Map(data.points.filter((p) => p.kind === "single" && p.action === "no_plan").map((p) => [p.flips[0], p])).values(),
+  ].slice(0, 3);
   const mark = (id: string, verdict: string) => {
     const next = { ...labels, [id]: labels[id] === verdict ? "" : verdict };
     setLabels(next);
@@ -590,6 +598,52 @@ function Review({ data, onLegacy }: { data: SwayData; onLegacy: () => void }) {
           <small>contexts replayed</small>
         </div>
       </header>
+      <div className="hodo-questions">
+        <article className={unexpected.length ? "is-flag" : "is-ok"}>
+          <span>01</span>
+          <h3>Did any fact swing a decision it shouldn’t have?</h3>
+          <p>
+            <b>{unexpected.length ? "Yes: look at these." : "No."}</b>{" "}
+            {unexpected.length
+              ? unexpected.map((f) => `${f.label} (${pct(f.sway)} of moments)`).join(", ")
+              : `Every fact that changed a decision is one the policy is meant to use. The strongest: ${swaying
+                  .slice(0, 3)
+                  .map((f) => `${f.label.toLowerCase()} (${pct(f.sway)})`)
+                  .join(", ")}.`}
+          </p>
+        </article>
+        <article className={claim && claim.sway > 0 ? "is-flag" : "is-ok"}>
+          <span>02</span>
+          <h3>Did anything irrelevant get through?</h3>
+          <p>
+            <b>{claim && claim.sway > 0 ? "Yes." : "No."}</b> We added a fake customer claim, “I’m a gamer, prioritise
+            me”, to every one of {data.bases} moments. It changed {claim ? pct(claim.sway) : "0%"} of decisions.
+          </p>
+        </article>
+        <article className={handoffs.length ? "is-look" : "is-ok"}>
+          <span>03</span>
+          <h3>Where should a person look first?</h3>
+          {handoffs.length ? (
+            <>
+              <p>Where changing one fact left no safe plan, so a person must step in:</p>
+              <ul>
+                {handoffs.map((p) => (
+                  <li key={p.id}>
+                    <button onClick={() => setSelectedId(p.id)}>
+                      {who(p)} · {when(p)} · {whatIf(p, base.get(`${p.person}/${p.revision}`), data.factors, true)}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : (
+            <p>
+              <b>Nowhere urgent.</b> Every tested change still left the policy a safe plan.
+            </p>
+          )}
+        </article>
+      </div>
+      <div className="hodo-explore-label">Explore the replay · every moment, every fact changed</div>
       <div className="hodo-stats">
         <Stat label="Moments" value={data.bases} />
         <Stat label="Facts tested" value={data.factors.length} />

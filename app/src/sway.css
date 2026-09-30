@@ -662,3 +662,69 @@
   border-color: var(--h-border);
   background: var(--h-raised);
 }
+/* The three questions a reviewer asks, answered before the map. */
+.hodo-questions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.hodo-questions article {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  border: 1px solid var(--h-border);
+  border-left: 3px solid #0f7b5f;
+  border-radius: 10px;
+  background: var(--h-raised);
+}
+.hodo-questions article.is-flag {
+  border-left-color: #c2416b;
+}
+.hodo-questions article.is-look {
+  border-left-color: #d08a3c;
+}
+.hodo-questions span {
+  font: 600 10px var(--h-mono);
+  color: var(--h-muted);
+}
+.hodo-questions h3 {
+  margin: 0;
+  font: 600 14.5px/1.3 var(--sans);
+}
+.hodo-questions p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.hodo-questions ul {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 2px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.hodo-questions li button {
+  width: 100%;
+  padding: 5px 8px;
+  border: 1px solid var(--h-border);
+  border-radius: 6px;
+  background: var(--h-bg);
+  text-align: left;
+  font: 11.5px var(--h-mono);
+  cursor: pointer;
+}
+.hodo-explore-label {
+  margin: 4px 0 8px;
+  font: 600 10px var(--h-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--h-muted);
+}
+@media (max-width: 900px) {
+  .hodo-questions {
+    grid-template-columns: 1fr;
+  }
+}

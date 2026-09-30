@@ -87,10 +87,10 @@ export function householdOutcome(s: Snapshot, person: PersonId) {
 /** The clock is the spine: each stop is one source signal, read across all three homes at once. */
 export const moments = [
   { time: "20:45", title: "Before the signal", lead: "No network signal yet, but each home already has a history. Daniel’s line has been dropping since yesterday, tonight’s restart didn’t fix it, and Aisha has promised to call at 21:15. His hub still looks healthy to our systems." },
-  { time: "21:00", title: "Three homes, one minute", lead: "Daniel’s and Maya’s routers miss the same heartbeat. Sam switches on his new hub for the first time, and it won’t connect." },
+  { time: "21:00", title: "Three homes, one minute", lead: "Daniel’s and Maya’s routers miss the same heartbeat. Sam switches on a new hub for the first time, and it won’t connect." },
   { time: "21:03", title: "A network incident is confirmed", lead: "The affected-service register names exactly which homes are in scope." },
   { time: "21:12", title: "The line comes back", lead: "The incident clears and fresh evidence arrives. A working line does not close every thread." },
-  { time: "21:15", title: "A promise is kept", lead: "The named adviser makes the call she promised, on time." },
+  { time: "21:15", title: "A promise is kept", lead: "The named adviser makes the promised call, on time." },
   { time: "21:18", title: "The customers confirm", lead: "The loop closes with each customer's own evidence." },
   { time: "Sat 08:30", title: "The morning after", lead: "What happened overnight, and who needs to hear about it. A quiet fix is only a selling point if the customer learns about it at the right time." },
   { time: "Mon 08:30", title: "Before the working week", lead: "Heightened monitoring ends, early life is checked, and every message is timed to the household’s own week." },

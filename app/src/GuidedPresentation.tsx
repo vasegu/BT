@@ -29,6 +29,7 @@ export function MomentSpine({
   onBack,
   onExplore,
   onRestart,
+  onFuture,
   target,
   opening = false,
 }: {
@@ -44,6 +45,8 @@ export function MomentSpine({
   onBack: () => void;
   onExplore: () => void;
   onRestart: () => void;
+  /** A separate future-vision mode, apart from tonight's story. */
+  onFuture?: () => void;
 }) {
   const at = target ?? snapshot?.cutoff ?? 0;
   const recorded = snapshot?.session.revision ?? 0;
@@ -96,6 +99,11 @@ export function MomentSpine({
         <button className="link" onClick={onExplore}>
           Explore
         </button>
+        {onFuture && (
+          <button className="link" onClick={onFuture} title="A future vision: a customer’s own AI agent talks to BT’s agent">
+            2030 vision
+          </button>
+        )}
         <button className="link" onClick={onRestart} disabled={busy} title="Start a fresh run of the scenario from 20:45">
           ↺ Restart
         </button>

@@ -18,6 +18,7 @@ import { PhoneExperience } from "./PhoneExperience";
 import { Rhythm } from "./Rhythm";
 import { SwayTile, SwayReview } from "./SwayReview";
 import { GovernanceTile } from "./GovernanceView";
+import { FutureView } from "./FutureView";
 import type { Snapshot, PersonId, SourceEvent, Step } from "./types";
 
 import { momentView } from "./presentation";
@@ -212,6 +213,7 @@ export function App() {
   ) as PanelId | null;
   const records = params.get("view") === "records";
   const review = params.get("view") === "agent-review";
+  const future = params.get("view") === "future";
   const focused = Boolean(panel || records || review);
   const cutoff = params.has("at") ? Number(params.get("at")) : undefined;
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null),
@@ -277,6 +279,8 @@ export function App() {
     void (async () => {
       for (let at = 0; at <= recordedRevision && !stopped; at++)
         await readSnapshot(sessionId, at).catch(() => undefined);
+      // The newest moment is shown as the live view, which is cached under its own key.
+      if (!stopped) await readSnapshot(sessionId).catch(() => undefined);
     })();
     return () => {
       stopped = true;
@@ -908,7 +912,7 @@ export function App() {
           {sessionUnavailable ? "Session unavailable" : error ? "Connection issue" : snapshot?.storage === "supabase" ? "Live" : "Local"}
         </span>
       </header>
-      {!focused && presenting && (
+      {!focused && presenting && !future && (
         <MomentSpine
           snapshot={snapshot}
           status={view?.status ?? null}
@@ -923,6 +927,7 @@ export function App() {
             change({ mode: "explore", person });
           }}
           onRestart={() => void newSession()}
+          onFuture={() => change({ view: "future" })}
         />
       )}
       {!focused && !presenting && (
@@ -1138,7 +1143,7 @@ export function App() {
                   : "Loading snapshot…"}
             </span>
           </div>
-        ) : presenting && !(snapshot && view) ? (
+        ) : future ? null : presenting && !(snapshot && view) ? (
           <MomentSkeleton />
         ) : presenting && snapshot && view ? (
           <MomentLanes
@@ -1212,6 +1217,8 @@ export function App() {
                 : "Loading the data model…"}
             </p>
           </div>
+        ) : future ? (
+          <FutureView onBack={() => change({ view: null })} />
         ) : review ? (
           <AgentReview
             snapshot={snapshot}

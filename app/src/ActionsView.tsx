@@ -5,6 +5,7 @@ import type { Household, PersonId, Snapshot, SourceEvent, Decision, OutcomeEpiso
 import { moments } from "./presentation";
 import { PromiseTimeline } from "./PromiseTimeline";
 import { FocusHeader } from "./FocusHeader";
+import { LearningView } from "./LearningView";
 import { ScopeTag } from "./Scope";
 import "./actions-view.css";
 
@@ -35,7 +36,7 @@ export function ActionsView({
   onCutoff: (at: number) => void;
   onPerson: (p: PersonId) => void;
 }) {
-  const [tab, setTab] = useState<"context" | "outcome">("context");
+  const [tab, setTab] = useState<"context" | "outcome" | "learning">("context");
   const space = useBehaviourSpace(snapshot);
   const first = h.name.split(" ")[0];
   const outcomes = snapshot.operations.outcomes.filter((o) => o.person === h.id);
@@ -67,6 +68,9 @@ export function ActionsView({
           <button role="tab" aria-selected={tab === "outcome"} onClick={() => setTab("outcome")}>
             Outcome evidence
           </button>
+          <button role="tab" aria-selected={tab === "learning"} onClick={() => setTab("learning")}>
+            What we learned
+          </button>
         </div>
       </FocusHeader>
 
@@ -80,8 +84,10 @@ export function ActionsView({
           inspect={inspect}
           onOutcome={() => setTab("outcome")}
         />
-      ) : (
+      ) : tab === "outcome" ? (
         <Outcome h={h} snapshot={snapshot} outcomes={outcomes} inspect={inspect} />
+      ) : (
+        <LearningView h={h} snapshot={snapshot} />
       )}
     </div>
   );
