@@ -1,3 +1,4 @@
+import { formatDateTime } from "./time";
 import { useEffect, useState } from "react";
 import { BehaviourSpace, useBehaviourSpace } from "./BehaviourSpace";
 import "./operations.css";
@@ -14,8 +15,7 @@ import "./actions-view.css";
 // "Outcome evidence" reads the whole evening: promises, recovery and what was proven.
 const ambient = new Set(["router.observation_window", "router.overnight_window", "conversation.message", "contact.authority_recorded"]);
 const pct = (n: number) => `${Math.round(n * 100)}%`;
-const at = (iso: string) =>
-  new Date(iso).toLocaleTimeString("en-GB", { timeZone: "Europe/London", hour: "2-digit", minute: "2-digit" });
+const at = formatDateTime;
 const statusLabel: Record<string, string> = {
   met: "Observed",
   waiting: "Awaiting proof",
@@ -277,11 +277,17 @@ function Outcome({
   outcomes: OutcomeEpisode[];
   inspect: (e: SourceEvent) => void;
 }) {
-  const event = (id: string) => snapshot.events.find((e) => e.id === id);
   return (
     <div className="av-outcome">
       <PromiseTimeline snapshot={snapshot} person={h} onInspect={inspect} />
-      <section className="av-proofs">
+      <OutcomeProofs snapshot={snapshot} outcomes={outcomes} inspect={inspect} />
+    </div>
+  );
+}
+
+export function OutcomeProofs({ snapshot, outcomes, inspect }: { snapshot: Snapshot; outcomes: OutcomeEpisode[]; inspect: (e: SourceEvent) => void }) {
+  const event = (id: string) => snapshot.events.find((e) => e.id === id);
+  return (      <section className="av-proofs">
         <header>
           <h3>Expected → observed</h3>
           <span>Each committed plan states what should change and when. Only a later source record can prove it.</span>
@@ -301,7 +307,7 @@ function Outcome({
                 <em>Expected:</em> {o.target}
               </p>
               <p>
-                <em>Observed:</em> {o.check.finding}
+                <em>Observed:</em> {o.check.finding}{o.check.observedAt && ` · ${at(o.check.observedAt)}`}
               </p>
               {o.check.nextDecision && (
                 <p className="av-next">
@@ -323,7 +329,5 @@ function Outcome({
             </article>
           ))}
         </div>
-      </section>
-    </div>
-  );
+      </section>);
 }

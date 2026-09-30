@@ -40,6 +40,11 @@ test("context sway replays every recorded moment with each fact flipped, without
     for (const p of r.points) assert.ok(Number.isFinite(p.x) && Number.isFinite(p.y));
     // The shipped all-customer review must match what today's dataset + policy produce.
     const baked = JSON.parse(readFileSync(new URL("../public/context-sway.json", import.meta.url), "utf8"));
+    assert.equal(baked.provenance?.scope, "global-static-fixture");
+    assert.equal(baked.provenance.datasetVersion, snap.session.seedVersion);
+    assert.deepEqual(baked.provenance.policyVersions, [...new Set(snap.decisions.map(d => d.policyVersion))].sort());
+    assert.ok(Number.isFinite(Date.parse(baked.provenance.builtAt)));
+    assert.match(baked.provenance.sourceHash, /^[a-f0-9]{64}$/);
     assert.equal(baked.fingerprint, r.fingerprint, "public/context-sway.json is stale: run npm run build:sway");
     assert.deepEqual(
       baked.factors.map((f: { id: string; sway: number }) => [f.id, f.sway]),

@@ -1,8 +1,10 @@
+import { daypart, formatDateTime, sameLondonDay, lifecycle } from "./time";
 import btLogo from "./assets/bt-logo.png";
 import { useState } from "react";
 import { Eve } from "./Eve";
-import type { Snapshot, Household, DemoAction, SourceEvent } from "./types";
+import type { Snapshot, Household, DemoAction } from "./types";
 import "./phone.css";
+import { messageExplanation, monitoringCheckLines } from "./message-explanation";
 
 export function PhoneIcon({
   kind,
@@ -53,91 +55,13 @@ const tabs = ["Home", "Services", "Help", "Account"] as const;
 const day = (iso: string) =>
   new Date(iso).toLocaleDateString("en-GB", { timeZone: "Europe/London", day: "numeric", month: "short" });
 
-/** A customer-language reason for each record a decision relied on. */
-function because(e: SourceEvent, h: Household): { text: string; used: string } | null {
-  const p = e.payload as Record<string, unknown>;
-  switch (e.type) {
-    case "router.heartbeat_overdue":
-      return { text: `Your hub stopped checking in with us at ${time(e.occurredAt)}.`, used: "Your hub’s status signal" };
-    case "router.heartbeat_received":
-      return { text: `Your hub checked in again at ${time(e.occurredAt)}.`, used: "Your hub’s status signal" };
-    case "service.reprofiled":
-      return { text: "We adjusted your line remotely to keep it stable.", used: "Tests already run on your line" };
-    case "monitoring.completed":
-      return { text: "We watched your line closely after the fix: no drops.", used: "Your hub’s status signal" };
-    case "line.drops_detected":
-      return { text: `Our monitoring spotted short drops on your line on ${day(e.occurredAt)}, before you had to tell us.`, used: "Tests already run on your line" };
-    case "line.degradation_detected":
-      return { text: "A routine overnight check found your line getting weaker.", used: "Tests already run on your line" };
-    case "early_life.checkpoint":
-      return { text: "Your plan includes BT TV and Netflix, and they weren’t set up yet.", used: "Your order" };
-    case "product.activated":
-      return { text: `You set up ${String(p.product ?? "a product")}.`, used: "Your order" };
-    case "usage.observed":
-      return { text: "Your household has been using everything.", used: "How you use your services" };
-    case "usage.pattern":
-      return { text: "Your household watches live sport on most weekends.", used: "How you use your services" };
-    case "preference.offers_opt_in":
-      return { text: "You said you’d like to hear about relevant offers.", used: "What you told us" };
-    case "router.setup_attempted":
-      return { text: `You switched on your new hub at ${time(e.occurredAt)}, and it hasn’t connected yet.`, used: "Your hub’s status signal" };
-    case "incident.cleared":
-      return { text: "The network fault in your area has been fixed.", used: "Our network fault register" };
-    case "incident.confirmed":
-      return h.incident
-        ? { text: "Your line is part of a confirmed network fault in your area.", used: "Our network fault register" }
-        : { text: "A nearby network fault does not include your line.", used: "Our network fault register" };
-    case "diagnostic.completed":
-      return p.result === "not_resolved" || p.result === "intermittent"
-        ? { text: `A ${String(p.test ?? "test").replace("_", " ")} at ${time(e.occurredAt)} didn’t fix it, so we won’t ask you to repeat it.`, used: "Tests already run on your line" }
-        : { text: `We ran a ${String(p.test ?? "test").replace("_", " ")} on your line at ${time(e.occurredAt)}.`, used: "Tests already run on your line" };
-    case "service.restored_observed":
-      return { text: `A line test at ${time(e.occurredAt)} shows your connection is back.`, used: "Tests already run on your line" };
-    case "promise.created":
-      return { text: `${h.owner ?? "Your adviser"} promised to call you at ${time(String(p.dueAt ?? e.occurredAt))}, and that still stands.`, used: "Your open case" };
-    case "promise.fulfilled":
-      return { text: `${h.owner ?? "Your adviser"} made the call promised for ${time(e.occurredAt)}.`, used: "Your open case" };
-    case "case.opened":
-      return { text: `You reported this on ${day(e.occurredAt)}.`, used: "Your open case" };
-    case "order.delivered":
-      return { text: `Your hub was delivered on ${day(e.occurredAt)}.`, used: "Your order" };
-    case "activation.pending":
-    case "activation.confirmed":
-      return { text: e.type === "activation.pending" ? "Your line isn’t switched on yet." : "Your line is now switched on.", used: "Your order" };
-    case "activation.first_use_observed":
-      return { text: "We saw your connection being used for the first time.", used: "Your hub’s status signal" };
-    case "customer.confirmed_working":
-      return { text: "You told us it’s working again.", used: "What you told us" };
-    case "preference.stated":
-      return { text: `You told us: ${e.description}`, used: "What you told us" };
-    default:
-      return null;
-  }
-}
-
 /** "Why am I seeing this?" — the decision behind a message, in the customer's language. */
-function WhySheet({ action, snapshot, h, onClose }: { action: DemoAction; snapshot: Snapshot; h: Household; onClose: () => void }) {
-  const decision = snapshot.decisions.find((d) => d.id === action.decisionId);
-  const used = (decision?.evidenceIds ?? [])
-    .map((id) => snapshot.events.find((e) => e.id === id))
-    .filter((e): e is SourceEvent => !!e)
-    // Old orders are real evidence but noise to a customer; only mention recent ones.
-    .filter((e) => !/^(order|activation)\./.test(e.type) || Date.parse(snapshot.clock) - Date.parse(e.occurredAt) < 30 * 864e5)
-    .map((e) => because(e, h))
-    .filter((x): x is { text: string; used: string } => !!x);
-  const reasons = [...new Map(used.map((u) => [u.text, u])).values()];
-  const sources = [...new Set(used.map((u) => u.used))];
-  const held = h.evidence.filter((e) => e.subject === h.id && !(decision?.evidenceIds ?? []).includes(e.id)).length;
-  return (
-    <div className="why-sheet" role="dialog" aria-label="Why am I seeing this?">
-      <div className="why-grab" />
-      <header>
-        <strong>Why am I seeing this?</strong>
-        <button onClick={onClose} aria-label="Close">×</button>
-      </header>
-      <h4>We sent this because</h4>
+export function MessageExplanation({ action, snapshot, h, compact = false }: { action: DemoAction; snapshot: Snapshot; h: Household; compact?: boolean }) {
+  const { decision, at, owner, reasons, sources, held } = messageExplanation(action, snapshot, h.id);
+  return <div className="message-explanation">      <h4>We sent this because</h4>
+      <p>Decision recorded {formatDateTime(at)}.</p>
       <ol>
-        {reasons.slice(0, 4).map((r) => (
+        {reasons.slice(0, compact ? 3 : 4).map((r) => (
           <li key={r.text}>{r.text}</li>
         ))}
         {!reasons.length && <li>{decision?.reason ?? "It relates to your service."}</li>}
@@ -150,20 +74,21 @@ function WhySheet({ action, snapshot, h, onClose }: { action: DemoAction; snapsh
       </div>
       <h4>What we didn’t use</h4>
       <p>
-        {held} other records we hold about your service. Other people and products in your household are not used for
-        service messages.
+        {held} other service records available then were not cited in this decision.{!compact && " A linked-product signal may inform a broadband decision when listed above; it does not authorise an action on that other product."}
       </p>
       <h4>Who’s accountable</h4>
       <p>
-        {h.owner ? `${h.owner}, your named BT adviser.` : "The BT service team."} This message was chosen by our service
-        system with AI assistance and checked against our service policy{decision ? ` (${decision.policyVersion})` : ""}.
+        {owner ? `${owner}, your named BT adviser at that time.` : "The BT service team at that time."}{!compact && " This message was chosen by our service system with AI assistance and checked against our service policy"}{decision ? ` (${decision.policyVersion})` : ""}.
       </p>
-      <footer>
-        <span>You can ask for a person at any time.</span>
-        <small>Ref {action.decisionId.slice(0, 8)} · demo · no real message sent</small>
-      </footer>
-    </div>
-  );
+</div>;
+}
+function WhySheet({ action, snapshot, h, onClose }: { action: DemoAction; snapshot: Snapshot; h: Household; onClose: () => void }) {
+  return <div className="why-sheet" role="dialog" aria-label="Why am I seeing this?">
+    <div className="why-grab" />
+    <header><strong>Why am I seeing this?</strong><button onClick={onClose} aria-label="Close">×</button></header>
+    <MessageExplanation action={action} snapshot={snapshot} h={h} />
+    <footer><span>You can ask for a person at any time.</span><small>Ref {action.decisionId.slice(0, 8)} · demo · no real message sent</small></footer>
+  </div>;
 }
 
 /** The story's next step for an Eve message: what the customer can do next, in one tap. */
@@ -208,11 +133,7 @@ const NEXT_STEP: Record<string, { cta: string; title: string; lines: string[]; p
   "monitor-closed": {
     cta: "See the checks",
     title: "Your weekend of extra checks",
-    lines: [
-      "Friday 21:12 · Your line was adjusted remotely to stop the drops.",
-      "Friday to Monday · We watched it closely: no drops at all.",
-      "Monday 08:25 · Aisha closed your case.",
-    ],
+    lines: [],
     primary: "Thanks",
     done: "You’re all set for the week.",
   },
@@ -269,7 +190,6 @@ export function PhoneExperience({
     startChat ? "Help" : "Home",
   );
   // Conversations with people at BT are part of this customer's own story; older days fold away.
-  const clockDay = new Date(snapshot.clock).toDateString();
   const chat = snapshot.events
     .filter(
       (e) =>
@@ -287,7 +207,9 @@ export function PhoneExperience({
   const STEP_KEY: Record<string, string> = { "early-life": "early-life", offer: "offer", "quiet-fix-note": "quiet-fix", "monitor-close": "monitor-closed" };
   const stepFor = (a: DemoAction) => {
     const id = snapshot.decisions.find((d) => d.id === a.decisionId)?.trace?.selectedId;
-    return id && STEP_KEY[id] ? NEXT_STEP[STEP_KEY[id]] : null;
+    if (!id || !STEP_KEY[id]) return null;
+    const step = NEXT_STEP[STEP_KEY[id]];
+    return id === "monitor-close" ? { ...step, lines: monitoringCheckLines(snapshot.events, h.id, a.time) } : step;
   };
   // The headline follows the household's actual state rather than a marketing line. A recovery
   // is only news to a customer we told about the problem; a quiet watch stays quiet.
@@ -317,7 +239,7 @@ export function PhoneExperience({
   const service = h.confirmed
     ? "Working · confirmed by you"
     : h.firstUseObserved
-      ? "Connected · first use observed"
+      ? `Connected · ${lifecycle(h, snapshot.clock)}`
       : h.restored && actions.length && h.promise && h.owner
         ? h.promiseFulfilled
           ? `Line back · ${h.owner} called you`
@@ -346,11 +268,11 @@ export function PhoneExperience({
     ...actions.map((a) => ({ kind: "eve" as const, action: a, at: a.time, latest: a.id === latestAction?.id })),
   ].sort((a, b) => Date.parse(a.at) - Date.parse(b.at));
   const stamp = (iso: string) =>
-    new Date(iso).toDateString() === clockDay ? time(iso) : `${day(iso)}, ${time(iso)}`;
+    sameLondonDay(iso, snapshot.clock) ? time(iso) : `${day(iso)}, ${time(iso)}`;
   // Anything before the most recent day with news folds away, so the thread opens on what's current.
-  const lastDay = thread.length ? new Date(thread.at(-1)!.at).toDateString() : clockDay;
-  const earlier = thread.filter((t) => new Date(t.at).toDateString() !== lastDay);
-  const recent = thread.filter((t) => new Date(t.at).toDateString() === lastDay);
+  const lastDay = thread.at(-1)?.at ?? snapshot.clock;
+  const earlier = thread.filter((t) => !sameLondonDay(t.at, lastDay));
+  const recent = thread.filter((t) => sameLondonDay(t.at, lastDay));
   const bubble = (item: ThreadItem, i: number) =>
     item.kind === "chat" ? (
       <div key={`c${i}${item.at}`} className={`eve-bubble ${item.who === "You" ? "is-you" : "is-person"}`}>
@@ -431,8 +353,8 @@ export function PhoneExperience({
   );
   const callback = h.promise
     ? h.promiseFulfilled
-      ? `${time(h.promise)} · completed`
-      : `Today, ${time(h.promise)}`
+      ? `${formatDateTime(h.promise)} · completed`
+      : formatDateTime(h.promise)
     : "None arranged";
   return (
     <>
@@ -489,7 +411,7 @@ export function PhoneExperience({
               {page === "Home" ? (
                 <>
                   <p className="phone-greeting">
-                    Good evening, {h.name.split(" ")[0]}
+                    Good {daypart(snapshot.clock)}, {h.name.split(" ")[0]}
                   </p>
                   <h2>{headline}</h2>
 <div className={`phone-service-group${caseCard ? " has-case" : ""}`}>

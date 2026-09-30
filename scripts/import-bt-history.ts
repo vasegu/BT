@@ -62,13 +62,15 @@ export async function importHistory(
       events: fixture.events.length,
       contentHash,
     };
-    await sql`insert into runtime.datasets(id,seed,content_hash,manifest) values(${datasetId},${fixture.seed},${contentHash},${sql.json(manifest)}) on conflict do nothing`;
+    await sql`insert into runtime.datasets(id,seed,content_hash,manifest,fixture_snapshot) values(${datasetId},${fixture.seed},${contentHash},${sql.json(manifest)},${JSON.stringify(fixture)}::text::json) on conflict do nothing`;
     const [dataset] =
       await sql`select content_hash from runtime.datasets where id=${datasetId}`;
     if (dataset.content_hash !== contentHash)
       throw new Error(
         "Dataset version already exists with different content. Increment its version.",
       );
+    // A missing historical snapshot is filled only by an exact content-hash match.
+    await sql`update runtime.datasets set fixture_snapshot=${JSON.stringify(fixture)}::text::json where id=${datasetId} and fixture_snapshot is null`;
     const [prior] =
       await sql`select dataset_id from runtime.sessions where id=${sessionId}`;
     if (prior) {

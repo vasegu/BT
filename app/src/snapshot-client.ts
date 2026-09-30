@@ -5,7 +5,7 @@ const keyFor = (id: string, at?: number) => `${id}/${at ?? "live"}`;
 // The last live snapshot of each replay survives a page refresh (session storage only),
 // so the presenter repaints instantly and the server read refreshes it underneath.
 // Bump when the snapshot shape changes, so a stored copy from an older build is never painted.
-const SHAPE = 2;
+const SHAPE = 4;
 const stored = (id: string) => `bt:snapshot:v${SHAPE}:${id}`;
 function remember(id: string, value: Snapshot) {
   try {

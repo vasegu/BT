@@ -1,3 +1,4 @@
+import { formatDateTime } from "./time";
 import type { Snapshot, PersonId } from "./types";
 import "./rhythm.css";
 
@@ -93,9 +94,9 @@ export function rhythmGrid(snapshot: Snapshot, person: PersonId, DAYS = 30) {
   const firstUse = tonightRecord("activation.first_use_observed");
   const switchedOn = tonightRecord("router.setup_attempted");
   const summary = firstUse
-    ? `Connected for the first time tonight, at ${new Date(firstUse.occurredAt).toLocaleTimeString("en-GB", { timeZone: "Europe/London", hour: "2-digit", minute: "2-digit" })} · no history before`
+    ? `First connection observed ${formatDateTime(firstUse.occurredAt)} · chart shows the current 30-day observation window`
     : switchedOn && silent && silent >= observed.length / 2
-      ? "Switched on for the first time tonight · it has not connected yet"
+      ? `Hub switched on ${formatDateTime(switchedOn.occurredAt)} · no first connection observed yet`
       : !observed.length
     ? "No heartbeat windows recorded yet"
     : silent && silent >= observed.length / 2
@@ -103,7 +104,7 @@ export function rhythmGrid(snapshot: Snapshot, person: PersonId, DAYS = 30) {
       : gaps.length === 0 && faults.length
         ? "Hub always reachable, yet the line dropped this week · line monitoring caught it; the heartbeat alone would miss it"
         : gaps.length === 0
-        ? "Management heartbeat steady for 30 days · tonight is the exception"
+        ? "Recorded management heartbeats are steady in this window"
         : nightGaps / gaps.length > 0.7
           ? "Switched off most nights, back by morning"
           : `Heartbeat mostly steady · ${gaps.length} gaps this month`;
@@ -152,7 +153,7 @@ export function Rhythm({ snapshot, person }: { snapshot: Snapshot; person: Perso
         <span>−30d</span>
         <span>−15d</span>
         {faults.length > 0 && <span className="is-fault">▲ fault on record</span>}
-        <span className={quietNow ? "is-quiet" : ""}>tonight{quietNow ? " · quiet now" : ""}</span>
+        <span className={quietNow ? "is-quiet" : ""}>selected day{quietNow ? " · quiet now" : ""}</span>
       </div>
     </figure>
   );

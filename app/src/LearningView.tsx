@@ -24,21 +24,21 @@ function contribution(loopId: string, h: Household, s: Snapshot): string | null 
     const g = outcomes.find((o) => o.goal === "early-life");
     if (!g) return null;
     return g.check.status === "met"
-      ? `${first}’s household was using everything within three days of the guide: one more guided home that got there.`
+      ? `${first}’s household has recorded included-product usage after the guide. This does not establish that the guide caused it.`
       : `${first}’s household had the guide on Saturday; whether they use everything decides which column this home joins.`;
   }
   return null;
 }
 
 export function LearningView({ h, snapshot }: { h: Household; snapshot: Snapshot }) {
-  const loops = learningLoops();
+  const loops = learningLoops().filter((l) => Date.parse(l.availableFrom) <= Date.parse(snapshot.clock));
   const clock = Date.parse(snapshot.clock);
   return (
     <div className="lv">
       <p className="lv-intro">
-        Every outcome we can observe feeds back into policy. Each loop compares what happened with and without an
-        action, and any change to the policy is signed off by a named role. Figures come from a synthetic cohort of
-        1,000 homes with a fixed seed: they illustrate the mechanism, not BT’s results.
+        This illustrative learning loop compares sampled outcomes with and without an
+        action, and any change to the policy is signed off by a named role. Figures come from synthetic
+        fixed-seed groups with sample sizes shown below. Their outcome probabilities are illustrative assumptions; these are not BT’s results or causal estimates.
       </p>
       {loops.map((l) => {
         const decided = Date.parse(l.change.on) <= clock;
@@ -48,7 +48,7 @@ export function LearningView({ h, snapshot }: { h: Household; snapshot: Snapshot
           <article key={l.id} className={`lv-loop${l.linkedTo === h.id ? " is-mine" : ""}`}>
             <header>
               <h3>{l.question}</h3>
-              <small>{l.metric}</small>
+              <small>{l.metric} · {l.observationWindow} · available {day(l.availableFrom)}</small>
             </header>
             <div className="lv-arms">
               {l.arms.map((a) => (

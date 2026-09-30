@@ -11,6 +11,8 @@ export type LearningLoop = {
   finding: string;
   change: { what: string; kind: "adopted" | "kept" | "expanded"; approver: string; on: string };
   linkedTo: string;
+  availableFrom: string;
+  observationWindow: string;
 };
 
 function rng(seed: number) {
@@ -35,28 +37,34 @@ export function learningLoops(): LearningLoop[] {
   return [
     {
       id: "quiet-fix-note",
+      availableFrom: "2026-09-12T00:00:00Z",
+      observationWindow: "Illustrative seven-day follow-up per synthetic home",
       question: "After a fix the customer didn’t notice, does telling them help?",
       metric: "Contacted us again within 7 days",
       arms: [note, silent],
-      finding: `Homes told about an overnight fix contacted us again ${pct(note.rate)} of the time, against ${pct(silent.rate)} when we fixed it silently. The note costs nothing and prevents calls.`,
+      finding: `Homes told about an overnight fix contacted us again ${pct(note.rate)} of the time, against ${pct(silent.rate)} when we fixed it silently. These sampled outcomes illustrate an assumed association; cost and causal effect were not measured.`,
       change: { what: "A morning note after any overnight fix is now the default", kind: "adopted", approver: "AgentOps lead", on: "2026-09-12" },
       linkedTo: "maya",
     },
     {
       id: "monitoring-window",
+      availableFrom: "2026-09-19T00:00:00Z",
+      observationWindow: "Illustrative days 1–3 and 4–7 after a remote fix",
       question: "After a remote line fix, how long should we watch closely?",
       metric: "Share of re-profiled lines that dropped again",
       arms: [within, after],
-      finding: `${pct(within.rate)} of re-profiled lines dropped again within 72 hours, and only ${pct(after.rate)} in the four days after. Most repeat faults show early, so 72 hours of close watching catches them without watching forever.`,
+      finding: `${pct(within.rate)} of re-profiled lines dropped again within 72 hours, and only ${pct(after.rate)} in the four days after. The sampling assumptions place more repeat faults in the first 72 hours; this is illustrative, not measured policy efficacy.`,
       change: { what: "Heightened monitoring stays at 72 hours", kind: "kept", approver: "AgentOps lead", on: "2026-09-19" },
       linkedTo: "daniel",
     },
     {
       id: "early-life-guide",
+      availableFrom: "2026-11-05T00:00:00Z",
+      observationWindow: "Illustrative 14-day follow-up per synthetic household",
       question: "Does guiding new customers get them using what they bought?",
       metric: "Using every included product by day 14",
       arms: [guided, unguided],
-      finding: `${pct(guided.rate)} of households guided in week one were using everything by day 14, against ${pct(unguided.rate)} without the guide. Guided homes also had lower early churn risk.`,
+      finding: `${pct(guided.rate)} of households guided in week one were using everything by day 14, against ${pct(unguided.rate)} without the guide. Churn and causal effect were not measured.`,
       change: { what: "The guide now also covers linked mobile setup", kind: "expanded", approver: "Chief Customer Officer", on: "2026-11-05" },
       linkedTo: "sam",
     },

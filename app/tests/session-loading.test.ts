@@ -47,7 +47,7 @@ test("sessions share one hash-checked baseline; each session costs one small ove
   const repo = new PostgresRepository(db as any);
   const [a, b] = await Promise.all([repo.fixture("one"), repo.fixture("one")]);
   assert.equal(a, b);
-  assert.equal(a.events.length, 2846);
+  assert.equal(a.events.length, fixture.events.length);
   assert.deepEqual(reads.sort(), ["baseline", "overlay"]);
   const c = await repo.fixture("two");
   assert.equal(c, a, "an unchanged session reuses the baseline object");
@@ -172,4 +172,49 @@ test("shutdown waits for the active worker before closing its database connectio
   release(null);
   await Promise.all([running, closing]);
   assert.equal(closed, true);
+});
+
+test("a dataset snapshot preserves the original profile after the generator moves on", async () => {
+  const original = generateHistory();
+  original.datasetVersion = "historical-A";
+  original.tables["profile.members"][0].historicalMarker = "original profile";
+  const db = async () => [{
+    variant: original.variant,
+    dataset_id: `historical-A/${original.variant}/${original.seed}`,
+    content_hash: fixtureHash(original),
+    fixture_snapshot: JSON.parse(JSON.stringify(original)),
+    events: [], conversations: [], messages: [],
+  }];
+  const repo = new PostgresRepository(db as any);
+  repo.baseline = async () => { throw Error("Historical snapshots must not load today's generator"); };
+  assert.deepEqual(await repo.fixture("old-session"), original);
+});
+
+test("a corrupted stored snapshot cannot silently rewrite historical profiles", async () => {
+  const original = generateHistory();
+  const db = async () => [{fixture_snapshot: original, content_hash: "wrong-hash", events: []}];
+  const repo = new PostgresRepository(db as any);
+  repo.baseline = async () => { throw Error("Unexpected current baseline"); };
+  await assert.rejects(repo.fixture("corrupt-session"), /snapshot.*hash/i);
+});
+
+test("Eve exchanges use the selected replay beat with separate wall-clock audit metadata", async () => {
+  const { clocks } = await import("../server/engine.ts");
+  const writes: {text: string; values: any[]}[] = [];
+  const sql = Object.assign(async (parts: TemplateStringsArray, ...values: any[]) => {
+    writes.push({text: parts.join("?"), values});
+    return [];
+  }, {json: (value: unknown) => value});
+  const repo = new PostgresRepository({begin: async (fn: any) => fn(sql)} as any);
+  repo.session = async () => ({revision: 8}) as any;
+  repo.contexts = async () => [{household: {id: "daniel", contactAllowed: true}, personId: "person", serviceId: "service"}] as any;
+  repo.fixture = async () => generateHistory();
+  await repo.saveConversation("session", "daniel", 2, [{role: "user", content: "Test"}]);
+  const event = writes.find(w => w.text.includes("insert into ingestion.events"))!;
+  assert.equal(event.values[4], clocks[2]);
+  assert.equal(event.values[5], clocks[2]);
+  const payload = event.values.at(-1);
+  assert.equal(payload.replayCutoff, clocks[2]);
+  assert.equal(payload.replayBeat, 2);
+  assert.ok(Number.isFinite(Date.parse(payload.recordedAt)));
 });

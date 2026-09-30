@@ -1,0 +1,379 @@
+surface,persona,moment,panel,content_chars,overflow_px,horizontal_overflow,url
+overview,daniel,0,Customer memory,694,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=0
+overview,daniel,0,Operational memory,560,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=0
+overview,daniel,0,Arbiter,366,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=0
+overview,daniel,0,Customer experience,234,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=0
+overview,daniel,0,Actions & outcomes,285,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=0
+overview,daniel,0,Governance,693,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=0
+overview,daniel,0,Agent review,498,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=0
+overview,daniel,1,Customer memory,707,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=1
+overview,daniel,1,Operational memory,765,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=1
+overview,daniel,1,Arbiter,1168,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=1
+overview,daniel,1,Customer experience,244,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=1
+overview,daniel,1,Actions & outcomes,1195,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=1
+overview,daniel,1,Governance,727,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=1
+overview,daniel,1,Agent review,497,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=1
+overview,daniel,2,Customer memory,776,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=2
+overview,daniel,2,Operational memory,831,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=2
+overview,daniel,2,Arbiter,1057,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=2
+overview,daniel,2,Customer experience,948,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=2
+overview,daniel,2,Actions & outcomes,1136,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=2
+overview,daniel,2,Governance,716,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=2
+overview,daniel,2,Agent review,497,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=2
+overview,daniel,3,Customer memory,921,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=3
+overview,daniel,3,Operational memory,1066,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=3
+overview,daniel,3,Arbiter,1230,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=3
+overview,daniel,3,Customer experience,996,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=3
+overview,daniel,3,Actions & outcomes,1189,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=3
+overview,daniel,3,Governance,697,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=3
+overview,daniel,3,Agent review,497,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=3
+overview,daniel,4,Customer memory,816,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=4
+overview,daniel,4,Operational memory,732,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=4
+overview,daniel,4,Arbiter,1061,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=4
+overview,daniel,4,Customer experience,244,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=4
+overview,daniel,4,Actions & outcomes,1177,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=4
+overview,daniel,4,Governance,701,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=4
+overview,daniel,4,Agent review,497,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=4
+overview,daniel,5,Customer memory,666,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=5
+overview,daniel,5,Operational memory,789,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=5
+overview,daniel,5,Arbiter,1134,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=5
+overview,daniel,5,Customer experience,870,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=5
+overview,daniel,5,Actions & outcomes,1183,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=5
+overview,daniel,5,Governance,696,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=5
+overview,daniel,5,Agent review,497,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=5
+overview,daniel,6,Customer memory,702,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=6
+overview,daniel,6,Operational memory,790,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=6
+overview,daniel,6,Arbiter,1184,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=6
+overview,daniel,6,Customer experience,244,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=6
+overview,daniel,6,Actions & outcomes,1184,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=6
+overview,daniel,6,Governance,696,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=6
+overview,daniel,6,Agent review,497,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=6
+overview,daniel,7,Customer memory,783,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=7
+overview,daniel,7,Operational memory,897,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=7
+overview,daniel,7,Arbiter,1161,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=7
+overview,daniel,7,Customer experience,908,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=7
+overview,daniel,7,Actions & outcomes,1219,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=7
+overview,daniel,7,Governance,699,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=7
+overview,daniel,7,Agent review,497,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=7
+overview,daniel,8,Customer memory,763,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=8
+overview,daniel,8,Operational memory,713,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=8
+overview,daniel,8,Arbiter,955,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=8
+overview,daniel,8,Customer experience,244,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=8
+overview,daniel,8,Actions & outcomes,1209,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=8
+overview,daniel,8,Governance,699,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=8
+overview,daniel,8,Agent review,497,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=8
+overview,sam,0,Customer memory,597,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=0
+overview,sam,0,Operational memory,560,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=0
+overview,sam,0,Arbiter,398,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=0
+overview,sam,0,Customer experience,234,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=0
+overview,sam,0,Actions & outcomes,285,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=0
+overview,sam,0,Governance,693,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=0
+overview,sam,0,Agent review,498,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=0
+overview,sam,1,Customer memory,603,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=1
+overview,sam,1,Operational memory,766,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=1
+overview,sam,1,Arbiter,1121,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=1
+overview,sam,1,Customer experience,893,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=1
+overview,sam,1,Actions & outcomes,564,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=1
+overview,sam,1,Governance,694,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=1
+overview,sam,1,Agent review,497,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=1
+overview,sam,2,Customer memory,635,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=2
+overview,sam,2,Operational memory,828,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=2
+overview,sam,2,Arbiter,1136,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=2
+overview,sam,2,Customer experience,907,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=2
+overview,sam,2,Actions & outcomes,550,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=2
+overview,sam,2,Governance,694,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=2
+overview,sam,2,Agent review,497,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=2
+overview,sam,3,Customer memory,691,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=3
+overview,sam,3,Operational memory,859,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=3
+overview,sam,3,Arbiter,1243,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=3
+overview,sam,3,Customer experience,930,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=3
+overview,sam,3,Actions & outcomes,550,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=3
+overview,sam,3,Governance,694,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=3
+overview,sam,3,Agent review,497,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=3
+overview,sam,4,Customer memory,691,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=4
+overview,sam,4,Operational memory,586,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=4
+overview,sam,4,Arbiter,1080,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=4
+overview,sam,4,Customer experience,244,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=4
+overview,sam,4,Actions & outcomes,550,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=4
+overview,sam,4,Governance,690,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=4
+overview,sam,4,Agent review,497,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=4
+overview,sam,5,Customer memory,795,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=5
+overview,sam,5,Operational memory,1005,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=5
+overview,sam,5,Arbiter,1352,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=5
+overview,sam,5,Customer experience,850,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=5
+overview,sam,5,Actions & outcomes,640,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=5
+overview,sam,5,Governance,696,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=5
+overview,sam,5,Agent review,497,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=5
+overview,sam,6,Customer memory,833,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=6
+overview,sam,6,Operational memory,813,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=6
+overview,sam,6,Arbiter,1146,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=6
+overview,sam,6,Customer experience,922,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=6
+overview,sam,6,Actions & outcomes,959,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=6
+overview,sam,6,Governance,696,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=6
+overview,sam,6,Agent review,497,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=6
+overview,sam,7,Customer memory,798,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=7
+overview,sam,7,Operational memory,787,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=7
+overview,sam,7,Arbiter,1026,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=7
+overview,sam,7,Customer experience,846,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=7
+overview,sam,7,Actions & outcomes,965,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=7
+overview,sam,7,Governance,699,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=7
+overview,sam,7,Agent review,497,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=7
+overview,sam,8,Customer memory,985,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=8
+overview,sam,8,Operational memory,885,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=8
+overview,sam,8,Arbiter,1473,49,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=8
+overview,sam,8,Customer experience,1104,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=8
+overview,sam,8,Actions & outcomes,1260,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=8
+overview,sam,8,Governance,721,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=8
+overview,sam,8,Agent review,497,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=8
+overview,maya,0,Customer memory,601,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=0
+overview,maya,0,Operational memory,560,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=0
+overview,maya,0,Arbiter,393,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=0
+overview,maya,0,Customer experience,234,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=0
+overview,maya,0,Actions & outcomes,285,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=0
+overview,maya,0,Governance,693,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=0
+overview,maya,0,Agent review,498,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=0
+overview,maya,1,Customer memory,693,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=1
+overview,maya,1,Operational memory,903,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=1
+overview,maya,1,Arbiter,1317,11,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=1
+overview,maya,1,Customer experience,244,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=1
+overview,maya,1,Actions & outcomes,562,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=1
+overview,maya,1,Governance,694,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=1
+overview,maya,1,Agent review,497,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=1
+overview,maya,2,Customer memory,707,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=2
+overview,maya,2,Operational memory,804,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=2
+overview,maya,2,Arbiter,1274,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=2
+overview,maya,2,Customer experience,244,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=2
+overview,maya,2,Actions & outcomes,548,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=2
+overview,maya,2,Governance,688,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=2
+overview,maya,2,Agent review,497,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=2
+overview,maya,3,Customer memory,751,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=3
+overview,maya,3,Operational memory,1010,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=3
+overview,maya,3,Arbiter,1248,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=3
+overview,maya,3,Customer experience,244,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=3
+overview,maya,3,Actions & outcomes,625,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=3
+overview,maya,3,Governance,688,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=3
+overview,maya,3,Agent review,497,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=3
+overview,maya,4,Customer memory,755,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=4
+overview,maya,4,Operational memory,578,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=4
+overview,maya,4,Arbiter,1147,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=4
+overview,maya,4,Customer experience,244,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=4
+overview,maya,4,Actions & outcomes,618,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=4
+overview,maya,4,Governance,690,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=4
+overview,maya,4,Agent review,497,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=4
+overview,maya,5,Customer memory,755,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=5
+overview,maya,5,Operational memory,619,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=5
+overview,maya,5,Arbiter,1147,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=5
+overview,maya,5,Customer experience,244,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=5
+overview,maya,5,Actions & outcomes,618,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=5
+overview,maya,5,Governance,690,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=5
+overview,maya,5,Agent review,497,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=5
+overview,maya,6,Customer memory,718,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=6
+overview,maya,6,Operational memory,974,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=6
+overview,maya,6,Arbiter,1302,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=6
+overview,maya,6,Customer experience,927,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=6
+overview,maya,6,Actions & outcomes,618,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=6
+overview,maya,6,Governance,696,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=6
+overview,maya,6,Agent review,497,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=6
+overview,maya,7,Customer memory,672,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=7
+overview,maya,7,Operational memory,558,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=7
+overview,maya,7,Arbiter,671,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=7
+overview,maya,7,Customer experience,244,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=7
+overview,maya,7,Actions & outcomes,618,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=7
+overview,maya,7,Governance,699,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=7
+overview,maya,7,Agent review,497,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=7
+overview,maya,8,Customer memory,735,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=8
+overview,maya,8,Operational memory,705,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=8
+overview,maya,8,Arbiter,803,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=8
+overview,maya,8,Customer experience,244,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=8
+overview,maya,8,Actions & outcomes,618,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=8
+overview,maya,8,Governance,693,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=8
+overview,maya,8,Agent review,497,0,False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=8
+expanded,daniel,0,customer,6478,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=0&panel=customer
+expanded,daniel,1,customer,7749,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=1&panel=customer
+expanded,daniel,2,customer,7932,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=2&panel=customer
+expanded,daniel,3,customer,8253,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=3&panel=customer
+expanded,daniel,4,customer,8212,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=4&panel=customer
+expanded,daniel,5,customer,8024,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=5&panel=customer
+expanded,daniel,6,customer,8203,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=6&panel=customer
+expanded,daniel,7,customer,8168,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=7&panel=customer
+expanded,daniel,8,customer,8069,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=8&panel=customer
+expanded,sam,0,customer,5409,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=0&panel=customer
+expanded,sam,1,customer,6532,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=1&panel=customer
+expanded,sam,2,customer,6738,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=2&panel=customer
+expanded,sam,3,customer,6936,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=3&panel=customer
+expanded,sam,4,customer,6756,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=4&panel=customer
+expanded,sam,5,customer,7019,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=5&panel=customer
+expanded,sam,6,customer,7287,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=6&panel=customer
+expanded,sam,7,customer,7380,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=7&panel=customer
+expanded,sam,8,customer,7922,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=8&panel=customer
+expanded,maya,0,customer,5398,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=0&panel=customer
+expanded,maya,1,customer,6721,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=1&panel=customer
+expanded,maya,2,customer,6830,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=2&panel=customer
+expanded,maya,3,customer,6834,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=3&panel=customer
+expanded,maya,4,customer,6805,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=4&panel=customer
+expanded,maya,5,customer,6837,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=5&panel=customer
+expanded,maya,6,customer,6731,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=6&panel=customer
+expanded,maya,7,customer,6677,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=7&panel=customer
+expanded,maya,8,customer,6846,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=8&panel=customer
+expanded,daniel,0,operations,5769,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=0&panel=operations
+expanded,daniel,1,operations,6247,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=1&panel=operations
+expanded,daniel,2,operations,6521,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=2&panel=operations
+expanded,daniel,3,operations,7214,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=3&panel=operations
+expanded,daniel,4,operations,7163,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=4&panel=operations
+expanded,daniel,5,operations,7373,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=5&panel=operations
+expanded,daniel,6,operations,6886,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=6&panel=operations
+expanded,daniel,7,operations,4320,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=7&panel=operations
+expanded,daniel,8,operations,3974,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=8&panel=operations
+expanded,sam,0,operations,5748,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=0&panel=operations
+expanded,sam,1,operations,6239,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=1&panel=operations
+expanded,sam,2,operations,6500,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=2&panel=operations
+expanded,sam,3,operations,7151,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=3&panel=operations
+expanded,sam,4,operations,7106,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=4&panel=operations
+expanded,sam,5,operations,7354,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=5&panel=operations
+expanded,sam,6,operations,6865,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=6&panel=operations
+expanded,sam,7,operations,4261,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=7&panel=operations
+expanded,sam,8,operations,3977,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=8&panel=operations
+expanded,maya,0,operations,5755,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=0&panel=operations
+expanded,maya,1,operations,6233,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=1&panel=operations
+expanded,maya,2,operations,6493,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=2&panel=operations
+expanded,maya,3,operations,7167,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=3&panel=operations
+expanded,maya,4,operations,7105,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=4&panel=operations
+expanded,maya,5,operations,7313,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=5&panel=operations
+expanded,maya,6,operations,6883,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=6&panel=operations
+expanded,maya,7,operations,4260,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=7&panel=operations
+expanded,maya,8,operations,3952,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=8&panel=operations
+expanded,daniel,0,arbiter,844,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=0&panel=arbiter
+expanded,daniel,1,arbiter,6416,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=1&panel=arbiter
+expanded,daniel,2,arbiter,6248,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=2&panel=arbiter
+expanded,daniel,3,arbiter,6597,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=3&panel=arbiter
+expanded,daniel,4,arbiter,6308,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=4&panel=arbiter
+expanded,daniel,5,arbiter,6118,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=5&panel=arbiter
+expanded,daniel,6,arbiter,6414,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=6&panel=arbiter
+expanded,daniel,7,arbiter,6375,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=7&panel=arbiter
+expanded,daniel,8,arbiter,5733,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=8&panel=arbiter
+expanded,sam,0,arbiter,838,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=0&panel=arbiter
+expanded,sam,1,arbiter,5662,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=1&panel=arbiter
+expanded,sam,2,arbiter,5961,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=2&panel=arbiter
+expanded,sam,3,arbiter,5929,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=3&panel=arbiter
+expanded,sam,4,arbiter,5837,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=4&panel=arbiter
+expanded,sam,5,arbiter,6388,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=5&panel=arbiter
+expanded,sam,6,arbiter,6078,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=6&panel=arbiter
+expanded,sam,7,arbiter,5950,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=7&panel=arbiter
+expanded,sam,8,arbiter,7043,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=8&panel=arbiter
+expanded,maya,0,arbiter,840,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=0&panel=arbiter
+expanded,maya,1,arbiter,6245,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=1&panel=arbiter
+expanded,maya,2,arbiter,6432,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=2&panel=arbiter
+expanded,maya,3,arbiter,6240,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=3&panel=arbiter
+expanded,maya,4,arbiter,6181,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=4&panel=arbiter
+expanded,maya,5,arbiter,6205,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=5&panel=arbiter
+expanded,maya,6,arbiter,6305,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=6&panel=arbiter
+expanded,maya,7,arbiter,5352,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=7&panel=arbiter
+expanded,maya,8,arbiter,5367,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=8&panel=arbiter
+expanded,daniel,0,phone,1831,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=0&panel=phone
+expanded,daniel,1,phone,2043,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=1&panel=phone
+expanded,daniel,2,phone,2318,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=2&panel=phone
+expanded,daniel,3,phone,2572,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=3&panel=phone
+expanded,daniel,4,phone,2500,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=4&panel=phone
+expanded,daniel,5,phone,2560,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=5&panel=phone
+expanded,daniel,6,phone,2662,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=6&panel=phone
+expanded,daniel,7,phone,2118,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=7&panel=phone
+expanded,daniel,8,phone,2039,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=8&panel=phone
+expanded,sam,0,phone,1577,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=0&panel=phone
+expanded,sam,1,phone,1860,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=1&panel=phone
+expanded,sam,2,phone,2134,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=2&panel=phone
+expanded,sam,3,phone,2381,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=3&panel=phone
+expanded,sam,4,phone,2371,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=4&panel=phone
+expanded,sam,5,phone,2557,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=5&panel=phone
+expanded,sam,6,phone,2016,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=6&panel=phone
+expanded,sam,7,phone,1939,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=7&panel=phone
+expanded,sam,8,phone,2131,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=8&panel=phone
+expanded,maya,0,phone,1485,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=0&panel=phone
+expanded,maya,1,phone,1778,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=1&panel=phone
+expanded,maya,2,phone,1780,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=2&panel=phone
+expanded,maya,3,phone,1608,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=3&panel=phone
+expanded,maya,4,phone,1606,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=4&panel=phone
+expanded,maya,5,phone,1610,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=5&panel=phone
+expanded,maya,6,phone,1941,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=6&panel=phone
+expanded,maya,7,phone,1858,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=7&panel=phone
+expanded,maya,8,phone,1835,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=8&panel=phone
+expanded,daniel,0,actions,874,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=0&panel=actions
+expanded,daniel,1,actions,1912,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=1&panel=actions
+expanded,daniel,2,actions,1872,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=2&panel=actions
+expanded,daniel,3,actions,1759,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=3&panel=actions
+expanded,daniel,4,actions,1444,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=4&panel=actions
+expanded,daniel,5,actions,1592,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=5&panel=actions
+expanded,daniel,6,actions,1497,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=6&panel=actions
+expanded,daniel,7,actions,1837,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=7&panel=actions
+expanded,daniel,8,actions,1539,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=8&panel=actions
+expanded,sam,0,actions,871,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=0&panel=actions
+expanded,sam,1,actions,1506,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=1&panel=actions
+expanded,sam,2,actions,1508,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=2&panel=actions
+expanded,sam,3,actions,1479,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=3&panel=actions
+expanded,sam,4,actions,1261,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=4&panel=actions
+expanded,sam,5,actions,1548,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=5&panel=actions
+expanded,sam,6,actions,1586,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=6&panel=actions
+expanded,sam,7,actions,1646,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=7&panel=actions
+expanded,sam,8,actions,1756,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=8&panel=actions
+expanded,maya,0,actions,872,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=0&panel=actions
+expanded,maya,1,actions,1472,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=1&panel=actions
+expanded,maya,2,actions,1429,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=2&panel=actions
+expanded,maya,3,actions,1304,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=3&panel=actions
+expanded,maya,4,actions,1231,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=4&panel=actions
+expanded,maya,5,actions,1235,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=5&panel=actions
+expanded,maya,6,actions,1628,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=6&panel=actions
+expanded,maya,7,actions,1293,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=7&panel=actions
+expanded,maya,8,actions,1294,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=8&panel=actions
+expanded,daniel,0,governance,4902,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=0&panel=governance
+expanded,daniel,1,governance,6614,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=1&panel=governance
+expanded,daniel,2,governance,6708,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=2&panel=governance
+expanded,daniel,3,governance,7063,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=3&panel=governance
+expanded,daniel,4,governance,6801,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=4&panel=governance
+expanded,daniel,5,governance,6812,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=5&panel=governance
+expanded,daniel,6,governance,6857,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=6&panel=governance
+expanded,daniel,7,governance,6870,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=7&panel=governance
+expanded,daniel,8,governance,6685,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=8&panel=governance
+expanded,sam,0,governance,4893,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=0&panel=governance
+expanded,sam,1,governance,6433,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=1&panel=governance
+expanded,sam,2,governance,6735,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=2&panel=governance
+expanded,sam,3,governance,6858,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=3&panel=governance
+expanded,sam,4,governance,6757,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=4&panel=governance
+expanded,sam,5,governance,6881,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=5&panel=governance
+expanded,sam,6,governance,6902,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=6&panel=governance
+expanded,sam,7,governance,6848,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=7&panel=governance
+expanded,sam,8,governance,7110,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=8&panel=governance
+expanded,maya,0,governance,4896,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=0&panel=governance
+expanded,maya,1,governance,6498,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=1&panel=governance
+expanded,maya,2,governance,6783,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=2&panel=governance
+expanded,maya,3,governance,6799,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=3&panel=governance
+expanded,maya,4,governance,6800,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=4&panel=governance
+expanded,maya,5,governance,6804,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=5&panel=governance
+expanded,maya,6,governance,6872,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=6&panel=governance
+expanded,maya,7,governance,6570,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=7&panel=governance
+expanded,maya,8,governance,6585,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=8&panel=governance
+expanded,daniel,0,review,9955,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=0&panel=review
+expanded,daniel,1,review,9945,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=1&panel=review
+expanded,daniel,2,review,9945,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=2&panel=review
+expanded,daniel,3,review,9945,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=3&panel=review
+expanded,daniel,4,review,9945,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=4&panel=review
+expanded,daniel,5,review,9945,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=5&panel=review
+expanded,daniel,6,review,9945,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=6&panel=review
+expanded,daniel,7,review,9945,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=7&panel=review
+expanded,daniel,8,review,9945,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=daniel&at=8&panel=review
+expanded,sam,0,review,9955,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=0&panel=review
+expanded,sam,1,review,9945,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=1&panel=review
+expanded,sam,2,review,9945,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=2&panel=review
+expanded,sam,3,review,9945,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=3&panel=review
+expanded,sam,4,review,9945,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=4&panel=review
+expanded,sam,5,review,9945,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=5&panel=review
+expanded,sam,6,review,9945,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=6&panel=review
+expanded,sam,7,review,9945,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=7&panel=review
+expanded,sam,8,review,9945,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=sam&at=8&panel=review
+expanded,maya,0,review,9955,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=0&panel=review
+expanded,maya,1,review,9945,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=1&panel=review
+expanded,maya,2,review,9945,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=2&panel=review
+expanded,maya,3,review,9945,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=3&panel=review
+expanded,maya,4,review,9945,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=4&panel=review
+expanded,maya,5,review,9945,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=5&panel=review
+expanded,maya,6,review,9945,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=6&panel=review
+expanded,maya,7,review,9945,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=7&panel=review
+expanded,maya,8,review,9945,not measured (scrolling inspectors),False,http://localhost:5185/?session=7e5f1471-687d-45bc-b2bd-3507719a29d0&person=maya&at=8&panel=review

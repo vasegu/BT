@@ -131,7 +131,7 @@ export function arbitrate(
     "complete",
     h.confirmed
       ? `${h.name.split(" ")[0]} confirmed the connection works. The diagnostic history and any callback record remain attached.`
-      : "Closing recovery requires an explicit customer confirmation. It has not been recorded yet.",
+      : "Acknowledging recovery requires an explicit customer confirmation. It has not been recorded yet.",
     "A new fault report opens a fresh assessment.",
     "Record confirmed outcome; publish the case update.",
     [["Confirmed outcome", 100]],
@@ -146,7 +146,7 @@ export function arbitrate(
         "customer.confirmed_working",
       ),
       gate('no_unresolved_test','No contradictory fresh test',!contraryTest,
-        contraryTest ? 'The customer reply differs from the latest failed line test. Reconcile them before closing the case.' : 'No newer contradictory service test.',
+        contraryTest ? 'The customer reply differs from the latest failed line test. Reconcile them before acknowledging recovery.' : 'No newer contradictory service test.',
         'service.failure_observed','service.restored_observed'),
       once("confirmation"),
     ],
@@ -450,6 +450,36 @@ export function arbitrate(
     ],
     [],
   );
+  const approval = latest("policy.offer_approved");
+  const faultFreeDays = Number(approval?.payload.faultFreeDays);
+  const faultWindowStart = Date.parse(time) - faultFreeDays * 24 * 3600e3;
+  const dated = h.evidence.filter(e => Date.parse(e.occurredAt) <= Date.parse(time) && Date.parse(e.receivedAt) <= Date.parse(time))
+    .sort((a, b) => Date.parse(a.occurredAt) - Date.parse(b.occurredAt));
+  // Household evidence is already scoped to its selected service by buildContext.
+  const faults = dated.filter(e =>
+    (e.subject === h.id &&
+      ((e.type === "case.opened" && e.payload.owner !== "Activation team") ||
+       ["service.failure_observed", "line.degradation_detected", "line.drops_detected"].includes(e.type))) ||
+    (e.type === "incident.confirmed" &&
+      ((Array.isArray(e.payload.affected) && e.payload.affected.includes(h.id)) || e.affectedServiceIds?.includes(h.serviceId))));
+  const overlappingFaults = faults.filter(fault => {
+    const resolution = dated.find(e => e.occurredAt >= fault.occurredAt && (
+      fault.type === "case.opened"
+        ? e.subject === h.id && e.type === "case.closed" && e.payload.caseId === fault.payload.caseId
+        : fault.type === "incident.confirmed"
+          ? e.type === "incident.cleared" && e.payload.incidentId === fault.payload.incidentId
+          : e.subject === h.id &&
+            ["service.restored_observed", "service.reprofiled"].includes(e.type) && e.payload.lineTest === "passed"
+    ));
+    return !resolution || Date.parse(resolution.occurredAt) >= faultWindowStart;
+  });
+  const faultWindow = gate("fault-window", "Approval’s fault-free window",
+    Number.isFinite(faultFreeDays) && faultFreeDays > 0 ? overlappingFaults.length === 0 : null,
+    Number.isFinite(faultWindowStart)
+      ? `Checked ${new Date(faultWindowStart).toISOString()} to ${time}: ${overlappingFaults.length} recorded fault interval(s) overlap the required ${faultFreeDays} days.`
+      : "Approval has no enforceable fault-free interval.",
+    "policy.offer_approved");
+  faultWindow.evidenceIds.push(...faults.map(e => e.id), ...dated.filter(e => ["case.closed", "incident.cleared", "service.restored_observed"].includes(e.type)).map(e => e.id));
   propose(
     "offer",
     "commercial.relevance",
@@ -474,10 +504,13 @@ export function arbitrate(
           ? "An unresolved service relationship takes precedence."
           : "No unresolved obligation recorded.",
         "case.opened",
+        "case.closed",
         "promise.created",
         "incident.confirmed",
+        "incident.cleared",
         "customer.confirmed_working",
       ),
+      faultWindow,
       gate(
         "intent",
         "Relevant product intent",
@@ -505,7 +538,7 @@ export function arbitrate(
     "Keep the extra monitoring running",
     "observation",
     "watch",
-    "The line was re-profiled on Friday and is under 72 hours of heightened monitoring. No drops so far, and nothing new to tell the customer.",
+    "The line was re-profiled on Friday and remains under heightened monitoring until Monday 28 September at 21:12 BST. No drops so far, and nothing new to tell the customer.",
     "Any drop, or the end of the monitoring window.",
     "Keep watching the line; send nothing while there is nothing to say.",
     [["Heightened monitoring", 104]],
@@ -522,12 +555,13 @@ export function arbitrate(
     "Close the extra checks and tell the customer",
     "recovery",
     "complete",
-    `Heightened monitoring found no drops since Friday. ${h.profile?.usage?.note.includes("Works from home") ? `${h.name.split(" ")[0]} works from home, so the note goes out before the working day starts.` : "The note goes out at a sensible hour."}`,
+    "The full 72-hour monitoring window ended without drops. Its dated completion record is now available.",
     "A new fault report opens a fresh assessment.",
-    "Close monitoring and the case; send one short note timed to the household’s week.",
+    "Record the completed monitoring and closed case; send one short follow-up note.",
     [["Monitoring complete", 112]],
     [
       gate("complete", "Heightened monitoring finished", h.monitoring === "complete", h.monitoring === "complete" ? "No drops across the monitoring window." : "Monitoring still running or not started.", "monitoring.completed"),
+      gate("case_closed", "Formal case closure recorded", h.caseStatus !== "open" && h.evidence.some(e => e.type === "case.closed"), "The completed checks and the dated case closure are separate records.", "case.closed"),
       gate("stable", "No new fault", !contraryTest, "No failed test since the fix.", "service.failure_observed"),
       once("monitor-close"),
     ],
@@ -664,6 +698,8 @@ export function arbitrate(
         ? { kind: "load-bearing", why: `${owner} promised a ${due} callback. A named person stays accountable; automation supports them rather than replacing them.` }
         : open && h.restartTried
           ? { kind: "load-bearing", why: "A repeat fault the customer has already chased. A named owner stays on it." }
+          : h.quietFix === "fixed"
+            ? { kind: "routine", why: "The remote fix is verified. Send a short note after quiet hours so the customer knows what changed." }
           : quiet
             ? { kind: "routine", why: "Normal for this household. Removing friction here means saying nothing." }
             : delivered
@@ -708,6 +744,17 @@ export function arbitrate(
     "activation",
     "firstUseObserved",
     "contactAllowed",
+    "incidentCleared",
+    "habit",
+    "restartTried",
+    "reprofiled",
+    "monitoring",
+    "quietFix",
+    "unused",
+    "engaged",
+    "offerSignal",
+    "offersAllowed",
+    "offerApproved",
   ];
   const previous = snapshot.decisions.filter((d) => d.person === h.id).at(-1);
   return {
@@ -723,7 +770,7 @@ export function arbitrate(
     held: candidates
       .filter((c) => c.status !== "selected")
       .map((c) => ({ title: c.title, reason: c.reason, wake: c.wake })),
-    policyVersion: "bt-context-v2.1",
+    policyVersion: "bt-context-v2.2",
     moment,
     trace: {
       version: 1,
@@ -732,7 +779,7 @@ export function arbitrate(
       previousDecisionId: previous?.id || null,
       candidates,
       changes: fields
-        .filter((field) => before[field] !== h[field])
+        .filter((field) => JSON.stringify(before[field]) !== JSON.stringify(h[field]))
         .map((field) => ({
           field,
           before: String(before[field] ?? "—"),
@@ -770,11 +817,10 @@ export function serviceMessage(
       : "";
   switch (selected) {
     case "monitor-close": {
-      const work = h.profile?.usage?.note.includes("Works from home");
       return {
         key: "monitor-closed",
-        title: "Your line has been stable since Friday",
-        body: `We kept a closer eye on your line all weekend after Friday’s fix: no drops at all. ${work ? "You’re all set for the working week. " : ""}${h.owner ? `${h.owner} has closed your case. ` : ""}If anything changes, we’ll see it.`,
+        title: "Your 72-hour line check completed",
+        body: "The extra monitoring after your 25 September fix completed on 28 September with no drops. Your case is closed. If you notice a new problem, let us know.",
       };
     }
     case "quiet-fix-note":
@@ -808,7 +854,7 @@ export function serviceMessage(
       return {
         key: "confirmed",
         title: `Thanks for confirming, ${h.name.split(" ")[0]}`,
-        body: "Your connection is working again and your case is now closed. Your history is here if you need us.",
+        body: "Thanks for confirming your connection is working again. We’ve recorded your reply; your case and any extra monitoring stay with the care team until the checks are complete.",
       };
     case "restoration":
       return {

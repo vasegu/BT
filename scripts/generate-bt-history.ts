@@ -279,6 +279,31 @@ export function generateHistory(
         "router",
       );
     }
+    // The weeks after tonight: the same four-hour windows keep arriving, so the rhythm stays
+    // readable on Saturday, Monday and six weeks on. Deterministic, so earlier draws are untouched.
+    if (since("2.3"))
+      for (
+        let t = Date.parse("2026-09-26T00:00:00Z");
+        t < Date.parse("2026-11-06T08:00:00Z");
+        t += 4 * 3600000
+      )
+        emit(
+          a,
+          `${a}-window-${t}`,
+          "router.observation_window",
+          iso(t + 4 * 3600000),
+          "Four-hour management observation window. Missing telemetry does not determine the physical cause.",
+          {
+            intervalStart: iso(t),
+            intervalEnd: iso(t + 4 * 3600000),
+            expected: 240,
+            received: a === "maya" ? null : 240 - ((t / 3600000) % 3),
+            coverage: a === "maya" ? "aggregate_unavailable" : "observed",
+            usage: null,
+          },
+          null,
+          "router",
+        );
   }
   // Explicit second product on Maya's existing authorised account; no address-based identity merging.
   put("operations.products", "product-mobile", {
@@ -633,6 +658,7 @@ export function generateHistory(
       e.personId === id("person-maya") &&
       e.type === "router.observation_window",
   )) {
+    if (since("2.4") && String(e.payload.intervalStart) >= "2026-09-26T00:00:00" && e.payload.coverage === "aggregate_unavailable") continue;
     const start = Date.parse(String(e.payload.intervalStart)),
       end = Date.parse(String(e.payload.intervalEnd));
     const overlaps = nights.filter(
@@ -1072,7 +1098,7 @@ export function generateHistory(
     churn("sam", "2026-09-28T07:30:00Z", "low", 0.12, ["All three products in use"]);
     churn("sam", "2026-11-06T19:00:00Z", "low", 0.08, ["Heavy, growing use across the household"]);
     churn("maya", "2026-06-01T00:00:00Z", "medium", 0.35, ["Out of contract since May"]);
-    churn("maya", "2026-09-28T07:30:00Z", "medium", 0.29, ["Out of contract since May", "Read our note about a proactive fix"]);
+    churn("maya", "2026-09-28T07:30:00Z", "medium", 0.29, ["Out of contract since May", since("2.4") ? "Proactive line fix verified" : "Read our note about a proactive fix"]);
 
     // Share of the household's weekly use, by hour (0–23, London).
     const shape = (peaks: [number, number, number][]) =>
@@ -1109,12 +1135,21 @@ export function generateHistory(
       "Heightened monitoring for 72 hours after the re-profile: any drop opens a fresh investigation straight away.",
       { window: "72h", until: "2026-09-28T20:12:00Z" }, "diagnostics");
     at("daniel", "daniel-monitoring-night", "monitoring.checked", "2026-09-26T06:00:00Z",
-      "Overnight: no drops in ten hours of heightened monitoring. Line sync stable.",
-      { drops: 0, hours: 10 }, "router");
-    at("daniel", "daniel-monitoring-done", "monitoring.completed", "2026-09-28T07:20:00Z",
-      "Heightened monitoring finished early on the working day: no drops since Friday 21:12. Line sync stable.",
-      { drops: 0, hours: 59 }, "router");
-    at("daniel", "daniel-case-closed", "case.closed", "2026-09-28T07:25:00Z",
+      since("2.4") ? "Overnight: no drops in 9 hours 48 minutes of heightened monitoring. Line sync stable." : "Overnight: no drops in ten hours of heightened monitoring. Line sync stable.",
+      { drops: 0, hours: since("2.4") ? 9.8 : 10 }, "router");
+    if (since("2.4")) {
+    at("daniel", "daniel-monitoring-monday", "monitoring.checked", "2026-09-28T07:20:00Z",
+      "Monday morning: no drops in 59 hours 8 minutes. Monitoring continues until 21:12 BST.",
+      { drops: 0, hours: 59 + 8 / 60 }, "router");
+    at("daniel", "daniel-monitoring-done", "monitoring.completed", "2026-09-28T20:12:00Z",
+      "The full 72-hour monitoring window completed with no drops.",
+      { drops: 0, hours: 72, coverage: "complete", windowStart: "2026-09-25T20:12:00Z" }, "router");
+    } else {
+      at("daniel", "daniel-monitoring-done", "monitoring.completed", "2026-09-28T07:20:00Z",
+        "Heightened monitoring finished early on the working day: no drops since Friday 21:12. Line sync stable.",
+        { drops: 0, hours: 59 }, "router");
+    }
+    at("daniel", "daniel-case-closed", "case.closed", since("2.4") ? "2026-09-28T20:15:00Z" : "2026-09-28T07:25:00Z",
       "Aisha closed case DR-2041: fault fixed, promise kept, line stable since Friday.",
       { caseId: "DR-2041", owner: "Aisha" }, "crm").caseId = id("daniel-case");
     // Maya · a quiet fix overnight, told in the morning.
@@ -1123,7 +1158,7 @@ export function generateHistory(
       { snrMarginDb: 3.1, normalDb: 6 }, "diagnostics");
     at("maya", "maya-reprofile", "service.reprofiled", "2026-09-26T02:40:00Z",
       "Remote line re-profile restored a healthy noise margin before anyone in the home noticed.",
-      { action: "dlm_reprofile", reason: "falling_noise_margin" }, "diagnostics");
+      { action: "dlm_reprofile", reason: "falling_noise_margin", ...(since("2.4") ? { lineTest: "passed", snrMarginDb: 6 } : {}) }, "diagnostics");
     // Sam · early life, every step, then a relevant offer.
     at("sam", "sam-early-life", "early_life.checkpoint", "2026-09-26T07:00:00Z",
       "Morning after the first connection: BT TV and Netflix are included in Sam’s plan but not set up.",
@@ -1142,7 +1177,7 @@ export function generateHistory(
       { sportWeekends: 5, of: 6, concurrentStreams: 3 }, "router");
     at(null, "offer-approved", "policy.offer_approved", "2026-10-01T09:00:00Z",
       "Autumn TV upgrade offer approved by the Memory & Trust Officer for customers who opted in, with no open fault in the last 30 days.",
-      { offerId: "AUTUMN-TV-26", approver: "Memory & Trust Officer" }, "crm");
+      { offerId: "AUTUMN-TV-26", ...(since("2.4") ? { faultFreeDays: 30 } : {}), approver: "Memory & Trust Officer" }, "crm");
   }
   f.events.sort(
     (a, b) =>

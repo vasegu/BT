@@ -1,4 +1,4 @@
-import type { Snapshot, PersonId } from "./types.ts";
+import type { Snapshot, PersonId, Household } from "./types.ts";
 export type PresentationPanel =
   | "customer"
   | "operations"
@@ -33,11 +33,11 @@ export function householdOutcome(s: Snapshot, person: PersonId) {
           : "waiting",
       title:
         s.cutoff >= 8
-          ? "Stable for six weeks. Nothing to do."
+          ? "Recovery retained. No new fault recorded."
           : h.monitoring === "complete"
             ? "Held all weekend. Case closed."
             : h.monitoring === "active" && s.cutoff >= 6
-              ? "Fixed, and watched for 72 hours."
+              ? "Fixed; 72-hour monitoring is still running."
               : h.confirmed && h.restored
           ? "Recovery confirmed"
           : h.restored
@@ -93,7 +93,7 @@ export const moments = [
   { time: "21:15", title: "A promise is kept", lead: "The named adviser makes the promised call, on time." },
   { time: "21:18", title: "The customers confirm", lead: "The loop closes with each customer's own evidence." },
   { time: "Sat 08:30", title: "The morning after", lead: "What happened overnight, and who needs to hear about it. A quiet fix is only a selling point if the customer learns about it at the right time." },
-  { time: "Mon 08:30", title: "Before the working week", lead: "Heightened monitoring ends, early life is checked, and every message is timed to the household’s own week." },
+  { time: "Mon 08:30", title: "Before the working week", lead: "Heightened monitoring continues towards its deadline, early life is checked, and every message is timed to the household’s own week." },
   { time: "6 Nov", title: "Six weeks on", lead: "What the relationship looks like now: what’s in use, what they might enjoy next, and what the system has learned." },
 ].map((m, i) => ({ ...m, chapter: i >= 6 ? 2 : 1 }));
 /** The two chapters of the story. */
@@ -148,8 +148,9 @@ export function momentView(s: Snapshot) {
     const inIncident = !!h.incident;
     const touchedByShared = shared.length > 0 && inIncident;
     const panels: PresentationPanel[] = [];
-    if (fresh.length) panels.push("customer");
-    if (shared.length) panels.push("operations");
+    const changes = changeSummary(s, person);
+    if (fresh.length || changes.find(r => r.panel === "customer")?.changed) panels.push("customer");
+    if (shared.length || changes.find(r => r.panel === "operations")?.changed) panels.push("operations");
     if (changed) panels.push("arbiter");
     if (message || fresh.some((e) => /fulfilled|confirmed|first_use|restored|received/.test(e.type)))
       panels.push("actions");
@@ -163,7 +164,7 @@ export function momentView(s: Snapshot) {
       lastMessage,
       fresh,
       inIncident,
-      involved: s.cutoff === 0 || fresh.length > 0 || changed || !!message || touchedByShared,
+      involved: s.cutoff === 0 || fresh.length > 0 || changed || !!message || touchedByShared || changes[0].changed,
       outcome: householdOutcome(s, person),
       panels,
     };
@@ -178,6 +179,7 @@ const RECORD_TEXT: Record<string, (first: string, owner: string) => string> = {
   "router.setup_attempted": () => "Hub switched on, not connected",
   "router.heartbeat_received": () => "Hub back online",
   "service.restored_observed": () => "Line test passed",
+  "service.failure_observed": () => "Fresh line test failed",
   "promise.fulfilled": (_f, owner) => `${owner}’s promised call made`,
   "customer.confirmed_working": (first) => `${first} confirmed it works`,
   "activation.confirmed": () => "Line provisioned",
@@ -185,7 +187,7 @@ const RECORD_TEXT: Record<string, (first: string, owner: string) => string> = {
   "mobile.activity_observed": () => "Linked mobile active at home",
   "service.reprofiled": () => "Line re-profiled remotely",
   "monitoring.started": () => "72-hour monitoring started",
-  "monitoring.checked": () => "Overnight check: no drops",
+  "monitoring.checked": () => "Monitoring checkpoint: no drops",
   "monitoring.completed": () => "Monitoring complete: no drops",
   "case.closed": (_f, owner) => `${owner} closed the case`,
   "line.degradation_detected": () => "Routine test found the line degrading",
@@ -194,7 +196,7 @@ const RECORD_TEXT: Record<string, (first: string, owner: string) => string> = {
   "usage.observed": () => "Household using everything",
   "usage.pattern": () => "Sport watched most weekends",
 };
-export type ChangeRow = { panel: PresentationPanel | "governance"; name: string; text: string; changed: boolean };
+export type ChangeRow = { panel: PresentationPanel | "governance" | "review"; name: string; text: string; changed: boolean };
 
 /** One line per panel: what changed for this customer at this moment, compared with the moment before. */
 export function changeSummary(s: Snapshot, person: PersonId): ChangeRow[] {
@@ -211,9 +213,17 @@ export function changeSummary(s: Snapshot, person: PersonId): ChangeRow[] {
   const outcomes = s.operations.outcomes.filter((o) => o.person === person);
   const from = Date.parse(CLOCKS[Math.max(0, at - 1)]),
     to = Date.parse(CLOCKS[at]);
+  const newDevices = at > 0 ? (h.profile?.devices ?? []).filter(d => Date.parse(d.since) > from && Date.parse(d.since) <= to) : [];
+  const operational = mine.filter(e => /^(router\.|service\.|line\.|monitoring\.|activation\.)/.test(e.type));
+  const recordText = (e: Snapshot["events"][number]) => e.type === "monitoring.checked"
+    ? `Monitoring checkpoint: ${e.payload.drops === 0 ? "no drops" : `${e.payload.drops ?? "unknown"} drops`}`
+    : RECORD_TEXT[e.type](first, owner);
+  const customerChanges = [...mine.map(recordText), ...newDevices.map(d => `New device: ${d.name}`)];
   const proven = outcomes.filter((o) => o.check.status === "met" && o.check.observedAt && Date.parse(o.check.observedAt) > from && Date.parse(o.check.observedAt) <= to);
   const opened = outcomes.filter((o) => o.revision === at);
   const chosen = decision?.trace?.candidates.find((c) => c.id === decision.trace?.selectedId);
+  const previousChosen = previous?.trace?.candidates.find((c) => c.id === previous.trace?.selectedId);
+  const authorityChanged = !!chosen && JSON.stringify([chosen.authority, chosen.checks.filter(c => /authority|commercial|contact/.test(c.id)).map(c => c.state)]) !== JSON.stringify([previousChosen?.authority, previousChosen?.checks.filter(c => /authority|commercial|contact/.test(c.id)).map(c => c.state)]);
   const waiting = decision?.trace?.candidates.filter((c) => c.status === "awaiting") ?? [];
   const withdrawn = (previous?.trace?.candidates ?? []).filter(
     (c) => c.status === "awaiting" && decision?.trace?.candidates.find((x) => x.id === c.id)?.status !== "awaiting",
@@ -227,14 +237,14 @@ export function changeSummary(s: Snapshot, person: PersonId): ChangeRow[] {
     {
       panel: "customer",
       name: "Customer memory",
-      text: at === 0 ? "History loaded before tonight’s first signal" : mine.length ? mine.map((e) => RECORD_TEXT[e.type](first, owner)).join(" · ") : "Nothing new for this home",
-      changed: at === 0 || mine.length > 0,
+      text: at === 0 ? "History loaded before tonight’s first signal" : customerChanges.length ? customerChanges.join(" · ") : "Nothing new for this home",
+      changed: at === 0 || customerChanges.length > 0,
     },
     {
       panel: "operations",
       name: "Operational memory",
-      text: shared.length ? shared.map(incidentText).join(" · ") : at === 0 ? "No network signal yet" : "No change on the network",
-      changed: shared.length > 0,
+      text: shared.length || operational.length ? [...shared.map(incidentText), ...operational.map(recordText)].join(" · ") : at === 0 ? "No network signal yet" : "No new operational evidence",
+      changed: shared.length > 0 || operational.length > 0,
     },
     {
       panel: "arbiter",
@@ -274,7 +284,23 @@ export function changeSummary(s: Snapshot, person: PersonId): ChangeRow[] {
           : chosen?.authority
             ? `${decision?.moment?.kind === "load-bearing" ? "Load-bearing" : "Routine"} · ${chosen.authority.mode === "autonomous" ? "ran on its own" : chosen.authority.mode === "human-led" ? `led by ${chosen.authority.role}` : `signed off by ${chosen.authority.role}`}`
             : "No decision to authorise yet",
-      changed: withdrawn.length > 0 || waiting.length > 0 || (!!decision && (!previous || previous.title !== decision.title)),
+      changed: withdrawn.length > 0 || waiting.length > 0 || authorityChanged,
     },
+    { panel: "review", name: "Agent review", text: "Post-evaluation · inspect context sensitivity", changed: false },
   ];
+}
+
+/** Current recovery context; retained fault history must not read as a live fault. */
+export function recoveryMemoryNote(h: Household): string | null {
+  if (!h.restored || h.firstUseObserved) return null;
+  const recovery = h.confirmed ? "The customer confirmed the recovery." : "A fresh service observation records recovery.";
+  const callback = h.promise ? h.promiseFulfilled ? " The promised callback was kept." : " The promised callback is still outstanding." : "";
+  const followThrough = h.monitoring === "active"
+    ? ` Extra monitoring continues; ${h.owner ?? "the care team"} retains the case until formal closure.`
+    : h.caseStatus === "none" && h.evidence.some(e => e.type === "case.closed")
+      ? ` ${h.monitoring === "complete" ? "Monitoring completion and case closure are" : "Case closure is"} recorded; earlier fault evidence remains as history.`
+      : h.caseStatus === "open"
+        ? ` ${h.owner ?? "The care team"} retains the case until formal closure.`
+        : " Earlier fault evidence remains as history; new evidence determines the next response.";
+  return recovery + callback + followThrough;
 }

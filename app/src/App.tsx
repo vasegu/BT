@@ -848,7 +848,7 @@ export function App() {
         )}
         <span className="runtime-badge" title={snapshot?.storage === "supabase" ? "Supabase runtime" : "Local runtime"}>
           <i className={error ? "offline" : ""} />
-          {sessionUnavailable ? "Session unavailable" : error ? "Connection issue" : snapshot?.storage === "supabase" ? "Live" : "Local"}
+          {sessionUnavailable ? "Session unavailable" : error ? "Connection issue" : snapshot?.storage === "supabase" ? "Supabase connected" : "Local"}
         </span>
       </header>
       {!focused && presenting && !future && (
@@ -1306,7 +1306,7 @@ export function App() {
             {decision?.trace?.assessment
               ? "Jev + policy"
               : "rule-derived decisions"}{" "}
-            · demo actions
+            · demo actions · {snapshot?.session.seedVersion ?? "dataset loading"}
           </span>
           <span>
             {snapshot

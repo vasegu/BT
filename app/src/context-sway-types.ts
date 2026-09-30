@@ -28,6 +28,13 @@ export type SwayFactor = {
   examples: { from: string; to: string; person: PersonId; revision: number }[];
 };
 export type SwayData = {
+  provenance?: {
+    builtAt: string;
+    datasetVersion: string;
+    policyVersions: string[];
+    sourceHash: string;
+    scope: "global-static-fixture";
+  };
   fingerprint: string;
   points: SwayPoint[];
   factors: SwayFactor[];

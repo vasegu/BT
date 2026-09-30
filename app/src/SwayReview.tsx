@@ -22,6 +22,13 @@ import { ScopeTag } from "./Scope";
 // Visual language follows the Jio CX Hodoscope action map: warm neutrals, hairlines,
 // letterspaced mono labels, square equal-aspect plot, KDE contour bands.
 export const actionLabels: Record<string, string> = {
+  monitor: "Continue monitoring",
+  "quiet-fix-note": "Notify after overnight fix",
+  "monitor-close": "Close verified monitoring",
+  "early-life-complete": "Confirm included-product use",
+  steady: "No further action",
+  "early-life": "Guide included products",
+  offer: "Present approved offer",
   recovery: "Keep recovery plan",
   restoration: "Recovery follow-up",
   confirmation: "Confirm recovery",
@@ -34,6 +41,7 @@ export const actionLabels: Record<string, string> = {
   defer: "Hold / review",
 };
 export const ACTION_TINT: Record<string, string> = {
+  monitor: "#0f7b5f", "monitor-close": "#0f7b5f", "quiet-fix-note": "#2a78d6", "early-life": "#a15c07", "early-life-complete": "#0e9aa7", offer: "#5514b4", steady: "#8a8494",
   // The app's own palette: brand purple, the household/status colours used across the panels.
   incident: "#c2416b",
   recovery: "#5514b4",
@@ -49,19 +57,19 @@ export const ACTION_TINT: Record<string, string> = {
 const PERSON_TINT: Record<PersonId, string> = { daniel: "#5514b4", sam: "#0f7b5f", maya: "#a15c07" };
 const KIND_TINT: Record<SwayPoint["kind"], string> = { recorded: "#2a2a2a", base: "#5514b4", single: "#c2416b", pair: "#b9b3c1" };
 const KIND_LABEL: Record<SwayPoint["kind"], string> = {
-  recorded: "live decision",
+  recorded: "fixture rules decision",
   base: "policy replay",
   single: "what-if · one fact changed",
   pair: "what-if · two facts changed",
 };
-const MOMENT_TINT = ["#E4DAF5", "#C9B5EC", "#A88BDC", "#8460C8", "#5514B4", "#3A0C80"];
+const MOMENT_TINT = ["#E4DAF5", "#C9B5EC", "#A88BDC", "#8460C8", "#5514B4", "#3A0C80", "#0f7b5f", "#a15c07", "#2a78d6"];
 const nameOf = (a: string) => actionLabels[a] || a;
 const pct = (n: number) => `${Math.round(n * 100)}%`;
 const who = (p: SwayPoint) => householdNames[p.person].split(" ")[0];
 const when = (p: SwayPoint) => moments[p.revision]?.time ?? "";
 /** A what-if in plain English. Removing a fact the customer had, or adding one they didn't. */
 function whatIf(p: SwayPoint, base: SwayPoint | undefined, factors: SwayData["factors"], short = false) {
-  if (p.kind === "recorded") return short ? "live" : "The decision that actually ran.";
+  if (p.kind === "recorded") return short ? "fixture" : "The rules decision recorded in the static fixture.";
   if (p.kind === "base") return short ? "replay" : "The same moment replayed through the policy, nothing changed.";
   const name = who(p);
   const parts = p.flips.map((id) => {
@@ -486,7 +494,7 @@ function DensityScale({ mode }: { mode: Density }) {
 export function SwayTile() {
   const { data, error } = useSway();
   if (error) return <p className="hodo-empty">{error}</p>;
-  if (!data) return <p className="hodo-empty">Replaying every recorded context through the policy…</p>;
+  if (!data) return <p className="hodo-empty">Loading the global static rules fixture…</p>;
   return <TileBody data={data} />;
 }
 function TileBody({ data }: { data: SwayData }) {
@@ -498,7 +506,7 @@ function TileBody({ data }: { data: SwayData }) {
   return (
     <div className="hodo hodo-tile-wrap">
       <p className="hodo-tile-sub">
-        What the agent saw → what it did · <b>{data.points.length}</b> contexts
+        Global static rules fixture · <b>{data.points.length}</b> contexts · independent of selected customer and replay
       </p>
       <div className="hodo-tile">
         <Scatter compact rows={data.points} allRows={data.points} groupKey={g.key} colorOf={g.color} density="groups" densityGroup="" labels={{}} />
@@ -520,7 +528,7 @@ function TileBody({ data }: { data: SwayData }) {
 export function SwayReview({ onLegacy }: { onLegacy: () => void }) {
   const { data, error } = useSway();
   if (error) return <p className="hodo-empty">{error}</p>;
-  if (!data) return <p className="hodo-empty">Replaying every recorded context through the policy and embedding it…</p>;
+  if (!data) return <p className="hodo-empty">Loading the global static rules fixture…</p>;
   return <Review data={data} onLegacy={onLegacy} />;
 }
 
@@ -583,8 +591,11 @@ function Review({ data, onLegacy }: { data: SwayData; onLegacy: () => void }) {
     <div className="hodo hodo-page">
       <header className="av-head">
         <div>
-          <span className="eyebrow">Agent review · all three customers · every moment</span>
-          <h2>Did anything unexpected sway the action?</h2>
+          <span className="eyebrow">Static rules review · three synthetic households · fixture moments</span>
+          <h2>Which facts change the rules decision?</h2>
+          <p>Global static rules fixture across three synthetic households; this is not the selected customer’s evaluation and does not follow the replay clock or test the live Jev model. Fingerprint {data.fingerprint.slice(0, 12)}. {data.provenance
+            ? `Dataset ${data.provenance.datasetVersion} · policy ${data.provenance.policyVersions.join(", ")} · built ${data.provenance.builtAt} · source ${data.provenance.sourceHash.slice(0, 12)}.`
+            : "Legacy artifact: dataset, policy and build provenance are unavailable; a match to this replay is not verified."}</p>
           <p className="av-arch">
             <span>Architecture</span>
             {ARCHITECTURE["Agent review"].component}
@@ -614,10 +625,9 @@ function Review({ data, onLegacy }: { data: SwayData; onLegacy: () => void }) {
         </article>
         <article className={claim && claim.sway > 0 ? "is-flag" : "is-ok"}>
           <span>02</span>
-          <h3>Did anything irrelevant get through?</h3>
+          <h3>Did claim wording change the rules result?</h3>
           <p>
-            <b>{claim && claim.sway > 0 ? "Yes." : "No."}</b> We added a fake customer claim, “I’m a gamer, prioritise
-            me”, to every one of {data.bases} moments. It changed {claim ? pct(claim.sway) : "0%"} of decisions.
+            <b>{claim && claim.sway > 0 ? "Rules changed." : "Policy facts stayed unchanged."}</b> Claim wording was varied across {data.bases} fixture moments. Rules decisions changed {claim ? pct(claim.sway) : "0%"}. This does not measure live-model resistance to customer claims.
           </p>
         </article>
         <article className={handoffs.length ? "is-look" : "is-ok"}>
@@ -649,7 +659,7 @@ function Review({ data, onLegacy }: { data: SwayData; onLegacy: () => void }) {
         <Stat label="Facts tested" value={data.factors.length} />
         <Stat label="Top sway" value={pct(top.sway)} sub={top.label.toLowerCase()} />
         {claim && <Stat label="Claim sway" value={pct(claim.sway)} sub="unverified claim" />}
-        <Stat label="Live = replay" value={data.policyAgreement === null ? "—" : pct(data.policyAgreement)} />
+        <Stat label="Fixture = rules replay" value={data.policyAgreement === null ? "—" : pct(data.policyAgreement)} />
         <Stat label="Flagged" value={Object.values(labels).filter((v) => v === "investigate").length} />
       </div>
       <div className="hodo-body">
@@ -687,7 +697,7 @@ function Review({ data, onLegacy }: { data: SwayData; onLegacy: () => void }) {
             )}
             <StackedSelect label="filter · fact" value={fact} onChange={setFact} options={[["all", "all"], ...data.factors.map((f): [string, string] => [f.id, f.label])]} />
             <StackedSelect label="filter · household" value={person} onChange={setPerson} options={[["all", "all"], ["daniel", "Daniel"], ["sam", "Sam"], ["maya", "Maya"]]} />
-            <StackedSelect label="filter · variant" value={kind} onChange={setKind} options={[["all", "all"], ["recorded", "live decisions"], ["base", "policy replays"], ["single", "what-if · one fact"], ["pair", "what-if · two facts"]]} />
+            <StackedSelect label="filter · variant" value={kind} onChange={setKind} options={[["all", "all"], ["recorded", "fixture decisions"], ["base", "policy replays"], ["single", "what-if · one fact"], ["pair", "what-if · two facts"]]} />
             <div className="hodo-count">{rows.length} / {data.points.length}</div>
             <div className="hodo-legend">
               <span className="hodo-label">Legend</span>
@@ -703,7 +713,7 @@ function Review({ data, onLegacy }: { data: SwayData; onLegacy: () => void }) {
                 ))}
               <span className="hodo-legend-row is-key">
                 <i className="is-ring" />
-                live decision
+                fixture rules decision
               </span>
             </div>
           </div>
@@ -888,7 +898,7 @@ function Drawer({
         {point.flips.length > 0 ? (
           <p className="hodo-whatif">
             <b>What-if test · not a real record.</b> {whatIfText} We changed this on purpose to test the policy; the
-            real {householdNames[point.person].split(" ")[0]} at {when(point)} is the live decision.
+            fixture {householdNames[point.person].split(" ")[0]} at {when(point)} is the fixture rules decision.
           </p>
         ) : (
           <p className="hodo-whatif is-real">
@@ -910,7 +920,7 @@ function Drawer({
         ) : (
           <p className="hodo-quote">
             {point.kind === "recorded"
-              ? "“This is the decision that actually ran.”"
+              ? "“This is the rules decision recorded in the static fixture.”"
               : point.kind === "base"
                 ? "“Policy replay of the recorded context, with no facts changed.”"
                 : "“Same action as the real decision: this change did not sway the plan.”"}

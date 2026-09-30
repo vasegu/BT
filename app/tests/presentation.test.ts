@@ -95,3 +95,17 @@ test("the final comparison keeps three proof types separate and preserves unreso
   assert.equal(householdOutcome(legacy, "sam").state, "waiting");
 });
 
+
+test('the presenter retains all seven sections and marks only material governance changes', async () => {
+  const { changeSummary } = await import('../src/presentation.ts');
+  const run = await replay();
+  for (const s of run) {
+    assert.deepEqual(changeSummary(s, 'daniel').map(x => x.panel), ['customer','operations','arbiter','phone','actions','governance','review']);
+  }
+  const unchanged = structuredClone(run[2]);
+  const prior = unchanged.decisions.filter(d => d.person === 'maya' && d.revision === 1).at(-1)!;
+  const now = unchanged.decisions.filter(d => d.person === 'maya' && d.revision === 2).at(-1)!;
+  now.title = 'A different explanation of the same permitted watch';
+  now.trace = structuredClone(prior.trace);
+  assert.equal(changeSummary(unchanged,'maya').find(x=>x.panel==='governance')?.changed, false);
+});

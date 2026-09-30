@@ -41,6 +41,44 @@ const fieldLabels: Record<string, string> = {
   contactAllowed: "contact.allowed",
 };
 
+export function EligibilityChecks({ checks, context, inspect }: {
+  checks: Proposal["checks"]; context: SourceEvent[]; inspect: (e: SourceEvent) => void;
+}) {
+  return (<div className="aw-checks">
+              <div className="aw-subhead">
+                <span>Eligibility checks</span>
+                <small>Hard gates</small>
+              </div>
+              {checks.map((check) => (
+                <div className={`aw-check ${check.state}`} key={check.id}>
+                  <i>
+                    {check.state === "pass"
+                      ? "✓"
+                      : check.state === "fail"
+                        ? "×"
+                        : "?"}
+                  </i>
+                  <div>
+                    <strong>{check.label}</strong>
+                    <p>{check.detail}</p>
+                    {check.evidenceIds.length > 0 && (
+                      <button
+                        onClick={() => {
+                          const e = context.find(
+                            (e) => e.id === check.evidenceIds[0],
+                          );
+                          if (e) inspect(e);
+                        }}
+                      >
+                        Source {short(check.evidenceIds[0])} ↗
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>);
+}
+
 function PanelHead({
   number,
   title,
@@ -620,39 +658,7 @@ export function ArbiterWorkbench({
               </div>
             )}
             {assessment && <ModelReadout assessment={assessment} />}
-            <div className="aw-checks">
-              <div className="aw-subhead">
-                <span>Eligibility checks</span>
-                <small>Hard gates</small>
-              </div>
-              {selected.checks.map((check) => (
-                <div className={`aw-check ${check.state}`} key={check.id}>
-                  <i>
-                    {check.state === "pass"
-                      ? "✓"
-                      : check.state === "fail"
-                        ? "×"
-                        : "?"}
-                  </i>
-                  <div>
-                    <strong>{check.label}</strong>
-                    <p>{check.detail}</p>
-                    {check.evidenceIds.length > 0 && (
-                      <button
-                        onClick={() => {
-                          const e = context.find(
-                            (e) => e.id === check.evidenceIds[0],
-                          );
-                          if (e) inspect(e);
-                        }}
-                      >
-                        Source {short(check.evidenceIds[0])} ↗
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
+            <EligibilityChecks checks={selected.checks} context={context} inspect={inspect} />
             <div className="aw-factors">
               <div className="aw-subhead">
                 <span>

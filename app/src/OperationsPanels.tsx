@@ -1,3 +1,4 @@
+import { nextLondonBatch } from "./time";
 import type { NetworkView, PersonId, Snapshot, SourceEvent } from "./types";
 import { householdNames } from "./presentation";
 import { rhythmGrid } from "./Rhythm";
@@ -21,11 +22,7 @@ export function LiveNotNightly({ snapshot, inspect }: { snapshot: Snapshot; insp
     (e) => OPS.has(e.source) && !ROUTINE.has(e.type) && Date.parse(e.receivedAt) <= clock && Date.parse(e.receivedAt) > clock - 3 * HOUR,
   );
   // The next 02:00 London run after each signal happened.
-  const nightly = (iso: string) => {
-    const d = new Date(iso);
-    const next = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + (d.getUTCHours() >= 1 ? 1 : 0), 1, 0);
-    return next;
-  };
+  const nightly = nextLondonBatch;
   const lags = tonight.map((e) => Date.parse(e.receivedAt) - Date.parse(e.occurredAt));
   const worstBatch = Math.max(0, ...tonight.map((e) => nightly(e.occurredAt) - Date.parse(e.occurredAt)));
   const mins = (ms: number) => (ms < 60e3 ? "0 min" : `${Math.round(ms / 60e3)} min`);
@@ -183,7 +180,7 @@ export function Provisioning({ snapshot, focus }: { snapshot: Snapshot; focus: P
 }
 
 /** Moment 4: "one household, several products, one relationship". */
-export function Households({ net, focus }: { net: NetworkView; focus: PersonId }) {
+export function Households({ net, focus, households = [] }: { net: NetworkView; focus: PersonId; households?: import("./types").Household[] }) {
   return (
     <div className="ops-households">
       {(net.households ?? []).map((hh) => (
@@ -204,7 +201,7 @@ export function Households({ net, focus }: { net: NetworkView; focus: PersonId }
             {hh.services.map((s) => (
               <span key={s.reference} className={`is-${s.product}`}>
                 {s.product}
-                <small>{s.lifecycle}</small>
+                <small>{s.product === "broadband" ? households.find((h) => h.id === hh.person)?.activation ?? s.lifecycle : s.lifecycle}</small>
               </span>
             ))}
           </div>

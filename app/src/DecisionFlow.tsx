@@ -1,4 +1,6 @@
 import type { Decision, Household, Snapshot } from "./types";
+import { formatDateTime } from "./time";
+import { hasRecordedApproval } from "./governance-status";
 import { moments } from "./presentation";
 import "./decision-flow.css";
 
@@ -11,21 +13,29 @@ export type Fact = { text: string; weight?: "high" | "low" };
 export function memoryFacts(h: Household): Fact[] {
   const first = h.name.split(" ")[0];
   const out: Fact[] = [];
+  if (h.offerSignal) out.push({ text: h.offerSignal, weight: "high" });
+  if (h.engaged) out.push({ text: "Included products are now in use", weight: "high" });
+  if (h.unused?.length) out.push({ text: `Included, not yet used: ${h.unused.join(", ")}`, weight: "high" });
+  if (h.monitoring) out.push({ text: h.monitoring === "active" ? "Heightened monitoring is still running" : "Monitoring completed with recorded evidence", weight: "high" });
+  if (h.quietFix === "fixed") out.push({ text: "Overnight line repair verified", weight: "high" });
   if (h.caseStatus === "open" && h.owner && h.owner !== "Activation team")
     out.push({
       text: h.evidence.some((e) => e.type === "line.drops_detected")
         ? `Our monitoring spotted drops before ${first} noticed; ${h.owner} opened the case and got in touch first`
-        : `Open case with ${h.owner}; line dropping since before tonight`,
+        : `Open case with ${h.owner}; earlier line drops retained`,
       weight: "high",
     });
   if (h.promise && !h.promiseFulfilled) out.push({ text: `${h.owner ?? "Adviser"} promised a call at ${at(h.promise)}`, weight: "high" });
-  if (h.promise && h.promiseFulfilled) out.push({ text: `${h.owner ?? "Adviser"} kept the ${at(h.promise)} call` });
+  if (h.promise && h.promiseFulfilled) out.push({ text: `${h.evidence.filter(e => e.type === "promise.fulfilled").at(-1)?.payload.owner ?? h.owner ?? "Adviser"} kept the call on ${formatDateTime(h.promise)}` });
   if (h.restartTried && !h.restored) out.push({ text: "A restart was already tried and failed", weight: "high" });
   if (h.activation.includes("unconfirmed")) out.push({ text: "New hub delivered; never connected", weight: "high" });
-  if (h.firstUseObserved) out.push({ text: "First connection observed tonight", weight: "high" });
+  if (h.firstUseObserved) {
+    const firstUse = h.evidence.find(e => e.type === "activation.first_use_observed");
+    out.push({ text: `First connection verified${firstUse ? ` · ${formatDateTime(firstUse.occurredAt)}` : ""}` });
+  }
   if (h.habit) out.push({ text: `Told us: “${h.habit}”`, weight: "high" });
   const linked = h.linkedServices?.find((s) => s.recent);
-  if (linked) out.push({ text: "Their linked mobile is in normal use at home" });
+  if (linked) out.push({ text: `Linked mobile observation · ${formatDateTime(linked.recent!.at)}` });
   if (h.restored) out.push({ text: "Connection seen working again" });
   if (h.confirmed) out.push({ text: `${first} confirmed it works`, weight: "high" });
   if (!out.length) out.push({ text: "Nothing on record that changes the response", weight: "low" });
@@ -45,6 +55,13 @@ export function operationsFacts(h: Household, s: Snapshot): Fact[] {
     "activation.first_use_observed": "First connection observed",
     "promise.fulfilled": "Adviser’s call logged",
     "customer.confirmed_working": "Customer reply received",
+    "monitoring.checked": "Monitoring checkpoint recorded",
+    "monitoring.completed": "Monitoring complete",
+    "service.reprofiled": "Line repaired remotely",
+    "line.degradation_detected": "Line degradation detected",
+    "early_life.checkpoint": "Included-product usage checked",
+    "usage.pattern": "Usage pattern recorded",
+    "policy.offer_approved": "Offer authority recorded",
   };
   const fresh = [...new Set(signals.map((e) => labels[e.type]).filter(Boolean))];
   if (fresh.length) out.push({ text: `New at ${moments[s.cutoff].time}: ${fresh.join(", ").toLowerCase()}`, weight: "high" });
@@ -56,8 +73,8 @@ export function operationsFacts(h: Household, s: Snapshot): Fact[] {
         : { text: `${inc.id}: this line is outside it`, weight: "high" },
     );
   else out.push({ text: "No confirmed network incident", weight: "low" });
-  const free = s.operations.slots.filter((x) => !x.person && !x.owner).length;
-  if (free) out.push({ text: `${free} callback slot${free === 1 ? "" : "s"} free tonight`, weight: "low" });
+  const free = s.operations.network?.slots.filter(x => x.state === "free" && Date.parse(x.startsAt) >= Date.parse(s.clock)).length ?? s.operations.slots.filter((x) => !x.person && !x.owner && Date.parse(x.time) >= Date.parse(s.clock)).length;
+  if (free) out.push({ text: `${free} callback slot${free === 1 ? "" : "s"} available ahead`, weight: "low" });
   return out;
 }
 
@@ -72,7 +89,7 @@ export function governanceFacts(h: Household, d: Decision): Fact[] {
           ? "This action may run on its own"
           : chosen.authority.mode === "human-led"
             ? `${chosen.authority.role} leads; the system supports`
-            : `Needs sign-off from ${chosen.authority.role}`,
+            : hasRecordedApproval(d, h.evidence) ? `Prior approval recorded · ${chosen.authority.role}` : `Needs sign-off from ${chosen.authority.role}`,
     });
   out.push({ text: h.contactAllowed ? "In-app service messages permitted" : "No permission to message", weight: h.contactAllowed ? "low" : "high" });
   for (const c of d.trace?.candidates.filter((x) => x.status === "awaiting") ?? [])

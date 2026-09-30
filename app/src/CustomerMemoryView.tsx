@@ -3,7 +3,9 @@ import { FocusHeader } from "./FocusHeader";
 import { Rhythm, rhythmGrid } from "./Rhythm";
 import { MemoryMap } from "./MemoryMap";
 import { HouseholdCard, RelationshipCard, HistoryCard, RightNowCard, profileNotes } from "./CustomerProfile";
+import { formatDateTime, daypart, lifecycle } from "./time";
 import { ScopeTag } from "./Scope";
+import { recoveryMemoryNote } from "./presentation";
 import "./customer-memory-view.css";
 
 // Customer memory, expanded. The pitch's common thread: given a signal, what does BT know
@@ -12,8 +14,7 @@ import "./customer-memory-view.css";
 type Epistemic = "stated" | "observed" | "derived";
 type Fact = { text: string; how: Epistemic; at: string; event?: SourceEvent };
 
-const time = (iso: string) =>
-  new Date(iso).toLocaleTimeString("en-GB", { timeZone: "Europe/London", hour: "2-digit", minute: "2-digit" });
+const time = formatDateTime;
 const day = (iso: string) => new Date(iso).toLocaleDateString("en-GB", { timeZone: "Europe/London", day: "numeric", month: "short", year: "numeric" });
 const age = (iso: string, clock: string) => {
   const ms = Date.parse(clock) - Date.parse(iso);
@@ -57,6 +58,9 @@ function layers(h: Household, snapshot: Snapshot): Record<Layer, Fact[]> {
     push("behavioural", { text: m.text, how: "derived", at: m.availableFrom });
 
   // service
+  push("service", { text: `Relationship stage · ${lifecycle(h, snapshot.clock)}`, how: "derived", at: snapshot.clock });
+  if (h.engaged) push("service", { text: "Included products in use", how: "observed", at: (last("usage.observed") ?? { receivedAt: snapshot.clock }).receivedAt });
+  if (h.offerSignal) push("intentional", { text: `${h.offerSignal} · offers ${h.offersAllowed ? "opted in" : "not permitted"} · approval ${h.offerApproved ? "recorded" : "not recorded"}`, how: "observed", at: (last("usage.pattern") ?? { receivedAt: snapshot.clock }).receivedAt });
   push("service", { text: `Broadband · ${h.activation}`, how: "observed", at: (last("activation.confirmed") ?? last("order.delivered") ?? firstOrder ?? { receivedAt: snapshot.clock }).receivedAt });
   const opened = last("case.opened");
   if (h.caseStatus === "open" && opened)
@@ -112,7 +116,7 @@ function layers(h: Household, snapshot: Snapshot): Record<Layer, Fact[]> {
         ? { text: `${String(incident.payload.incidentId)} cleared at ${time(cleared.occurredAt)}`, how: "observed", at: cleared.receivedAt, event: cleared }
         : { text: `Inside confirmed incident ${String(incident.payload.incidentId)}`, how: "observed", at: incident.receivedAt, event: incident },
     );
-  push("context", { text: `${new Date(snapshot.clock).toLocaleDateString("en-GB", { weekday: "long", timeZone: "Europe/London" })} evening, ${time(snapshot.clock)}`, how: "observed", at: snapshot.clock });
+  push("context", { text: `${formatDateTime(snapshot.clock)} · ${daypart(snapshot.clock)}`, how: "observed", at: snapshot.clock });
 
   // emotional: the customer's own words
   for (const e of mine.filter((e) => e.type === "conversation.message" && (e.payload as { speakerRole?: string }).speakerRole === "customer").slice(-3))
@@ -122,7 +126,7 @@ function layers(h: Household, snapshot: Snapshot): Record<Layer, Fact[]> {
   const promise = last("promise.created");
   if (promise)
     push("intentional", {
-      text: `${h.owner ?? "Adviser"} promised a callback at ${time(String((promise.payload as { dueAt?: string }).dueAt ?? promise.occurredAt))} · ${h.promiseFulfilled ? "kept" : "outstanding"}`,
+      text: `${String((promise.payload as { owner?: string }).owner ?? h.owner ?? "Adviser")} promised a callback at ${formatDateTime(String((promise.payload as { dueAt?: string }).dueAt ?? promise.occurredAt))} · ${h.promiseFulfilled ? "kept" : "outstanding"}`,
       how: "stated",
       at: promise.receivedAt,
       event: promise,
@@ -138,7 +142,7 @@ function layers(h: Household, snapshot: Snapshot): Record<Layer, Fact[]> {
 
 /** Which kind of situation this household is in, read from its memory rather than its name. */
 function situation(h: Household): "fault" | "setup" | "routine" | "none" {
-  if (h.activation !== "Activation confirmed" || h.firstUseObserved) return "setup";
+  if (!h.firstUseObserved && h.activation !== "Activation confirmed") return "setup";
   if (h.caseStatus === "open" || h.promise || h.restartTried) return "fault";
   if (h.habit) return "routine";
   return "none";
@@ -176,7 +180,12 @@ function PNote({ note: [what, so] }: { note: [string, string] }) {
   );
 }
 function Note({ kind, h }: { kind: keyof typeof NOTES; h: Household }) {
-  const [what, so] = NOTES[kind][situation(h)](h.name.split(" ")[0], h.owner ?? "the adviser");
+  const recovered = recoveryMemoryNote(h);
+  const [what, so] = recovered
+    ? ["Dated service history alongside the latest recovery and follow-through evidence.", recovered]
+    : h.firstUseObserved
+    ? [kind === "rhythm" ? "Recorded heartbeat coverage in the current 30-day window; unknown windows remain unknown." : "Dated activation history alongside the current relationship and service evidence.", h.engaged ? "Included products are in use. Any new offer requires relevant interest, opt-in and recorded approval." : "First connection has been observed. Follow-through focuses on helping the household use the products already included."]
+    : NOTES[kind][situation(h)](h.name.split(" ")[0], h.owner ?? "the adviser");
   return (
     <aside className="cm-note">
       <p>

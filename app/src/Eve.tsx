@@ -1,3 +1,4 @@
+import { formatDateTime } from "./time";
 import { useEffect, useRef, useState } from "react";
 import { VoiceBeam, getAudioContext } from "voice-glow";
 import { BorderBeam } from "border-beam";
@@ -344,7 +345,7 @@ export function Eve({
                   {h.promise
                     ? h.promiseFulfilled
                       ? "Completed"
-                      : "Due at 21:15"
+                      : `Due ${formatDateTime(h.promise)}`
                     : "None recorded"}
                 </dd>
               </div>
@@ -352,7 +353,9 @@ export function Eve({
                 <dt>Incident</dt>
                 <dd>
                   {snapshot.operations.incident
-                    ? h.incident
+                    ? h.incidentCleared
+                      ? "Cleared · historically in scope"
+                      : h.incident
                       ? "In scope"
                       : "Outside scope"
                     : "Not confirmed"}

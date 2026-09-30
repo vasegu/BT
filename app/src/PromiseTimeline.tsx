@@ -44,11 +44,13 @@ export function PromiseTimeline({
     const f = (v - stops[i]) / (stops[i + 1] - stops[i] || 1);
     return LEFT + ((i + f) / (stops.length - 1)) * (W - LEFT - RIGHT);
   };
-  const lanes = ["Network", "System", person.owner || "No named owner", person.name.split(" ")[0]];
+  const historicalPromise = snapshot.events.find((e) => e.subject === person.id && e.type === "promise.created" && Date.parse(e.occurredAt) >= start && Date.parse(e.occurredAt) <= end);
+  const owner = (historicalPromise?.payload as { owner?: string } | undefined)?.owner;
+  const lanes = ["Network", "System", owner || person.owner || "No named owner", person.name.split(" ")[0]];
   const H = TOP + lanes.length * LANE + 24;
   const y = (lane: number) => TOP + lane * LANE + LANE / 2;
   const at = (e: SourceEvent) => Date.parse(e.occurredAt);
-  const mine = snapshot.events.filter((e) => e.subject === person.id && at(e) >= start);
+  const mine = snapshot.events.filter((e) => e.subject === person.id && at(e) >= start && at(e) <= Math.min(clock, end));
   const shared = snapshot.events.filter(
     (e) => e.subject === "shared" && (e.type === "incident.confirmed" || e.type === "incident.cleared") && person.incident,
   );
@@ -71,12 +73,12 @@ export function PromiseTimeline({
     if (e.type === "customer.confirmed_working")
       marks.push({ lane: 3, t: at(e), label: `“${String((e.payload as { statement?: string }).statement || "It’s working")}”`, sub: "loop closed", tone: "customer", shape: "star", event: e });
   }
-  const decisions = snapshot.decisions.filter((d) => d.person === person.id);
+  const decisions = snapshot.decisions.filter((d) => d.person === person.id && Date.parse(d.time) >= start && Date.parse(d.time) <= Math.min(clock, end));
   decisions.forEach((d, i) => {
     const changed = i === 0 || decisions[i - 1].title !== d.title;
     if (changed) marks.push({ lane: 1, t: Date.parse(d.time), label: trim(d.title, 28), sub: d.disposition, tone: "system", shape: "hollow" });
   });
-  const actions = snapshot.actions.filter((a) => a.person === person.id);
+  const actions = snapshot.actions.filter((a) => a.person === person.id && Date.parse(a.time) >= start && Date.parse(a.time) <= Math.min(clock, end));
   for (const a of actions) marks.push({ lane: 3, t: Date.parse(a.time) + 60e3, label: trim(a.title, 30), sub: "update received", tone: "customer" });
   const quiet = !actions.length && decisions.some((d) => d.disposition === "watch" || d.disposition === "suppress");
 
@@ -85,10 +87,11 @@ export function PromiseTimeline({
   const restored = mine.find((e) => e.type === "service.restored_observed" || e.type === "router.heartbeat_received" || e.type === "activation.first_use_observed");
   const confirmed = mine.find((e) => e.type === "customer.confirmed_working");
   // Each home teaches a different lesson; the headline and status follow that home's story.
-  const kind = promise ? "promise" : person.activation !== "Activation confirmed" || person.firstUseObserved ? "setup" : "quiet";
+  const firstUse = mine.some((e) => e.type === "activation.first_use_observed");
+  const kind = promise ? "promise" : mine.some((e) => e.type === "router.setup_attempted") || firstUse ? "setup" : "quiet";
   const signal = mine.some((e) => e.revision > 0);
   const switchedOn = mine.some((e) => e.type === "router.setup_attempted");
-  const clearedNow = !!person.incidentCleared;
+  const clearedNow = shared.some((e) => e.type === "incident.cleared" && at(e) <= Math.min(clock, end));
   const headline =
     kind === "promise"
       ? restored && !kept
@@ -99,7 +102,7 @@ export function PromiseTimeline({
             ? "The promise is kept. Waiting for the customer’s word."
             : "A promise is running alongside the fault."
       : kind === "setup"
-        ? person.firstUseObserved
+        ? firstUse
           ? "Connected for the first time. First use is its own proof."
           : clearedNow
             ? "Told to go ahead once the network cleared."
@@ -123,9 +126,9 @@ export function PromiseTimeline({
         ]
       : kind === "setup"
         ? [
-            [`Hub ${person.firstUseObserved ? "connected" : switchedOn ? "switched on" : "not switched on"}`, !!person.firstUseObserved],
+            [`Hub ${firstUse ? "connected" : switchedOn ? "switched on" : "not switched on"}`, !!firstUse],
             [`Go-ahead ${clearedNow ? "sent" : person.incident ? "on hold" : "not needed yet"}`, clearedNow],
-            [`First use ${person.firstUseObserved ? "observed" : "not yet"}`, !!person.firstUseObserved],
+            [`First use ${firstUse ? "observed" : "not yet"}`, !!firstUse],
           ]
         : [
             [`Hub ${!signal ? "normal" : restored ? "back" : "quiet"}`, !signal || !!restored],
@@ -148,7 +151,7 @@ export function PromiseTimeline({
     <section className="promise-timeline" aria-label="Promise timeline">
       <header>
         <div>
-          <span className="eyebrow">{lesson} · {person.name}</span>
+          <span className="eyebrow">{lesson} · {person.name} · Fri 25 Sep 2026, 20:45–21:21 BST</span>
           <h3>{headline}</h3>
         </div>
         <div className="pt-status">
@@ -179,7 +182,7 @@ export function PromiseTimeline({
         ))}
         <line x1={x(clock)} x2={x(clock)} y1={TOP - 8} y2={H - 24} className="pt-now" />
         <text x={x(clock)} y={TOP - 12} className="pt-now-label" textAnchor="middle">
-          now {clockTime(snapshot.clock)}
+          {clock > end ? "episode end 21:21" : `now ${clockTime(snapshot.clock)}`}
         </text>
         {/* the promise thread: open until the call is made */}
         {promise && (

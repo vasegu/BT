@@ -198,7 +198,15 @@ export function verifyOutcome(
           : c.goal === "watch"
             ? e.payload.status === undefined || e.payload.status === "received"
             : c.goal === "monitoring"
-              ? e.payload.drops === 0
+              ? e.payload.drops === 0 && e.payload.coverage === "complete" &&
+                e.payload.windowStart === anchor?.occurredAt && Number(e.payload.hours) >= 72 &&
+                Date.parse(e.occurredAt) >= Date.parse(c.dueAt) &&
+                Date.parse(e.occurredAt) - Date.parse(String(e.payload.windowStart)) >= 72 * 3600e3 &&
+                !s.events.some(x => x.subject === c.person && (!anchor?.serviceId || x.serviceId === anchor.serviceId) &&
+                  x.revision <= s.cutoff && Date.parse(x.receivedAt) <= Date.parse(s.clock) &&
+                  Date.parse(x.occurredAt) >= Date.parse(String(e.payload.windowStart)) &&
+                  Date.parse(x.occurredAt) <= Date.parse(e.occurredAt) &&
+                  (x.type === "service.failure_observed" || (x.type === "monitoring.checked" && Number(x.payload.drops) > 0)))
               : c.goal === "early-life" || c.goal === "offer"
                 ? true
             : typeof e.payload.statement === "string" &&

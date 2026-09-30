@@ -1,8 +1,10 @@
+import { hasRecordedApproval, recordedContactPermission } from "./governance-status";
+import { formatDateTime } from "./time";
 import { useState } from "react";
 import type { Decision, Household, PersonId, Snapshot, SourceEvent } from "./types";
 import { ACTION_POLICY } from "./governance";
 import { FocusHeader } from "./FocusHeader";
-import { moments, householdNames } from "./presentation";
+import { householdNames } from "./presentation";
 import { useSway } from "./SwayReview";
 import { ScopeTag, StandingBand } from "./Scope";
 import "./governance.css";
@@ -10,7 +12,7 @@ import "./governance.css";
 // Governance, the fifth component: the explicit policy layer. What the system may do on its
 // own, what waits for a named person, which data may be used for what, and a record of every
 // decision that a regulator or a customer can read.
-const at = (iso: string) => new Date(iso).toLocaleTimeString("en-GB", { timeZone: "Europe/London", hour: "2-digit", minute: "2-digit" });
+const at = formatDateTime;
 const modeLabel = { autonomous: "Runs on its own", "sign-off": "Needs sign-off", "human-led": "Person-led", conditional: "Depends on promises" } as const;
 const PEOPLE: PersonId[] = ["daniel", "sam", "maya"];
 const first = (p: PersonId) => householdNames[p].split(" ")[0];
@@ -42,53 +44,60 @@ function rules(snapshot: Snapshot, claimSway: number | null, contexts: number | 
   const members = (snapshot.operations.network?.households ?? []).flatMap((x) =>
     x.members.filter((m) => m.name !== householdNames[x.person as PersonId]).map((m) => `${m.name} (${x.label})`),
   );
-  const signoffRan = ds.filter((d) => ACTION_POLICY.find((p) => p.id === chosen(d))?.mode === "sign-off").length;
+  const requiresApproval = ds.filter((d) => ACTION_POLICY.find((p) => p.id === chosen(d))?.mode === "sign-off");
+  const authorised = (d: Decision) => hasRecordedApproval(d, snapshot.events);
+  const signoffRan = requiresApproval.filter((d) => !authorised(d)).length;
+  const approved = requiresApproval.length - signoffRan;
+  const offers = ds.filter((d) => chosen(d) === "offer");
   const waiting = ds.flatMap((d) => d.trace?.candidates.filter((c) => c.status === "awaiting") ?? []).length;
   const restarts = ds.filter((d) => chosen(d) === "restart").length;
-  const permitted = sent.filter((a) => snapshot.households.find((h) => h.id === a.person)?.contactAllowed).length;
+  const permissions = sent.map(a => recordedContactPermission(ds.find(d => d.id === a.decisionId), snapshot.events));
+  const permitted = permissions.filter(p => p === true).length;
+  const denied = permissions.filter(p => p === false).length;
+  const unknown = permissions.filter(p => p === null).length;
   return [
     {
       rule: "Anything costly or committing waits for a named person",
       held: signoffRan === 0,
-      evidence: `${signoffRan} sign-off actions ran on their own · ${waiting} waited for a person`,
+      evidence: `${approved} actions with recorded prior approval · ${signoffRan} without evidenced approval · ${waiting} awaited approval`,
     },
     {
       rule: "Service contact authority is not commercial authority",
-      held: !ds.some((d) => chosen(d) === "offer"),
-      evidence: `No offer made in ${ds.length} decisions. Service data was never used for a sale.`,
+      held: offers.every(authorised),
+      evidence: `${offers.length} offer decisions · ${offers.filter(authorised).length} with a passed commercial-permission gate and dated approval evidence.`,
     },
     {
-      rule: "An unverified customer claim cannot move the policy",
+      rule: "Static rules fixture: unchanged policy facts retain the decision",
       held: claimSway === null ? null : claimSway === 0,
       evidence:
         claimSway === null
           ? "Replay not loaded."
-          : `“I’m a gamer, prioritise me” injected into ${contexts} replayed contexts · moved ${Math.round(claimSway * 100)}% of decisions`,
+          : `Rules-only fixture: claim wording changed in ${contexts} contexts · moved ${Math.round(claimSway * 100)}% of decisions. This does not test live-model resistance.`,
     },
     {
       rule: "Nothing is sent without contact permission",
-      held: permitted === sent.length,
-      evidence: `${permitted} of ${sent.length} customer messages had in-app service permission`,
+      held: denied ? false : unknown ? null : true,
+      evidence: `${permitted} of ${sent.length} messages have decision-time service permission · ${denied} denied · ${unknown} not evidenced`,
     },
     {
       rule: "A household member is not the account holder",
-      held: true,
-      evidence: members.length ? `${members.join(", ")}: known to memory, never contacted or used for a decision` : "No other household members at this moment.",
+      held: null,
+      evidence: `Not measured: recipient/member identity usage is not audited. ${members.length ? `${members.join(", ")} are recorded in memory.` : "No other household members at this moment."}`,
     },
     {
       rule: "Another product’s signal may inform a decision, never trigger one",
-      held: true,
+      held: null,
       evidence: informed.length
-        ? `Linked mobile activity informed ${informed.length} broadband decision${informed.length === 1 ? "" : "s"} · 0 actions on the mobile line`
-        : "No linked-product signal used yet.",
+        ? `Linked mobile activity informed ${informed.length} broadband decision${informed.length === 1 ? "" : "s"} · product trigger and delivery scope not measured`
+        : "No linked-product evidence cited yet; product trigger and delivery scope not measured.",
     },
     {
       rule: "A failed test is never repeated",
-      held: restarts === 0,
-      evidence: `Hub restart suggested ${restarts} times after a failed restart was on record`,
+      held: null,
+      evidence: `${restarts} restart decisions recorded; prior failed-test matching is not measured.`,
     },
     {
-      rule: "Every decision is recorded, and every message says it is AI-assisted",
+      rule: "Every recorded decision carries a trace and policy version",
       held: ds.every((d) => !!d.trace && !!d.policyVersion),
       evidence: `${ds.filter((d) => d.trace).length} of ${ds.length} decisions carry a full trace · ${sent.filter((a) => a.receiptId).length} messages have a delivery receipt`,
     },
@@ -110,7 +119,7 @@ export function GovernanceTile({ snapshot }: { snapshot: Snapshot }) {
           <strong>
             {rs.filter((r) => r.held).length}/{rs.length}
           </strong>
-          <small>policy rules held</small>
+          <small>rules evidenced</small>
         </div>
         <div>
           <strong>{person}</strong>
@@ -124,7 +133,7 @@ export function GovernanceTile({ snapshot }: { snapshot: Snapshot }) {
       <ul className="gv-tile-rules">
         {rs.slice(0, 3).map((r) => (
           <li key={r.rule} className={r.held === false ? "is-broken" : ""}>
-            <i>{r.held === false ? "×" : "✓"}</i>
+            <i>{r.held === false ? "×" : r.held === null ? "?" : "✓"}</i>
             {r.rule}
           </li>
         ))}
@@ -183,7 +192,6 @@ export function GovernanceView({
     [
       "What we did not use",
       [
-        "Commercial or marketing data",
         ...members.map((m) => `${m.name} (household member, not the account holder)`),
         `${d.held.length} other possible actions, held with reasons`,
       ].join("; "),
@@ -221,7 +229,7 @@ export function GovernanceView({
               <span> / {rs.length}</span>
             </>
           ),
-          label: "policy rules held",
+          label: "rules evidenced",
         }}
         onPerson={onPerson}
         onCutoff={onCutoff}
@@ -237,7 +245,7 @@ export function GovernanceView({
             <ol className="gv-people">
               {people.map((x, i) => (
                 <li key={i} className={`is-${x.kind}${x.d.person === h.id ? " is-focus" : ""}`}>
-                  <time>{moments[x.d.revision].time}</time>
+                  <time>{at(x.d.time)}</time>
                   <div>
                     <small>
                       {x.kind === "led" ? "Led by" : x.kind === "waiting" ? "Waiting for" : "Withdrawn · was waiting for"} {x.who} · {first(x.d.person)}
@@ -259,20 +267,10 @@ export function GovernanceView({
             <ScopeTag scope="moment" snapshot={snapshot} person={h.id} />
           </header>
           <p className="gv-tally">
-            Tonight so far, all three homes: <b>{totals.ran}</b> actions ran · <b>{totals.waiting}</b> waited for a person ·{" "}
-            <b>{rs.filter((r) => r.held === false).length}</b> rules broken
+            Recorded replay history, all three homes: <b>{totals.ran}</b> actions ran · <b>{totals.waiting}</b> waited for a person ·{" "}
+            <b>{rs.filter((r) => r.held === false).length}</b> rules broken · <b>{rs.filter((r) => r.held === null).length}</b> not measured
           </p>
-          <ul className="gv-rules">
-            {rs.map((r) => (
-              <li key={r.rule} className={r.held === false ? "is-broken" : r.held === null ? "is-unknown" : ""}>
-                <i>{r.held === false ? "×" : r.held === null ? "?" : "✓"}</i>
-                <div>
-                  <b>{r.rule}</b>
-                  <small>{r.evidence}</small>
-                </div>
-              </li>
-            ))}
-          </ul>
+          <PolicyRules rows={rs} />
         </section>
       </div>
       <section className="av-step">
@@ -345,4 +343,21 @@ export function GovernanceView({
       </StandingBand>
     </div>
   );
+}
+
+function PolicyRules({ rows }: { rows: ReturnType<typeof rules> }) { return (          <ul className="gv-rules">
+            {rows.map((r) => (
+              <li key={r.rule} className={r.held === false ? "is-broken" : r.held === null ? "is-unknown" : ""}>
+                <i>{r.held === false ? "×" : r.held === null ? "?" : "✓"}</i>
+                <div>
+                  <b>{r.rule}</b>
+                  <small>{r.evidence}</small>
+                </div>
+              </li>
+            ))}
+          </ul>); }
+export function GovernanceEvidence({ snapshot }: { snapshot: Snapshot }) {
+  const { data } = useSway();
+  const claim = data?.factors.find(f => f.id === "claim");
+  return <div><p className="gv-tally">Recorded replay history · all three households</p><PolicyRules rows={rules(snapshot, claim?.sway ?? null, data?.bases ?? null).filter((_, i) => [0, 1, 3, 7].includes(i))} /></div>;
 }

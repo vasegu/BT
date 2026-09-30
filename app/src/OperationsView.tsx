@@ -1,3 +1,4 @@
+import { formatDateTime } from "./time";
 import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -33,7 +34,7 @@ function effect(e: SourceEvent, snapshot: Snapshot): string {
     case "router.observation_window": {
       const got = Number(p.received),
         exp = Number(p.expected);
-      return p.coverage === "no_telemetry" ? "No heartbeat at all in this window" : got >= exp * 0.95 ? `Steady · ${got}/${exp} heartbeats` : `Gap · ${got}/${exp} heartbeats`;
+      return p.received == null || p.coverage === "aggregate_unavailable" ? "Coverage unknown · no observation available" : p.coverage === "no_telemetry" ? "No heartbeat at all in this window" : got >= exp * 0.95 ? `Steady · ${got}/${exp} heartbeats` : `Gap · ${got}/${exp} heartbeats`;
     }
     case "router.overnight_window":
       return p.returnObserved ? `Overnight quiet ended at ${at(String(p.returnAt))}` : "Overnight quiet, return not yet observed";
@@ -113,7 +114,7 @@ export function OperationsView({
         <header>
           <span>02</span>
           <h3>Operational feeds</h3>
-          <small className="ov-hint">Arrivals over the last 24 hours · the band is tonight</small>
+          <small className="ov-hint">Arrivals over the last 24 hours · the band is the last 75 minutes</small>
           <ScopeTag scope="highlight" snapshot={snapshot} person={h.id} />
         </header>
         <div className="ov-feed-axis" aria-hidden="true">
@@ -158,7 +159,7 @@ export function OperationsView({
               </span>
               <span className="ov-feed-meta">
                 <b>{today.length}</b>
-                <small>{last ? `last ${at(last.receivedAt)} · ${ago(age)}` : "nothing yet"}</small>
+                <small>{last ? `last ${formatDateTime(last.receivedAt)} · ${ago(age)}` : "nothing yet"}</small>
               </span>
             </button>
           );
@@ -200,7 +201,7 @@ export function OperationsView({
             <small className="ov-hint">one household, several products</small>
             <ScopeTag scope="highlight" snapshot={snapshot} person={h.id} />
           </header>
-          {net ? <Households net={net} focus={h.id} /> : <p className="av-note">Household records are held in the Supabase runtime.</p>}
+          {net ? <Households net={net} focus={h.id} households={snapshot.households} /> : <p className="av-note">Household records are held in the Supabase runtime.</p>}
         </section>
       </div>
       <div className="ov-lower">
@@ -227,7 +228,7 @@ export function OperationsView({
               const tonight = Date.parse(e.receivedAt) >= clock - 1.25 * HOUR;
               return (
                 <button key={e.id} role="listitem" className={`ov-row${tonight ? " is-tonight" : ""}${who === h.id ? " is-mine" : ""}`} onClick={() => inspect(e)}>
-                  <time>{at(e.receivedAt)}</time>
+                  <time title={e.receivedAt}>{formatDateTime(e.receivedAt)}</time>
                   <i style={{ background: f.color }} />
                   <span className="ov-row-main">
                     <code>{e.type}</code>
@@ -268,7 +269,7 @@ function pulse(snapshot: Snapshot, person: PersonId): Pulse {
   const overdue = last(["router.heartbeat_overdue"]);
   const back = last(["router.heartbeat_received", "service.restored_observed", "activation.first_use_observed"]);
   const everSeen = snapshot.events.some(
-    (e) => e.subject === person && e.type === "router.observation_window" && (e.payload as { coverage?: string }).coverage !== "no_telemetry",
+    (e) => e.subject === person && e.type === "router.observation_window" && Number((e.payload as { received?: number | null }).received) > 0,
   );
   // A hub that was never online connects for the first time; it doesn't come "back".
   if (last(["activation.first_use_observed"]) && !everSeen) return "first";
@@ -457,14 +458,15 @@ function WestLondonMap({
 }
 
 function Rota({ net, clock }: { net: NetworkView; clock: string }) {
-  if (!net.slots.length) return <p className="av-note">No rota received yet.</p>;
+  if (!net.slots.some((s) => Date.parse(s.endsAt) > Date.parse(clock))) return <p className="av-note">No current capacity feed. Earlier rota slots have expired.</p>;
   const start = Date.parse("2026-09-25T20:00:00Z"),
     end = Date.parse("2026-09-25T21:00:00Z");
   const x = (iso: string) => ((Math.min(Math.max(Date.parse(iso), start), end) - start) / (end - start)) * 100;
   return (
     <div className="ov-rota">
+      <p className="av-note">Rota · {new Date(net.slots[0].startsAt).toLocaleDateString("en-GB", { timeZone: "Europe/London", day: "numeric", month: "short", year: "numeric" })}</p>
       <div className="ov-rota-track">
-        {net.slots.map((s) => (
+        {net.slots.filter((s) => Date.parse(s.endsAt) > Date.parse(clock)).map((s) => (
           <div key={s.startsAt} className={`ov-slot is-${s.state}`} style={{ left: `${x(s.startsAt)}%`, width: `${x(s.endsAt) - x(s.startsAt)}%` }}>
             <b>{at(s.startsAt)}</b>
             <span>{s.heldFor ? `${s.owner} · held` : "free"}</span>

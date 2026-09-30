@@ -1,3 +1,4 @@
+import { formatDateTime } from "./time";
 import { ActionsView } from "./ActionsView";
 import { OperationsView } from "./OperationsView";
 import { ArbiterWorkbench } from "./ArbiterWorkbench";
@@ -15,12 +16,7 @@ import type {
   PersonId,
 } from "./types";
 
-const time = (iso: string) =>
-  new Intl.DateTimeFormat("en-GB", {
-    timeZone: "Europe/London",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(iso));
+const time = formatDateTime;
 const short = (id: string) => id.slice(0, 8);
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -161,13 +157,13 @@ export function SectionView({
       <div className="channel-receipts">
         <span className="eyebrow">Channel evidence</span>
         <h3>
-          {h.id === "maya"
-            ? "No message is an intentional outcome."
+          {!actions.length
+            ? "No message recorded at this point."
             : "The phone and the record agree."}
         </h3>
         <p>
-          {h.id === "maya"
-            ? "The customer sees no new service notification. The watch is visible only to the operator."
+          {!actions.length
+            ? "No delivery is recorded for this household by the selected replay time."
             : "Each update has a persisted action and simulated delivery receipt. A customer reply adds a new source event."}
         </p>
         <div className="channel-receipt-list">

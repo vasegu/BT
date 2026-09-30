@@ -45,7 +45,7 @@ export function HouseholdCard({ p }: { p: HouseholdProfile }) {
             ))}
           </ul>
         ) : (
-          <p className="cm-none">No devices seen yet: the hub has never connected.</p>
+          <p className="cm-none">No device observations are available at this replay time.</p>
         )}
       </div>
     </div>
@@ -151,7 +151,7 @@ export function HistoryCard({ p, sent }: { p: HouseholdProfile; sent: { at: stri
 }
 
 export function RightNowCard({ p }: { p: HouseholdProfile }) {
-  if (!p.usage || !p.now) return <p className="cm-none">No usage pattern yet: the hub has never connected.</p>;
+  if (!p.usage || !p.now) return <p className="cm-none">No usage pattern is available at this replay time.</p>;
   const curve = p.now.weekend ? p.usage.weekend : p.usage.weekday;
   return (
     <div className="cp-now">

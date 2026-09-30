@@ -127,7 +127,7 @@ export class PostgresRepository {
   }
   /** Baseline history (generated locally, hash-checked against Supabase) plus this session's own Eve records. */
   private async overlayFixture(id: string): Promise<HouseholdFixture> {
-    const [row] = await this.db`select s.variant, s.dataset_id, d.content_hash,
+    const [row] = await this.db`select s.variant, s.dataset_id, d.content_hash, d.fixture_snapshot,
       coalesce((select jsonb_agg(jsonb_strip_nulls(jsonb_build_object(
         'id',e.id,'source',e.source_id,'sourceEventId',e.source_event_id,'type',e.event_type,
         'occurredAt',e.occurred_at,'knownAt',e.known_at,'personId',e.person_id,
@@ -139,11 +139,18 @@ export class PostgresRepository {
       from runtime.sessions s join runtime.datasets d on d.id=s.dataset_id where s.id=${id}`;
     if (!row)
       throw new DomainError("Session not found in the selected store", 404);
-    const base = await this.baseline(row.variant);
-    if (row.dataset_id !== base.datasetId || row.content_hash !== base.hash)
-      return this.fullFixture(id);
-    if (!row.events.length) return base.fixture;
-    const f = base.fixture;
+    let f: HouseholdFixture;
+    if (row.fixture_snapshot) {
+      f = row.fixture_snapshot;
+      if (fixtureHash(f) !== row.content_hash)
+        throw new DomainError("Dataset snapshot hash mismatch", 409);
+    } else {
+      const base = await this.baseline(row.variant);
+      if (row.dataset_id !== base.datasetId || row.content_hash !== base.hash)
+        return this.fullFixture(id);
+      f = base.fixture;
+    }
+    if (!row.events.length) return f;
     return {
       ...f,
       tables: {
@@ -648,14 +655,16 @@ export class PostgresRepository {
     at: number,
     messages: { role: "user" | "assistant"; content: string }[],
   ) {
-    const live = await this.session(id);
-    const c = (await this.contexts(id, live.revision)).find(
+    await this.session(id);
+    const c = (await this.contexts(id, at)).find(
       (c) => c.household.id === person,
     )!;
     if (!c.household.contactAllowed)
       throw new DomainError("Service contact permission unavailable", 403);
-    const time = new Date().toISOString(),
-      conversationId = stableId(`${id}/${person}/eve/${hash(messages)}`);
+    const time = clocks[at],
+      recordedAt = new Date().toISOString(),
+      conversationId = stableId(`${id}/${person}/eve/${at}/${hash(messages)}`);
+    if (!time) throw new DomainError("Unknown replay beat", 400);
     const fixture = await this.fixture(id),
       source = fixture.tables["ingestion.sources"].find(
         (s) => s.name === "crm_simulator",
@@ -665,7 +674,7 @@ export class PostgresRepository {
       await sql`insert into operations.conversations(session_id,id,person_id,service_id,channel,started_at,retention_basis) values(${id},${conversationId},${c.personId},${c.serviceId},'in_app',${time},'Local presenter synthetic Eve session; retained for this demonstration') on conflict do nothing`;
       for (const [i, m] of messages.entries()) {
         const eventId = stableId(`${conversationId}/${i}`);
-        await sql`insert into ingestion.events(session_id,id,source_id,source_event_id,event_type,occurred_at,known_at,person_id,service_id,description,payload) values(${id},${eventId},${source},${`${conversationId}/${i}`},'conversation.message',${time},${time},${c.personId},${c.serviceId},${m.content},${sql.json({ speakerRole: m.role === "user" ? "customer" : "assistant", conversationId, channel: "in_app", origin: "eve", epistemic: "stated", replayCutoff: clocks[at] })}) on conflict do nothing`;
+        await sql`insert into ingestion.events(session_id,id,source_id,source_event_id,event_type,occurred_at,known_at,person_id,service_id,description,payload) values(${id},${eventId},${source},${`${conversationId}/${i}`},'conversation.message',${time},${time},${c.personId},${c.serviceId},${m.content},${sql.json({ speakerRole: m.role === "user" ? "customer" : "assistant", conversationId, channel: "in_app", origin: "eve", epistemic: "stated", replayCutoff: time, replayBeat: at, recordedAt })}) on conflict do nothing`;
         await sql`insert into operations.messages(session_id,id,conversation_id,speaker_role,speaker_ref,sent_at,body,source_event_id) values(${id},${eventId},${conversationId},${m.role === "user" ? "customer" : "assistant"},${m.role === "user" ? person : "Eve"},${time},${m.content},${eventId}) on conflict do nothing`;
       }
     });

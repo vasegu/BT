@@ -2,7 +2,8 @@
 // The replay is deterministic: fixed dataset, rules policy, seeded layout. Re-run after
 // changing the dataset, arbiter policy or the embedding text:
 //   npm --prefix app run build:sway
-import { writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { Engine, steps } from "../app/server/engine.ts";
 import { contextSway } from "../app/server/context-sway.ts";
 
@@ -14,7 +15,18 @@ export async function bakeContextSway() {
       engine.advance(session.id, step, `sway-${i}`, i);
       await engine.processJobs();
     }
-    return await contextSway(engine.snapshot(session.id), (at) => engine.snapshot(session.id, at));
+    const snapshot = engine.snapshot(session.id);
+    const data = await contextSway(snapshot, (at) => engine.snapshot(session.id, at));
+    const sourceHash = createHash("sha256");
+    for (const path of ["../app/server/engine.ts", "../app/server/arbiter.ts", "../app/server/context-sway.ts", "../app/server/assessment.ts", "../app/server/encoder.ts", "../app/server/projection.ts", "./build-context-sway.ts"])
+      sourceHash.update(path).update(readFileSync(new URL(path, import.meta.url)));
+    return { ...data, provenance: {
+      builtAt: new Date().toISOString(),
+      datasetVersion: snapshot.session.seedVersion,
+      policyVersions: [...new Set(snapshot.decisions.map(d => d.policyVersion))].sort(),
+      sourceHash: sourceHash.digest("hex"),
+      scope: "global-static-fixture" as const,
+    } };
   } finally {
     engine.close();
   }

@@ -333,7 +333,7 @@ test("restoration cannot fulfil a promise; later outcomes stay out of historical
     daniel = s.households.find((p: any) => p.id === "daniel");
     assert.equal(daniel.promiseFulfilled, true);
     assert.equal(daniel.confirmed, true);
-    assert.equal(daniel.caseStatus, "closed");
+    assert.equal(daniel.caseStatus, "open");
     const past = f.engine.snapshot(a.id, 3);
     assert.equal(
       past.households.find((p: any) => p.id === "daniel").promiseFulfilled,

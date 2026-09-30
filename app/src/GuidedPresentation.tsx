@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
-import { DecisionFlow } from "./DecisionFlow";
+import { PresenterWorkspace } from "./PresenterWorkspace";
 import type { Snapshot, PersonId, SourceEvent } from "./types";
-import { householdNames, moments, chapters, changeSummary } from "./presentation";
-import type { ChangeRow, MomentLane, momentView } from "./presentation";
+import { householdNames, moments, chapters } from "./presentation";
+import type { MomentLane, momentView } from "./presentation";
 import "./presentation.css";
 
 const roles: Record<PersonId, string> = {
@@ -149,42 +149,6 @@ function storySoFar(snapshot: Snapshot, person: PersonId) {
     });
 }
 
-/** The one-glance summary: what changed in each panel for this customer at this moment. */
-function ChangeStrip({ rows, time, name, onOpen, deciding }: { rows: ChangeRow[]; time: string; name: string; onOpen?: (panel: string) => void; deciding: boolean }) {
-  // What moved gets a card; what held still is one quiet line, so the eye lands on the change.
-  const moved = deciding ? rows : rows.filter((r) => r.changed);
-  const still = deciding ? [] : rows.filter((r) => !r.changed);
-  return (
-    <section className="change-strip" aria-label={`What changed at ${time} for ${name}`}>
-      <span className="eyebrow">What changed at {time} for {name}</span>
-      {moved.length > 0 && (
-        <ol style={{ gridTemplateColumns: `repeat(${Math.min(moved.length, 3)}, minmax(0, 1fr))` }}>
-          {moved.map((r) => (
-            <li key={r.panel} className={deciding ? "" : "is-changed"}>
-              <button onClick={() => onOpen?.(r.panel)} title={`Open ${r.name}`}>
-                <small>
-                  {String(rows.indexOf(r) + 1).padStart(2, "0")} · {r.name}
-                </small>
-                <span>{deciding && r.panel !== "customer" && r.panel !== "operations" ? "Deciding…" : r.text}</span>
-              </button>
-            </li>
-          ))}
-        </ol>
-      )}
-      {still.length > 0 && (
-        <p className="change-still">
-          <span>{moved.length ? "Unchanged" : "Nothing moved yet"}</span>
-          {still.map((r) => (
-            <button key={r.panel} onClick={() => onOpen?.(r.panel)} title={r.text}>
-              {r.name}
-            </button>
-          ))}
-        </p>
-      )}
-    </section>
-  );
-}
-
 export function MomentLanes({
   snapshot,
   view,
@@ -262,31 +226,10 @@ export function MomentLanes({
           Compare all three
         </button>
       </div>
-      {!compare && (
-        <ChangeStrip rows={changeSummary(snapshot, focus)} time={moment.time} name={first(focus)} onOpen={onOpen} deciding={status === "deciding"} />
-      )}
-      <div className={compare ? "lanes" : "moment-focus"}>
-        {!compare && focusLane?.decision && status !== "deciding" ? (
-          <DecisionFlow h={snapshot.households.find((x) => x.id === focus)!} snapshot={snapshot} decision={focusLane.decision} compact />
-        ) : null}
-        {lanes.filter((lane) => compare || (lane.person === focus && !(lane.decision && status !== "deciding"))).map((lane) => (
-          <Lane
-            key={lane.person}
-            lane={lane}
-            deciding={status === "deciding"}
-            final={final}
-            focused={focus === lane.person}
-            opening={snapshot.cutoff === 0}
-            story={storySoFar(snapshot, lane.person)}
-            single={!compare}
-            onFocus={() => {
-              onCompare?.(false);
-              onFocus(lane.person);
-            }}
-          />
-        ))}
-        {!compare && phone && <div className="moment-phone">{phone}</div>}
-      </div>
+      {!compare && focusLane ? <PresenterWorkspace key={`${focus}/${snapshot.cutoff}`} snapshot={snapshot} person={focus} lane={focusLane} deciding={status !== "ready"} phone={phone} onOpen={onOpen} onInspect={onInspect} /> : (
+      <div className="lanes">
+        {lanes.map((lane) => <Lane key={lane.person} lane={lane} deciding={status === "deciding"} final={final} focused={focus === lane.person} opening={snapshot.cutoff === 0} story={storySoFar(snapshot,lane.person)} onFocus={() => { onCompare?.(false); onFocus(lane.person); }} />)}
+      </div>)}
     </section>
   );
 }

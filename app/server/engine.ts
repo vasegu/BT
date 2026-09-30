@@ -164,16 +164,27 @@ export function project(
         break;
       case "service.reprofiled":
         h.reprofiled = true;
-        if (h.quietFix === "detected") h.quietFix = "fixed";
+        if (e.payload.lineTest === "passed") {
+          if (h.quietFix === "detected") h.quietFix = "fixed";
+          h.restored = true;
+          h.serviceState = "Line quality restored · verified after remote re-profile";
+        }
         break;
       case "monitoring.started":
         h.monitoring = "active";
         break;
       case "monitoring.completed":
-        h.monitoring = "complete";
+        const started = evidence.filter(x => x.type === "monitoring.started" && x.occurredAt <= e.occurredAt).at(-1);
+        if (started && e.payload.drops === 0 && e.payload.coverage === "complete" &&
+            e.payload.windowStart === started.occurredAt && Number(e.payload.hours) >= 72 &&
+            Date.parse(e.occurredAt) - Date.parse(started.occurredAt) >= 72 * 3600e3 &&
+            !evidence.some(x => x.subject === person.id && x.occurredAt >= started.occurredAt && x.occurredAt <= e.occurredAt &&
+              (x.type === "service.failure_observed" || (x.type === "monitoring.checked" && Number(x.payload.drops) > 0))))
+          h.monitoring = "complete";
         break;
       case "line.degradation_detected":
         h.quietFix = "detected";
+        h.restored = false;
         h.serviceState = "Line quality falling · found by a routine test";
         break;
       case "early_life.checkpoint":
@@ -225,7 +236,7 @@ export function project(
       case "customer.confirmed_working":
         h.confirmed = true;
         h.serviceState = "Working · confirmed by the customer";
-        if (h.restored) h.caseStatus = "closed";
+        // Recovery confirmation does not replace a dated case.closed record.
         break;
     }
   }
@@ -603,23 +614,24 @@ export class Engine {
       // The weeks after tonight: monitoring, a quiet overnight fix, early life, then an offer.
       if (step === "morning")
         inputs.push(
-          { type: "monitoring.checked", subject: "daniel", source: "router_simulator", occurredAt: "2026-09-26T06:00:00Z", description: "Overnight: no drops in ten hours of heightened monitoring. Line sync stable.", payload: { drops: 0 } },
+          { type: "monitoring.checked", subject: "daniel", source: "router_simulator", occurredAt: "2026-09-26T06:00:00Z", description: "Overnight: no drops in 9 hours 48 minutes of heightened monitoring. Line sync stable.", payload: { drops: 0 } },
           { type: "line.degradation_detected", subject: "maya", source: "diagnostics_simulator", occurredAt: "2026-09-26T01:10:00Z", description: "Routine overnight line test: the noise margin on Maya’s line is falling. Unrelated to INC-017.", payload: { snrMarginDb: 3.1 } },
-          { type: "service.reprofiled", subject: "maya", source: "diagnostics_simulator", occurredAt: "2026-09-26T02:40:00Z", description: "Remote line re-profile restored a healthy noise margin before anyone in the home noticed.", payload: { action: "dlm_reprofile" } },
+          { type: "service.reprofiled", subject: "maya", source: "diagnostics_simulator", occurredAt: "2026-09-26T02:40:00Z", description: "Remote line re-profile restored a healthy noise margin before anyone in the home noticed.", payload: { action: "dlm_reprofile", lineTest: "passed", snrMarginDb: 6 } },
           { type: "early_life.checkpoint", subject: "sam", source: "provisioning_simulator", occurredAt: "2026-09-26T07:00:00Z", description: "Morning after the first connection: BT TV and Netflix are included in Sam’s plan but not set up.", payload: { unused: ["BT TV", "Netflix"] } },
         );
       if (step === "monday")
         inputs.push(
-          { type: "monitoring.completed", subject: "daniel", source: "router_simulator", occurredAt: "2026-09-28T07:20:00Z", description: "Heightened monitoring finished early on the working day: no drops since Friday 21:12.", payload: { drops: 0 } },
-          { type: "case.closed", subject: "daniel", source: "crm_simulator", occurredAt: "2026-09-28T07:25:00Z", description: "Aisha closed case DR-2041: fault fixed, promise kept, line stable since Friday.", payload: { caseId: "DR-2041" } },
+          { type: "monitoring.checked", subject: "daniel", source: "router_simulator", occurredAt: "2026-09-28T07:20:00Z", description: "Monday morning: no drops in 59 hours 8 minutes. Monitoring continues until 21:12 BST.", payload: { drops: 0, hours: 59 + 8 / 60 } },
           { type: "product.activated", subject: "sam", source: "provisioning_simulator", occurredAt: "2026-09-26T10:05:00Z", description: "BT TV box activated in the living room.", payload: { product: "BT TV" } },
           { type: "product.activated", subject: "sam", source: "provisioning_simulator", occurredAt: "2026-09-27T19:00:00Z", description: "Netflix linked to Sam’s BT account.", payload: { product: "Netflix" } },
           { type: "usage.observed", subject: "sam", source: "router_simulator", occurredAt: "2026-09-28T07:00:00Z", description: "Since Saturday: 11 hours of TV and Netflix watched across the household.", payload: { hours: 11 } },
         );
       if (step === "weeks")
         inputs.push(
+          { type: "monitoring.completed", subject: "daniel", source: "router_simulator", occurredAt: "2026-09-28T20:12:00Z", description: "The full 72-hour monitoring window completed with no drops.", payload: { drops: 0, hours: 72, coverage: "complete", windowStart: "2026-09-25T20:12:00Z" } },
+          { type: "case.closed", subject: "daniel", source: "crm_simulator", occurredAt: "2026-09-28T20:15:00Z", description: "Aisha closed case DR-2041 after the full monitoring window.", payload: { caseId: "DR-2041" } },
           { type: "preference.offers_opt_in", subject: "sam", source: "crm_simulator", occurredAt: "2026-09-18T10:05:00Z", description: "Sam opted in to hearing about relevant offers when ordering.", payload: { channel: "in_app" } },
-          { type: "policy.offer_approved", subject: "shared", source: "crm_simulator", occurredAt: "2026-10-01T09:00:00Z", description: "Autumn TV upgrade offer approved by the Memory & Trust Officer for customers who opted in, with no open fault in the last 30 days.", payload: { offerId: "AUTUMN-TV-26" } },
+          { type: "policy.offer_approved", subject: "shared", source: "crm_simulator", occurredAt: "2026-10-01T09:00:00Z", description: "Autumn TV upgrade offer approved by the Memory & Trust Officer for customers who opted in, with no open fault in the last 30 days.", payload: { offerId: "AUTUMN-TV-26", faultFreeDays: 30 } },
           { type: "usage.pattern", subject: "sam", source: "router_simulator", occurredAt: "2026-11-06T18:30:00Z", description: "Live sport watched through apps on 5 of the last 6 weekends; three TVs streaming at once on most evenings.", payload: { sportWeekends: 5 } },
         );
       if (step === "callback")

@@ -224,3 +224,97 @@ test("Sam's evening follows: setting up, hold off, go ahead, connected", () => {
   // Maya is outside the incident: the clear never reaches her evidence.
   assert.ok(!run[3].households.find((x) => x.id === "maya")!.evidence.some((e) => e.type === "incident.cleared"));
 });
+
+function followThrough() {
+  const run = replay();
+  for (let i = 1; i < run.length; i++) {
+    run[i].decisions = [...run[i - 1].decisions, ...run[i - 1].households.map(h =>
+      arbitrate(h, run[Math.max(0, i - 2)].households.find(p => p.id === h.id)!, run[i - 1]))];
+  }
+  return run;
+}
+
+test("future Maya telemetry preserves unavailable coverage", () => {
+  const f = generateHistory();
+  const maya = f.tables["customer.people"].find(p => p.alias === "maya")!.id;
+  const future = f.events.filter(e => e.personId === maya && e.type === "router.observation_window" && e.occurredAt > clocks[5]);
+  assert.ok(future.length > 0);
+  assert.ok(future.every(e => e.payload.received === null && e.payload.coverage === "aggregate_unavailable"));
+});
+
+test("Monday monitoring remains open and only a covered 72-hour observation completes it", () => {
+  const run = followThrough();
+  const h = run[6].households[0];
+  const d = arbitrate(h, run[5].households[0], run[6]);
+  const c = contractsFor(h, d, run[6], false).find(c => c.goal === "monitoring")!;
+  assert.ok(c);
+  assert.equal(run[7].households[0].monitoring, "active");
+  assert.notEqual(run[7].households[0].caseStatus, "none");
+  assert.equal(verifyOutcome(c, run[7]).status, "waiting");
+  assert.equal(run[8].households[0].monitoring, "complete");
+  assert.equal(verifyOutcome(c, run[8]).status, "met");
+  const completion = run[8].events.find(e => e.type === "monitoring.completed")!;
+  completion.payload.hours = 59;
+  assert.notEqual(verifyOutcome(c, run[8]).status, "met");
+});
+
+test("verified Maya fix projects recovered service and a notification explanation", () => {
+  const run = followThrough(), h = run[6].households[2];
+  assert.equal(h.restored, true);
+  assert.doesNotMatch(h.serviceState, /falling/);
+  const d = arbitrate(h, run[5].households[2], run[6]);
+  assert.equal(d.trace!.selectedId, "quiet-fix-note");
+  assert.doesNotMatch(d.moment.why, /saying nothing/);
+});
+
+test("commercial eligibility rejects a recently closed fault and records new decision facts", () => {
+  const run = followThrough(), s = run[8], h = s.households[1];
+  const decision = arbitrate(h, run[7].households[1], s);
+  assert.equal(decision.trace!.selectedId, "offer");
+  assert.ok(decision.trace!.changes.some(c => c.field === "offerSignal"));
+  assert.ok(decision.trace!.changes.some(c => c.field === "offerApproved"));
+  const template = h.evidence[0];
+  h.evidence.push(...[
+    { type: "case.opened", occurredAt: "2026-10-20T10:00:00Z" },
+    { type: "case.closed", occurredAt: "2026-10-21T10:00:00Z" },
+  ].map((e, i) => ({ ...template, ...e, id: `recent-fault-${i}`, subject: h.id, receivedAt: e.occurredAt, payload: { caseId: "recent" } })));
+  const rejected = arbitrate(h, run[7].households[1], s).trace!.candidates.find(c => c.id === "offer")!;
+  assert.equal(rejected.checks.find(c => c.id === "fault-window")?.state, "fail");
+  assert.notEqual(rejected.status, "selected");
+});
+
+test("monitoring cannot be completed by early, uncovered or contradicted observations", () => {
+  const run = followThrough(), h = run[6].households[0];
+  const c = contractsFor(h, arbitrate(h, run[5].households[0], run[6]), run[6], false).find(c => c.goal === "monitoring")!;
+  const final = run[8], completion = final.events.find(e => e.type === "monitoring.completed")!;
+  const original = structuredClone(completion);
+  completion.occurredAt = "2026-09-28T07:20:00Z";
+  assert.notEqual(verifyOutcome(c, final).status, "met");
+  Object.assign(completion, structuredClone(original));
+  completion.payload.coverage = "partial";
+  assert.notEqual(verifyOutcome(c, final).status, "met");
+  assert.equal(project({ id: "daniel", name: "Daniel" }, final.events).monitoring, "active");
+  Object.assign(completion, structuredClone(original));
+  final.events.push({ ...completion, id: "drop-during-monitoring", type: "monitoring.checked", occurredAt: "2026-09-27T10:00:00Z", payload: { drops: 1 } });
+  assert.notEqual(verifyOutcome(c, final).status, "met");
+});
+
+test("commercial fault window checks spanning intervals and rejects missing approval scope", () => {
+  const run = followThrough(), s = run[8], h = s.households[1];
+  const template = h.evidence.find(e => e.subject === "sam")!;
+  const check = () => arbitrate(h, run[7].households[1], s).trace!.candidates.find(c => c.id === "offer")!.checks.find(c => c.id === "fault-window")!;
+  h.evidence.push(...[
+    { type: "case.opened", occurredAt: "2026-09-30T10:00:00Z" },
+    { type: "case.closed", occurredAt: "2026-10-20T10:00:00Z" },
+  ].map((e, i) => ({ ...template, ...e, id: `spanning-${i}`, receivedAt: e.occurredAt, payload: { caseId: "spanning" } })));
+  assert.equal(check().state, "fail");
+  h.evidence.at(-1)!.occurredAt = "2026-10-01T10:00:00Z";
+  assert.equal(check().state, "pass");
+  delete h.evidence.find(e => e.type === "policy.offer_approved")!.payload.faultFreeDays;
+  assert.equal(check().state, "unknown");
+});
+
+test("v2.3 remains immutable when v2.4 corrects monitoring and unavailable telemetry", () => {
+  assert.equal(fixtureHash(generateHistory({ datasetVersion: "bt-households-v2.3" })),
+    "e8f81fb5c51985954706398ba3a218fd1bbaeb34e2d0f1671f66813167f0e276");
+});
