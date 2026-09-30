@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { PresenterWorkspace } from "./PresenterWorkspace";
 import type { Snapshot, PersonId, SourceEvent } from "./types";
-import { householdNames, moments, chapters, storyValue, householdOutcome } from "./presentation";
+import { householdNames, moments, chapters, householdOutcome } from "./presentation";
 import type { MomentLane, momentView } from "./presentation";
 import "./presentation.css";
 
@@ -182,7 +182,7 @@ export function MomentLanes({
           {moment.time} · Moment {snapshot.cutoff + 1} of {moments.length}
         </span>
         <div className="moment-title-row">
-          <h1>{compare ? moment.title : householdOutcome(snapshot, focus).title}</h1>
+          <h1>{moment.title}</h1>
           {compare && signals.length > 0 && (
             <div className="moment-signals" aria-label="Source signals at this moment">
               {[...new Set(signals.map((e) => e.type))].map((type) => [type, signals.filter((e) => e.type === type)] as const).map(([type, events]) => (
@@ -199,7 +199,7 @@ export function MomentLanes({
             </div>
           )}
         </div>
-        <p>{compare ? moment.lead : storyValue[focus]}</p>
+        {compare && <p>{moment.lead}</p>}
       </header>
       {status === "failed" && (
         <div className="moment-alert" role="alert">
@@ -226,7 +226,7 @@ export function MomentLanes({
           Compare all three
         </button>
       </div>
-      {!compare && focusLane ? <PresenterWorkspace key={`${focus}/${snapshot.cutoff}`} snapshot={snapshot} person={focus} lane={focusLane} deciding={status !== "ready"} phone={phone} onOpen={onOpen} onInspect={onInspect} /> : (
+      {!compare && focusLane ? <PresenterWorkspace key={focus} snapshot={snapshot} person={focus} lane={focusLane} deciding={status !== "ready"} phone={phone} onOpen={onOpen} onInspect={onInspect} /> : (
       <div className="lanes">
         {lanes.map((lane) => <Lane key={lane.person} lane={lane} deciding={status === "deciding"} final={final} focused={focus === lane.person} opening={snapshot.cutoff === 0} story={storySoFar(snapshot,lane.person)} onFocus={() => { onCompare?.(false); onFocus(lane.person); }} />)}
       </div>)}

@@ -1049,3 +1049,36 @@
   .presenter-detail .presenter-count { line-height:1.25; }
   .presenter-detail .presenter-alternatives article { padding:2px 0; }
 }
+
+/* Keep the explanation visible at every beat, including shorter demo screens. */
+.presentation-workspace .moment-head .moment-narrative { display:block; max-width:none; line-height:1.45; }
+.presentation-workspace .moment { display:flex; flex-direction:column; height:calc(100dvh - 145px); min-height:0; }
+.presentation-workspace .presenter-workspace { flex:1; height:auto; min-height:0; }
+@media(max-width:1100px) {
+  .presentation-workspace .moment { height:auto; }
+  .presentation-workspace .presenter-workspace { flex:auto; }
+}
+
+.presenter-middle { display:grid; grid-template-rows:minmax(150px, .85fr) minmax(200px, 1.15fr); gap:12px; min-height:0; min-width:0; }
+.presenter-narrative { background:var(--surface); border:1px solid var(--line); border-top:3px solid var(--brand); border-radius:10px; padding:16px 18px; overflow:auto; }
+.presenter-narrative h2 { margin:8px 0; font:600 22px/1.16 var(--sans); letter-spacing:-.025em; }
+.presenter-narrative > p { margin:0; color:var(--ink); font:13px/1.5 var(--sans); }
+.narrative-effect { margin-top:12px; padding-top:10px; border-top:1px solid var(--line); }
+.narrative-effect p { margin:4px 0 0; color:var(--muted); font:12px/1.4 var(--sans); }
+.presenter-middle .presenter-detail { min-height:0; }
+@media(min-width:1101px) and (max-height:760px) {
+  .presenter-middle { grid-template-rows:minmax(140px,.9fr) minmax(180px,1.1fr); gap:8px; }
+  .presenter-narrative { padding:11px 14px; }
+  .presenter-narrative h2 { font-size:18px; margin:6px 0; }
+  .presenter-narrative > p { font-size:12px; line-height:1.4; }
+  .narrative-effect { margin-top:8px; padding-top:7px; }
+}
+@media(max-width:1100px) { .presenter-middle { grid-template-rows:auto auto; } }
+
+/* The split card owns its overflow; expanded-view content cannot enlarge its track. */
+.presenter-middle > .presenter-detail { overflow:hidden; display:flex; padding:0; gap:0; }
+.presenter-detail-body { flex:1; min-height:0; min-width:0; overflow:auto; overscroll-behavior:contain; padding:14px; display:flex; flex-direction:column; gap:8px; overflow-wrap:anywhere; }
+.presenter-detail-body > * { flex-shrink:0; min-width:0; max-width:100%; }
+.presenter-middle .presenter-open { flex:none; margin:0; border-top:1px solid var(--line); padding:10px 14px; background:var(--surface); width:100%; }
+.narrative-source { display:flex; flex-direction:column; align-items:flex-start; gap:4px; width:100%; margin-top:10px; padding:8px 10px; background:var(--soft); border:1px solid var(--line); text-align:left; font:12px/1.35 var(--sans); }
+.narrative-source span,.narrative-source small { color:var(--muted); font-size:10px; }

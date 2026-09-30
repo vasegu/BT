@@ -45,9 +45,17 @@ export function householdOutcome(s: Snapshot, person: PersonId) {
               ? "Fixed; 72-hour monitoring is still running."
               : h.confirmed && h.restored
           ? "Recovery confirmed"
-          : h.restored
-            ? "Connection back. Follow-through matters."
-            : "Dropping since yesterday. Aisha has the case.",
+          : h.restored && h.promiseFulfilled
+            ? "Connection back, callback kept. Awaiting confirmation."
+            : h.restored
+              ? "Connection back. Follow-through matters."
+              : h.incident && h.incidentCleared
+                ? "Network incident cleared. Checking Daniel’s line."
+                : h.incident
+                  ? "A network incident now explains the disruption."
+                  : h.evidence.some(e => e.type === "router.heartbeat_overdue")
+                    ? "A fresh missed heartbeat. The cause is still unconfirmed."
+                    : "Internet dropping since yesterday. Aisha has the case.",
       detail: `Line ${h.restored ? "observed working" : "not yet verified"} · callback ${h.promiseFulfilled ? "kept" : "outstanding"} · customer ${h.confirmed ? "confirmed" : "reply outstanding"}.`,
       proof: outcomes,
     };

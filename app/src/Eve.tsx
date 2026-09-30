@@ -243,8 +243,10 @@ export function Eve({
     setVoice("closing");
     call.current?.end();
   };
-  const prompts =
-    person === "daniel"
+  const needsSetup = !!h.unused?.length && h.firstUseObserved;
+  const prompts = needsSetup
+    ? ["Can you help me set up Netflix?", "I’m stuck setting up BT TV.", "I’ve tried setup but it still isn’t working."]
+    : person === "daniel"
       ? ["What’s happening with my broadband?", "Is Aisha still calling me?"]
       : person === "sam"
         ? ["My hub arrived. What happens next?", "Is my service affected?"]
@@ -415,13 +417,10 @@ export function Eve({
                 A little less explaining.
               </span>
               <h3>
-                Let’s pick up
-                <br />
-                from here.
+                {needsSetup ? "Where are you getting stuck?" : <>Let’s pick up<br />from here.</>}
               </h3>
               <p>
-                Hi {h.name.split(" ")[0]}, I’m Eve. I can read your service
-                history and recent updates, so you don’t have to start again.
+                {needsSetup ? `Hi ${h.name.split(" ")[0]}, would you like a hand with ${h.unused!.join(" or ")}? Tell me what you’ve tried and what’s on your screen. We can work through it together, one step at a time.` : `Hi ${h.name.split(" ")[0]}, I’m Eve. I can read your service history and recent updates, so you don’t have to start again.`}
               </p>
               <div className="eve-context-pills">
                 <span>Customer memory</span>

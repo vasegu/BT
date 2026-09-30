@@ -93,19 +93,6 @@ function WhySheet({ action, snapshot, h, onClose }: { action: DemoAction; snapsh
 
 /** The story's next step for an Eve message: what the customer can do next, in one tap. */
 const NEXT_STEP: Record<string, { cta: string; title: string; lines: string[]; primary: string; secondary?: string; done: string; declined?: string }> = {
-  "early-life": {
-    cta: "Start setup",
-    title: "Set up BT TV and Netflix",
-    lines: [
-      "Plug the BT TV box into your TV and into the hub.",
-      "Switch it on. It finds your account by itself.",
-      "Open Netflix on the box and sign in with the code we’ll send you.",
-    ],
-    primary: "I’ve done it",
-    secondary: "Remind me tonight",
-    done: "Great. Eve will check it’s all working.",
-    declined: "No problem. Eve will remind you at 19:00.",
-  },
   offer: {
     cta: "See the offer",
     title: "TNT Sports on your BT TV",
@@ -194,17 +181,17 @@ export function PhoneExperience({
     .filter(
       (e) =>
         e.subject === h.id &&
-        e.type === "conversation.message" &&
+        (e.type === "conversation.message" || e.type === "customer.confirmed_working") &&
         Date.parse(e.receivedAt) <= Date.parse(snapshot.clock),
     )
     .map((e) => {
       const p = e.payload as { speakerRole?: string; speaker?: string };
-      return { who: p.speakerRole === "customer" ? "You" : p.speaker ?? "BT", text: e.description, at: e.occurredAt };
+      return { who: e.type === "customer.confirmed_working" || p.speakerRole === "customer" ? "You" : p.speaker ?? "BT", text: e.type === "customer.confirmed_working" ? String(e.payload.statement ?? e.description) : e.description, at: e.occurredAt };
     });
   const [why, setWhy] = useState<DemoAction | null>(null);
   const [next, setNext] = useState<(typeof NEXT_STEP)[string] | null>(null);
   const [note, setNote] = useState<string | null>(null);
-  const STEP_KEY: Record<string, string> = { "early-life": "early-life", offer: "offer", "quiet-fix-note": "quiet-fix", "monitor-close": "monitor-closed" };
+  const STEP_KEY: Record<string, string> = { offer: "offer", "quiet-fix-note": "quiet-fix", "monitor-close": "monitor-closed" };
   const stepFor = (a: DemoAction) => {
     const id = snapshot.decisions.find((d) => d.id === a.decisionId)?.trace?.selectedId;
     if (!id || !STEP_KEY[id]) return null;
@@ -293,6 +280,9 @@ export function PhoneExperience({
         </small>
         <b>{item.action.title}</b>
         <p>{item.action.body}</p>
+        {item.latest && snapshot.decisions.find(d => d.id === item.action.decisionId)?.trace?.selectedId === "early-life" && (
+          <button className="next-cta" onClick={() => open("Help")}>Get setup help from Eve <PhoneIcon kind="chevron" /></button>
+        )}
         {item.latest && stepFor(item.action) && (
           <button className="next-cta" onClick={() => setNext(stepFor(item.action)!)}>
             {stepFor(item.action)!.cta} <PhoneIcon kind="chevron" />
@@ -414,7 +404,7 @@ export function PhoneExperience({
                   <p className="phone-greeting">
                     Good {daypart(snapshot.clock)}, {h.name.split(" ")[0]}
                   </p>
-                  <h2>{headline}</h2>
+                  {!h.restored && !h.firstUseObserved && <h2>{headline}</h2>}
 <div className={`phone-service-group${caseCard ? " has-case" : ""}`}>
                   <button className="phone-service phone-service-card" onClick={() => setPage("Services")}>
                     <PhoneIcon kind="wifi" />

@@ -1,7 +1,7 @@
 import { DecisionContext } from './DecisionContext';
 import { useState, type ReactNode } from 'react';
 import type { Snapshot, PersonId, SourceEvent } from './types';
-import { changeSummary, type MomentLane } from './presentation';
+import { changeSummary, householdOutcome, storyValue, type MomentLane } from './presentation';
 import { competingProposal, importantChecks } from './presenter-selection';
 import { EligibilityChecks } from './ArbiterWorkbench';
 import { OutcomeProofs } from './ActionsView';
@@ -29,6 +29,7 @@ export function PresenterWorkspace({ snapshot, person, lane, deciding, phone, on
   const previewChecks = chosen ? importantChecks(chosen.checks) : [];
   const changes = d?.trace?.changes.slice(0, 3) ?? [];
   const outcomes = snapshot.operations.outcomes.filter(o => o.person === person);
+  const confirmation = h.evidence.find(e => e.type === 'customer.confirmed_working' && e.revision === snapshot.cutoff);
   const current = snapshot.events.filter(e => e.revision === snapshot.cutoff && snapshot.cutoff > 0 && (e.subject === person || e.subject === 'shared') && !e.type.startsWith('router.observation_'));
   const evidence = (selected === 'arbiter' || selected === 'governance') && d
     ? h.evidence.filter(e => d.evidenceIds.includes(e.id)).slice(-3)
@@ -62,13 +63,22 @@ export function PresenterWorkspace({ snapshot, person, lane, deciding, phone, on
         <span className="rail-mark" aria-label={r.changed && !deciding ? 'Changed at this moment' : 'Unchanged'}>{r.changed && !deciding ? '●' : '—'}</span>
       </button>)}
     </nav>
+    <div className="presenter-middle">
+    <section className="presenter-narrative" aria-label="This moment’s story">
+      <span className="eyebrow">{snapshot.cutoff === 0 ? 'The starting point' : 'What happens now'} · {h.name.split(' ')[0]}</span>
+      <h2>{householdOutcome(snapshot, person).title}</h2>
+      <p>{snapshot.cutoff === 0 ? storyValue[person] : deciding ? 'New evidence has arrived. The next action is still being assessed.' : d?.reason ?? 'No new decision for this home. The recorded context is retained.'}</p>
+      {confirmation && <button className="narrative-source" onClick={() => onInspect(confirmation)}><span>Recorded customer reply · {new Date(confirmation.occurredAt).toLocaleTimeString('en-GB', { timeZone:'Europe/London', hour:'2-digit', minute:'2-digit' })}</span><strong>{String(confirmation.payload.statement ?? confirmation.description)}</strong><small>Synthetic replay input · inspect source ↗</small></button>}
+      <div className="narrative-effect"><span className="eyebrow">On the customer’s side</span><p>{lane.message ? `Sees “${lane.message.title}”` : snapshot.cutoff === 0 ? 'The existing conversation and account history are already here.' : deciding ? 'No new message is claimed while the decision is pending.' : 'No new message at this beat. The existing conversation stays in place.'}</p></div>
+    </section>
     <section className="presenter-detail" aria-label={row.name}>
+      <div className="presenter-detail-body">
       <header><span className="eyebrow">{row.name} · {snapshot.cutoff === 0 ? 'before the signal' : row.changed ? 'changed at this moment' : 'retained context'}</span>
         <h2>{questions[selected]}</h2>
         {selected !== 'arbiter' && <p>{row.text}</p>}
       </header>
       {selected === 'arbiter' && <>
-        <p className="presenter-reason">{d?.reason ?? 'The records are available. An action will only be proposed after a signal has been assessed.'}</p>
+
         {lane.previous && d && changes.length === 0 && lane.previous.title !== d.title && <div className="presenter-before"><span>Previously</span>{lane.previous.title}</div>}
         <DecisionContext compact snapshot={snapshot} person={person} inspect={onInspect} />
         <div className="presenter-decision-grid">
@@ -87,8 +97,10 @@ export function PresenterWorkspace({ snapshot, person, lane, deciding, phone, on
       {selected === 'governance' && <GovernanceEvidence snapshot={snapshot} />}
       {selected === 'review' && <><span className="eyebrow">Global study · all households and fixture moments</span><SwayTile /><p className="presenter-reason">Prebuilt rules sensitivity study. Inspect frozen-request model evaluations in the expanded review; this map is not a live safety score for this replay.</p></>}
       {['customer', 'operations'].includes(selected) && evidence.length > 0 && <div className="presenter-evidence"><span className="eyebrow">{selected === 'customer' ? 'Latest source · full history in customer memory' : 'Inspect the evidence'}</span>{evidence.slice(selected === 'customer' ? -1 : -2).map(e => <button key={e.id} onClick={() => onInspect(e)}><time>{new Date(e.occurredAt).toLocaleDateString('en-GB', { timeZone: 'Europe/London', day:'numeric', month:'short' })}</time><span><strong>{e.description}</strong><small>{e.source} · {e.type}</small></span><span>↗</span></button>)}</div>}
+      </div>
       <button className="presenter-open" onClick={() => onOpen?.(selected)}>Open {row.name.toLowerCase()} <span>↗</span></button>
     </section>
+    </div>
     <div className="moment-phone">{phone}</div>
   </div>;
 }

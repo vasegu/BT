@@ -833,7 +833,7 @@ export function serviceMessage(
       return {
         key: "early-life",
         title: `Let’s get your ${h.unused?.join(" and ") ?? "extras"} set up`,
-        body: `Your broadband is working. ${h.unused?.join(" and ")} ${h.unused && h.unused.length > 1 ? "are" : "is"} included in your plan too. I can walk you through it, one step at a time: it takes about five minutes.`,
+        body: `Your broadband is working. ${h.unused?.join(" and ")} ${h.unused && h.unused.length > 1 ? "are" : "is"} included in your plan too. Would you like a hand getting started? Tell Eve what you’re stuck on, or ask for step-by-step instructions.`,
       };
     case "early-life-complete":
       return {

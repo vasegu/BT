@@ -1093,7 +1093,7 @@ export function App() {
           <MomentSkeleton />
         ) : presenting && snapshot && view ? (
           <MomentLanes
-            key={`${snapshot.session.id}/${snapshot.cutoff}`}
+            key={snapshot.session.id}
             snapshot={snapshot}
             view={view}
             focus={person}

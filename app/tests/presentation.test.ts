@@ -109,3 +109,17 @@ test('the presenter retains all seven sections and marks only material governanc
   now.trace = structuredClone(prior.trace);
   assert.equal(changeSummary(unchanged,'maya').find(x=>x.panel==='governance')?.changed, false);
 });
+
+ test("Daniel's headline follows the signal, incident and callback evidence", async () => {
+  const run = await replay();
+  const title = (at: number) => householdOutcome(run[at], "daniel").title;
+  assert.match(title(0), /Internet dropping since yesterday/);
+  assert.match(title(1), /heartbeat.*cause.*unconfirmed/i);
+  assert.match(title(2), /network incident/i);
+  assert.match(title(3), /Connection back/);
+  assert.match(title(4), /callback kept.*confirmation/i);
+  assert.match(title(5), /Recovery confirmed/);
+  const noSignal = structuredClone(run[1]);
+  noSignal.households.find(h => h.id === "daniel")!.evidence = noSignal.households.find(h => h.id === "daniel")!.evidence.filter(e => e.type !== "router.heartbeat_overdue");
+  assert.match(householdOutcome(noSignal, "daniel").title, /Internet dropping since yesterday/);
+});
