@@ -51,7 +51,10 @@ test("the same signal produces different responses: Maya is watched, not message
   const view = momentView(s);
   const lane = (p: string) => view.lanes.find((l) => l.person === p)!;
   assert.equal(view.signals.length, 3, "one heartbeat signal per home");
-  assert.ok(lane("daniel").message && lane("sam").message);
+  // Sam is messaged. Daniel is not: Aisha spoke to him minutes ago, so a message would only repeat her.
+  assert.ok(lane("sam").message);
+  assert.equal(lane("daniel").message, null);
+  assert.ok(lane("daniel").decision?.reason.includes("no message that would repeat it"));
   assert.equal(lane("maya").message, null);
   assert.equal(lane("maya").decision?.disposition, "watch");
   assert.ok(lane("maya").panels.includes("arbiter"));

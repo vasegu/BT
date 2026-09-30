@@ -240,7 +240,14 @@ export class PostgresRepository {
     )
       throw new DomainError("Invalid historical cutoff");
     const settled = cutoff === undefined ? undefined : this.settled.get(`${id}/${cutoff}`);
-    if (settled) return structuredClone(settled);
+    if (settled) {
+      // A past moment's content never changes, but how far the session has been played does:
+      // read the current revision so the clock knows which later moments exist.
+      const [now] = await this.db`select revision, step from runtime.sessions where id=${id}`;
+      const copy = structuredClone(settled);
+      if (now) copy.session = { ...copy.session, revision: now.revision, step: now.step };
+      return copy;
+    }
     const [[state], fixture] = await Promise.all([
       this.db`select to_jsonb(s) session,
       coalesce((select jsonb_agg(data order by revision,person_id) from runtime.decisions where session_id=s.id and revision<=coalesce(${cutoff ?? null}::int,s.revision)),'[]') decisions,

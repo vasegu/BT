@@ -228,6 +228,43 @@ export function PhoneExperience({
           : h.activation.includes("unconfirmed")
             ? "Hub delivered · not connected yet"
             : "Your home broadband";
+  // A fault case that was open before tonight: what the customer reported and what was tried.
+  const opened = h.evidence.filter((e) => e.type === "case.opened").at(-1);
+  const tried = h.evidence.filter(
+    (e) => e.type === "diagnostic.completed" && opened && Date.parse(e.occurredAt) >= Date.parse(opened.occurredAt),
+  );
+  // Title a conversation by what was promised in it, if anything.
+  const chatTitle =
+    chat
+      .filter((m) => m.who !== "You")
+      .flatMap((m) => m.text.split(/(?<=\.)\s+/))
+      .find((line) => /\bcall\b/i.test(line))
+      ?.replace(/,.*$/, "")
+      .replace(/\.$/, "") ?? chat.find((m) => m.who !== "You")?.text.split(".")[0] ?? "Your conversation";
+  const caseCard =
+    openCase && opened && !h.confirmed ? (
+      <div className="phone-case">
+        <div className="phone-case-head">
+          <strong>Your open case · {String((opened.payload as { caseId?: string }).caseId ?? "")}</strong>
+          <small>Reported {day(opened.occurredAt)}</small>
+        </div>
+        <p>{opened.description.split(".")[0]}.</p>
+        <ul>
+          {tried.map((e) => (
+            <li key={e.id}>
+              {(e.payload as { test?: string }).test === "restart"
+                ? `Restart at ${time(String(e.occurredAt))} didn’t fix it`
+                : `${day(e.occurredAt)}: ${e.description.split(".")[0].toLowerCase()}`}
+            </li>
+          ))}
+        </ul>
+        {h.promise && (
+          <small className="phone-case-next">
+            {h.promiseFulfilled ? `${h.owner} called you at ${time(h.promise)}` : `${h.owner} will call you at ${time(h.promise)}`}
+          </small>
+        )}
+      </div>
+    ) : null;
   const eveEntry = (
     <button className="phone-eve-entry" onClick={() => open("Help")}>
       <i className="eve-entry-icon" aria-hidden="true">
@@ -300,12 +337,13 @@ export function PhoneExperience({
                     </span>
                     <PhoneIcon kind="chevron" />
                   </button>
+                  {caseCard}
                   {eveEntry}
                   <div className="phone-section-title">
                     <span>Your updates</span>
                     <span>
-                      {messages.length
-                        ? `${messages.length} received`
+                      {messages.length + (chat.length ? 1 : 0)
+                        ? `${messages.length + (chat.length ? 1 : 0)} tonight`
                         : "All caught up"}
                     </span>
                   </div>
@@ -382,14 +420,29 @@ export function PhoneExperience({
                       </div>
                     )}
                     {chat.length > 0 && (
-                      <div className="phone-chat">
-                        <small>Your chat with {chat.find((m) => m.who !== "You")?.who ?? "BT"} · {time(chat[0].at)}</small>
-                        {chat.map((m, i) => (
-                          <p key={i} className={m.who === "You" ? "is-you" : ""}>
-                            <b>{m.who}</b> {m.text}
-                          </p>
-                        ))}
-                      </div>
+                      // Tonight's conversation is one more update, oldest last, in the same list.
+                      <details className={`phone-message phone-chat-item${messages.length ? " older" : ""}`} open={messages.length ? undefined : true}>
+                        <summary>
+                          <div className="message-meta">
+                            <span>
+                              <img src={btLogo} alt="" />
+                              {chat.find((m) => m.who !== "You")?.who ?? "BT"} · your conversation
+                            </span>
+                            <time>{time(chat[0].at)}</time>
+                          </div>
+                          <h3>
+                            {chatTitle}
+                            <PhoneIcon kind="chevron" />
+                          </h3>
+                        </summary>
+                        <div className="phone-chat">
+                          {chat.map((m, i) => (
+                            <p key={i} className={m.who === "You" ? "is-you" : ""}>
+                              <b>{m.who}</b> {m.text}
+                            </p>
+                          ))}
+                        </div>
+                      </details>
                     )}
                   </div>
                 </>

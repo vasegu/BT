@@ -384,7 +384,8 @@ test("pending work and receipts survive reopen; retry does not deliver twice", a
     await f.engine.processJobs();
     const before = f.engine.snapshot(a.id);
     assert.equal(before.pendingJobs, 0);
-    assert.equal(before.actions.length, 2);
+    // Only Sam is messaged at 21:00; Daniel's owner has just spoken to him, so his drop goes on the case.
+    assert.equal(before.actions.length, 1);
     f.reopen();
     await f.engine.processJobs();
     const after = f.engine.snapshot(a.id);

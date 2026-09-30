@@ -28,24 +28,30 @@ export function MomentSpine({
   onBack,
   onExplore,
   onRestart,
+  target,
+  opening = false,
 }: {
   snapshot: Snapshot | null;
   status: ReturnType<typeof momentView>["status"] | null;
   busy: boolean;
+  /** The moment asked for; the clock moves to it at once, before its snapshot arrives. */
+  target?: number;
+  /** A recorded moment is loading: nothing is being decided. */
+  opening?: boolean;
   onGo: (at: number) => void;
   onNext: () => void;
   onBack: () => void;
   onExplore: () => void;
   onRestart: () => void;
 }) {
-  const at = snapshot?.cutoff ?? 0;
+  const at = target ?? snapshot?.cutoff ?? 0;
   const recorded = snapshot?.session.revision ?? 0;
   const last = at === moments.length - 1;
   return (
     <div className="spine" role="navigation" aria-label="Scenario clock">
       <div className="spine-clock">
         <span>THREE HOMES, ONE EVENING</span>
-        <strong>{snapshot ? moments[at].time : "--:--"}</strong>
+        <strong>{snapshot || target !== undefined ? moments[at].time : "--:--"}</strong>
       </div>
       <ol className="spine-track">
         {moments.map((m, i) => (
@@ -56,7 +62,7 @@ export function MomentSpine({
             }
           >
             <button
-              disabled={!snapshot || busy || i > recorded}
+              disabled={!snapshot || busy || opening || i > recorded}
               aria-current={i === at ? "step" : undefined}
               onClick={() => onGo(i)}
               title={i > recorded ? "Not played yet" : m.title}
@@ -68,15 +74,17 @@ export function MomentSpine({
         ))}
       </ol>
       <div className="spine-controls">
-        <button onClick={onBack} disabled={!snapshot || busy || at === 0} aria-label="Previous moment">
+        <button onClick={onBack} disabled={!snapshot || busy || opening || at === 0} aria-label="Previous moment">
           ←
         </button>
         <button
           className="primary"
           onClick={onNext}
-          disabled={!snapshot || busy || last || status !== "ready"}
+          disabled={!snapshot || busy || opening || last || status !== "ready"}
         >
-          {status === "deciding" || busy
+          {opening
+            ? "Opening…"
+            : status === "deciding" || busy
             ? "Deciding…"
             : last
               ? "End of story"
@@ -95,8 +103,8 @@ export function MomentSpine({
   );
 }
 
-/** The human events behind each home before tonight's signal, from the records themselves. */
-const STORY_TYPES = new Set(["case.opened", "diagnostic.completed", "conversation.message", "order.delivered"]);
+/** The human events behind each home before tonight's signal, from the records themselves:
+ *  the open case and what was tried, then the latest conversation (acknowledgements left out). */
 function storySoFar(snapshot: Snapshot, person: PersonId) {
   const clock = Date.parse(snapshot.clock);
   const today = new Date(clock).toDateString();
@@ -107,9 +115,22 @@ function storySoFar(snapshot: Snapshot, person: PersonId) {
       ? d.toLocaleTimeString("en-GB", { ...opts, hour: "2-digit", minute: "2-digit" })
       : d.toLocaleDateString("en-GB", { ...opts, day: "numeric", month: "short" });
   };
-  return snapshot.events
-    .filter((e) => e.subject === person && STORY_TYPES.has(e.type) && Date.parse(e.receivedAt) <= clock)
-    .slice(-3)
+  const known = snapshot.events.filter((e) => e.subject === person && Date.parse(e.receivedAt) <= clock);
+  const opened = known.filter((e) => e.type === "case.opened").at(-1);
+  const since = opened ? Date.parse(opened.occurredAt) : 0;
+  const setupCase = (opened?.payload as { owner?: string } | undefined)?.owner === "Activation team";
+  const caseWork = known.filter(
+    (e) =>
+      e === opened ||
+      (e.type === "diagnostic.completed" && Date.parse(e.occurredAt) >= since) ||
+      (e.type === "order.delivered" && setupCase),
+  );
+  const said = known.filter((e) => e.type === "conversation.message" && !/^thank/i.test(e.description));
+  const todays = said.filter((e) => new Date(e.occurredAt).toDateString() === today);
+  const talk = todays.length ? todays : said.slice(-2);
+  return [...caseWork, ...talk]
+    .sort((a, b) => Date.parse(a.occurredAt) - Date.parse(b.occurredAt))
+    .slice(-6)
     .map((e) => {
       const p = e.payload as { speakerRole?: string; speaker?: string };
       const who = e.type === "conversation.message" ? (p.speakerRole === "customer" ? first(person) : p.speaker ?? "BT") : null;

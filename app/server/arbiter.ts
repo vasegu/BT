@@ -60,6 +60,9 @@ export function arbitrate(
   const linked = h.linkedServices?.find((s) => s.recent);
   // The network team has cleared the incident this service was in.
   const cleared = !!h.incidentCleared;
+  // The case owner has only just spoken to the customer and made a promise: a message now would
+  // repeat what they were told, so new evidence goes onto the case instead.
+  const justPromised = justSpoken(h, time);
   const candidates: Proposal[] = [];
   function propose(
     id: string,
@@ -229,9 +232,11 @@ export function arbitrate(
     open ? "Continue the recovery plan" : "Investigate service state",
     "recovery",
     "investigate",
-    `${h.restartTried ? "The earlier restart did not resolve the issue. " : "The cause is still unconfirmed. "}${obligation ? `Keep ${h.owner || "the current owner"} and the ${due} callback together.` : open ? "Continue the reported case with its existing owner." : "Obtain fresh diagnostics before asking the customer to act."}`,
+    `${h.restartTried ? "The earlier restart did not resolve the issue. " : "The cause is still unconfirmed. "}${obligation ? `Keep ${h.owner || "the current owner"} and the ${due} callback together.` : open ? "Continue the reported case with its existing owner." : "Obtain fresh diagnostics before asking the customer to act."}${justPromised ? ` ${h.owner} spoke to ${h.name.split(" ")[0]} minutes ago; the new drop goes onto the case, with no message that would repeat it.` : ""}`,
     "A fresh diagnostic, incident membership or customer report.",
-    "Publish a service update; continue the existing investigation.",
+    justPromised
+      ? "Add tonight’s evidence to the owner’s case; send no message that repeats what the customer was just told."
+      : "Publish a service update; continue the existing investigation.",
     [
       ["Investigation", 40],
       ["Open case", open ? 25 : 0],
@@ -600,12 +605,25 @@ export function arbitrate(
   };
 }
 
+/** The owner made a still-open promise to this customer within the last half hour. */
+function justSpoken(h: Household, at: string) {
+  const promised = h.evidence.filter((e) => e.type === "promise.created").at(-1);
+  return (
+    !!promised &&
+    !!h.promise &&
+    !h.promiseFulfilled &&
+    Date.parse(at) - Date.parse(promised.occurredAt) <= 30 * 60e3
+  );
+}
+
 export function serviceMessage(
   h: Household,
   d: Decision,
 ): { key: string; title: string; body: string } | null {
   if (!h.contactAllowed || ["watch", "suppress"].includes(d.disposition))
     return null;
+  // Recovery work right after the owner's own promise stays on the case, not the phone.
+  if (d.trace?.selectedId === "recovery" && justSpoken(h, d.time)) return null;
   const selected = d.trace!.selectedId;
   const callback =
     h.promise && !h.promiseFulfilled

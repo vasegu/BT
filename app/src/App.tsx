@@ -269,6 +269,19 @@ export function App() {
     },
     [sessionId, cutoff],
   );
+  // Preload every recorded moment so clicking a time or stepping through is instant.
+  const recordedRevision = snapshot?.session.id === sessionId ? snapshot?.session.revision : undefined;
+  useEffect(() => {
+    if (!sessionId || recordedRevision === undefined) return;
+    let stopped = false;
+    void (async () => {
+      for (let at = 0; at <= recordedRevision && !stopped; at++)
+        await readSnapshot(sessionId, at).catch(() => undefined);
+    })();
+    return () => {
+      stopped = true;
+    };
+  }, [sessionId, recordedRevision]);
   const newSession = async () => {
     setPlaying(false);
     setBusy(true);
@@ -899,7 +912,9 @@ export function App() {
         <MomentSpine
           snapshot={snapshot}
           status={view?.status ?? null}
-          busy={busy || openingMoment || !!error}
+          busy={busy || !!error}
+          opening={openingMoment}
+          target={cutoff ?? (snapshot?.session.id === sessionId ? snapshot?.session.revision : undefined)}
           onGo={goChapter}
           onNext={() => void nextMoment()}
           onBack={previousMoment}

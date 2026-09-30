@@ -144,7 +144,11 @@ export function SectionView({
             </div>
           </>
         ) : (
-          <p>Nothing has happened yet. The phone shows what {first} would see today.</p>
+          <p>
+            {h.caseStatus === "open" && h.owner && h.owner !== "Activation team"
+              ? `No network signal yet, but ${first} already has an open case: the line has been dropping and ${h.owner} is looking after it. The phone shows what ${first} sees before tonight’s signal.`
+              : `No network signal yet. The phone shows what ${first} would see today.`}
+          </p>
         )}
         <div className="full-fields">
           <Field label="Current service state">{h.serviceState}</Field>

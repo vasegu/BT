@@ -29,8 +29,9 @@ test("delivery opens immutable expectations; separate observations close only th
     const original = episode(first, "daniel", "callback");
     assert.equal(original.check.status, "waiting");
     assert.equal(original.dueAt, "2026-09-25T20:15:00Z");
-    assert.ok(original.actionId);
-    assert.equal(first.actions.length, 2);
+    // Aisha has just promised the call, so no message repeats it: the expectation opens with the decision.
+    assert.equal(original.actionId, null);
+    assert.equal(first.actions.length, 1);
     assert.equal(episode(first, "maya", "watch").actionId, null);
     await step(e, id, "incident");
     const restored = await step(e, id, "restore");

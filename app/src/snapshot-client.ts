@@ -55,7 +55,8 @@ export async function readSnapshot(
         { status: response.status },
       );
     if (cache.size >= 24) cache.delete(cache.keys().next().value!);
-    const entry = { value: value as Snapshot, expires: Date.now() + 30000 };
+    // A recorded moment never changes, so it can stay cached; the live view refreshes often.
+    const entry = { value: value as Snapshot, expires: Date.now() + ((value as Snapshot).historical ? 600000 : 30000) };
     if (pending.get(key) === request) {
       cache.set(key, entry);
       cache.set(keyFor(id, value.cutoff), entry);
