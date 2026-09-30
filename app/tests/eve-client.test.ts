@@ -91,3 +91,12 @@ test("long voice transcripts stay within the server history limits", () => {
   assert.ok(result.every((m) => m.content.length <= 4000));
   assert.ok(result.reduce((total, m) => total + m.content.length, 0) <= 20000);
 });
+
+test('demo scope is pinned even when the displayed moment is the latest', async()=>{
+ const {eveScope, spokenAnswer}=await import('../src/eve-client.ts');
+ assert.deepEqual(eveScope({session:{id:'pinned'},cutoff:4,historical:false} as any,'sam'),{sessionId:'pinned',person:'sam',at:4});
+ assert.equal(spokenAnswer('The line is restored. Your callback is still due.'),'The line is restored. Your callback is still due.');
+ const long='Your connection is restored. '.repeat(80)+'But the case is not closed.';
+ assert.ok(spokenAnswer(long).length<=1000);assert.match(spokenAnswer(long),/full answer.*conversation/i);
+ assert.doesNotMatch(spokenAnswer(long),/Your connection is restored/);
+});

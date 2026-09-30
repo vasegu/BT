@@ -349,6 +349,13 @@ export function App() {
     };
   }, [refresh, sessionUnavailable, Boolean(snapshot?.pendingJobs)]);
   useEffect(() => {
+    const updated = (event: Event) => {
+      if ((event as CustomEvent).detail?.sessionId === sessionId) void refresh(true);
+    };
+    window.addEventListener("bt-eve-updated", updated);
+    return () => window.removeEventListener("bt-eve-updated", updated);
+  }, [sessionId, refresh]);
+  useEffect(() => {
     setPlaying(false);
   }, [sessionId, cutoff, panel, records]);
   useEffect(() => {

@@ -387,6 +387,7 @@ export function PhoneExperience({
         </div>
         {page === "Help" ? (
           <Eve
+            key={`${snapshot.session.id}/${h.id}/${snapshot.cutoff}`}
             snapshot={snapshot}
             person={h.id}
             onBack={() => setPage("Home")}

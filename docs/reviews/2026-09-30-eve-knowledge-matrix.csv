@@ -1,0 +1,28 @@
+person,at,clock,records,chars,future,late,foreign,case,owner,promise,restored,confirmed,devices,products,monitoring,quietFix,engaged,offer,decision,conversation,updates
+daniel,0,2026-09-25T19:45:00Z,10,9180,0,0,[],open,Aisha,False,False,False,5,2,,,,,,7,0
+sam,0,2026-09-25T19:45:00Z,7,4968,0,0,[],open,Activation team,False,False,False,0,3,,,,,,3,0
+maya,0,2026-09-25T19:45:00Z,7,9665,0,0,[],none,,False,False,False,5,2,,,,,,2,0
+daniel,1,2026-09-25T20:00:00Z,11,13385,0,0,[],open,Aisha,False,False,False,5,2,,,,,Continue the recovery plan,7,0
+sam,1,2026-09-25T20:00:00Z,8,9279,0,0,[],open,Activation team,False,False,False,0,3,,,,,Check activation status,3,1
+maya,1,2026-09-25T20:00:00Z,8,13970,0,0,[],none,,False,False,False,5,2,,,,,Observe without interruption,2,0
+daniel,2,2026-09-25T20:03:00Z,11,13733,0,0,[],open,Aisha,False,False,False,5,2,,,,,Coordinate the shared incident,7,1
+sam,2,2026-09-25T20:03:00Z,8,9684,0,0,[],open,Activation team,False,False,False,0,3,,,,,Coordinate the shared incident,3,2
+maya,2,2026-09-25T20:03:00Z,8,14061,0,0,[],none,,False,False,False,5,2,,,,,Observe without interruption,2,0
+daniel,3,2026-09-25T20:12:00Z,14,14802,0,0,[],open,Aisha,False,True,False,5,2,active,,,,Keep the 21:15 callback,7,2
+sam,3,2026-09-25T20:12:00Z,8,9982,0,0,[],open,Activation team,False,False,False,0,3,,,,,Tell the customer setup can go ahead,3,3
+maya,3,2026-09-25T20:12:00Z,9,14170,0,0,[],none,,False,True,False,5,2,,,,,Quiet watch completed,2,0
+daniel,4,2026-09-25T20:15:00Z,15,15122,0,0,[],open,Aisha,True,True,False,5,2,active,,,,Await customer confirmation,7,2
+sam,4,2026-09-25T20:15:00Z,8,9982,0,0,[],open,Activation team,False,False,False,0,3,,,,,Tell the customer setup can go ahead,3,3
+maya,4,2026-09-25T20:15:00Z,9,14170,0,0,[],none,,False,True,False,5,2,,,,,Quiet watch completed,2,0
+daniel,5,2026-09-25T20:18:00Z,16,15638,0,0,[],open,Aisha,True,True,True,5,2,active,,,,Recovery confirmed,7,3
+sam,5,2026-09-25T20:18:00Z,10,12127,0,0,[],closed,Activation team,False,True,False,6,3,,,,,Successful first use observed,3,4
+maya,5,2026-09-25T20:18:00Z,9,14170,0,0,[],none,,False,True,False,5,2,,,,,Quiet watch completed,2,0
+daniel,6,2026-09-26T07:30:00Z,17,15869,0,0,[],open,Aisha,True,True,True,5,2,active,,,,Keep the extra monitoring running,7,3
+sam,6,2026-09-26T07:30:00Z,11,12701,0,0,[],closed,Activation team,False,True,False,6,3,,,,,Help set up BT TV and Netflix,3,5
+maya,6,2026-09-26T07:30:00Z,11,14857,0,0,[],none,,False,True,False,5,2,,fixed,,,Tell the customer about a fix they didn’t notice,2,1
+daniel,7,2026-09-28T07:30:00Z,18,16084,0,0,[],open,Aisha,True,True,True,5,2,active,,,,Keep the extra monitoring running,7,3
+sam,7,2026-09-28T07:30:00Z,14,13824,0,0,[],closed,Activation team,False,True,False,9,3,,,True,,Early life complete: everything in use,3,6
+maya,7,2026-09-28T07:30:00Z,11,14905,0,0,[],none,,False,True,False,5,2,,fixed,,,Nothing to do: all healthy,2,1
+daniel,8,2026-11-06T19:00:00Z,20,16349,0,0,[],none,,True,True,True,5,2,complete,,,,Close the extra checks and tell the customer,7,4
+sam,8,2026-11-06T19:00:00Z,15,14608,0,0,[],closed,Activation team,False,True,False,9,3,,,True,Live sport watched through apps on 5 of the last 6 weekends; three TVs streaming at once on most evenings.,Offer a TV upgrade with sport,3,7
+maya,8,2026-11-06T19:00:00Z,11,15105,0,0,[],none,,False,True,False,7,2,,fixed,,,Nothing to do: all healthy,2,1

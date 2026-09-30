@@ -218,3 +218,15 @@ test("Eve exchanges use the selected replay beat with separate wall-clock audit 
   assert.equal(payload.replayBeat, 2);
   assert.ok(Number.isFinite(Date.parse(payload.recordedAt)));
 });
+
+test('saving a replay conversation invalidates cached snapshots at and after its beat',async()=>{
+ const repo=new PostgresRepository({} as any), internal=repo as any;
+ internal.settled=new Map([['s/0',{}],['s/1',{}],['s/2',{}],['other/2',{}]]);
+ internal.fixtures=new Map([['s',{}]]);
+ internal.session=async()=>({});internal.contexts=async()=>[{household:{id:'daniel',contactAllowed:true},personId:'p',serviceId:'svc'}];
+ internal.fixture=async()=>({tables:{'ingestion.sources':[{name:'crm_simulator',id:'source'}]}});
+ const tx:any=async()=>[];tx.json=(x:any)=>x;internal.db={begin:async(fn:any)=>fn(tx)};
+ await repo.saveConversation('s','daniel',1,[{role:'user',content:'Question'},{role:'assistant',content:'Answer'}]);
+ assert.ok(internal.settled.has('s/0'));assert.ok(internal.settled.has('other/2'));
+ assert.ok(!internal.settled.has('s/1'));assert.ok(!internal.settled.has('s/2'));assert.ok(!internal.fixtures.has('s'));
+});

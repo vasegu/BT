@@ -51,6 +51,7 @@ export class PostgresRepository {
   private fixtures = new Map<string, Promise<HouseholdFixture>>();
   private baselines = new Map<string, Promise<Baseline>>();
   private settled = new Map<string, Snapshot>();
+  private conversationVersion = 0;
   constructor(db: Sql) {
     this.db = db;
   }
@@ -241,6 +242,7 @@ export class PostgresRepository {
     );
   }
   async snapshot(id: string, cutoff?: number): Promise<Snapshot> {
+    const conversationVersion = this.conversationVersion;
     if (
       cutoff !== undefined &&
       (!Number.isInteger(cutoff) || cutoff < 0 || cutoff > steps.length)
@@ -350,8 +352,8 @@ export class PostgresRepository {
       },
       nextStep: at < session.revision ? null : (steps[session.step] ?? null),
     };
-    // A past revision with no outstanding jobs can no longer change; keep it in memory.
-    if (at < session.revision && !state.pending && !state.failed) {
+    // Cache settled replay state; conversation writes invalidate this beat and later ones.
+    if (at < session.revision && !state.pending && !state.failed && conversationVersion === this.conversationVersion) {
       if (this.settled.size >= 120)
         this.settled.delete(this.settled.keys().next().value!);
       this.settled.set(`${id}/${at}`, structuredClone(result));
@@ -679,6 +681,11 @@ export class PostgresRepository {
       }
     });
     this.fixtures.delete(id);
+    this.conversationVersion++;
+    // Replay chat is an overlay available from this beat onward, including cached chapters.
+    for (const key of this.settled.keys()) {
+      if (key.startsWith(`${id}/`) && Number(key.slice(id.length + 1)) >= at) this.settled.delete(key);
+    }
   }
   async close() {
     this.closing = true;

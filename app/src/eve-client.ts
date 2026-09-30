@@ -1,7 +1,15 @@
-import type { PersonId } from "./types";
+import { invalidateSnapshot } from "./snapshot-client.ts";
+import type { Snapshot, PersonId } from "./types";
 
 export type Message = { role: "user" | "assistant"; content: string };
 export type EveScope = { sessionId: string; person: PersonId; at?: number };
+export function eveScope(snapshot: Snapshot, person: PersonId): EveScope {
+  return { sessionId: snapshot.session.id, person, at: snapshot.cutoff };
+}
+// Never deliver a partial claim with its final qualification cut off.
+export function spokenAnswer(text: string): string {
+  return text.length <= 1000 ? text : "The full answer is in our conversation. It needs more detail than I can safely shorten here. Please read it there, or ask me one specific part. I haven’t changed your account.";
+}
 export type EveReply = {
   text: string;
   revision: number;
@@ -26,6 +34,10 @@ export async function evePost<T>(
   const data = await response.json();
   if (!response.ok)
     throw new Error(data.error || "Eve could not connect. Please try again.");
+  if (path === "chat" && body && typeof body === "object" && "sessionId" in body && typeof body.sessionId === "string") {
+    invalidateSnapshot(body.sessionId);
+    if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") window.dispatchEvent(new CustomEvent("bt-eve-updated", { detail: { sessionId: body.sessionId } }));
+  }
   return data;
 }
 
@@ -281,7 +293,7 @@ export class EveCall {
       if (this.closed || this.closing) return;
       this.events.onEvidence(reply);
       // GPT-Live append content has a 500-token limit. Bound to 1,000 characters.
-      this.send("session.commentary.append", reply.text.slice(0, 1000), id);
+      this.send("session.commentary.append", spokenAnswer(reply.text), id);
     } catch {
       if (!this.closed && !this.closing)
         this.send(

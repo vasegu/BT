@@ -2,7 +2,7 @@ import { formatDateTime } from "./time";
 import { useEffect, useRef, useState } from "react";
 import { VoiceBeam, getAudioContext } from "voice-glow";
 import { BorderBeam } from "border-beam";
-import { EveCall, evePost, recentMessages } from "./eve-client";
+import { EveCall, evePost, recentMessages, eveScope } from "./eve-client";
 import type { EveReply, Message } from "./eve-client";
 import type { PersonId, Snapshot } from "./types";
 import "./eve.css";
@@ -40,11 +40,7 @@ export function Eve({
   onBack: () => void;
 }) {
   const h = snapshot.households.find((h) => h.id === person)!;
-  const scope = {
-    sessionId: snapshot.session.id,
-    person,
-    ...(snapshot.historical ? { at: snapshot.cutoff } : {}),
-  };
+  const scope = eveScope(snapshot, person);
   const memoryKey = `bt-eve/${scope.sessionId}/${person}/${scope.at ?? "live"}`;
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
     try {
@@ -198,7 +194,14 @@ export function Eve({
       onStream: setStream,
       onOutputStream: setOutputStream,
       onThinking: setThinking,
-      onEvidence: setEvidence,
+      onEvidence: (reply) => {
+        setEvidence(reply);
+        // When speech cannot safely carry the whole answer, make its promised full
+        // written version visible instead of relying on an unspoken transcript.
+        if (reply.text.length > 1000) updateMessages([...messagesRef.current, {
+          id: crypto.randomUUID(), role: "assistant", content: reply.text, revision: reply.revision,
+        }]);
+      },
       onError: setError,
       onClosed: () => {
         setVoice("off");

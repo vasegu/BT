@@ -47,8 +47,9 @@ test("historical grounding cannot see future restoration or callback completion"
     assert.deepEqual(now.availableDemoActions, [
       "Confirm the service is working using the ‘It’s working again’ button in Home",
     ]);
+    assert.ok(past.outcomes.every(o => o.check.status === "waiting" && !o.check.observedAt));
     assert.doesNotMatch(
-      JSON.stringify(past),
+      JSON.stringify(past.records),
       /service.restored_observed|promise.fulfilled/,
     );
   } finally {
@@ -179,4 +180,17 @@ test("missing credentials and upstream failures never masquerade as AI answers",
   } finally {
     engine.close();
   }
+});
+
+test('Eve exposes personal outcome proof, scoped shared evidence and a current voice brief',async()=>{
+ const {steps}=await import('../server/engine.ts');const {voiceBrief}=await import('../server/eve.ts');
+ const e=new Engine(':memory:');try{
+ const s=e.createSession();for(const [i,step]of steps.entries()){e.advance(s.id,step,`knowledge-${i}`,i);await e.processJobs();}
+ const snap=e.snapshot(s.id), c=eveContext(snap,'sam');
+ assert.ok(c.outcomes.length>0);assert.ok(c.decision?.checks.length);
+ assert.ok(c.sharedRecords.some(r=>r.type==='policy.offer_approved'));
+ assert.doesNotMatch(JSON.stringify(c),/Daniel Reed|Maya Patel|svc_daniel|svc_maya/);
+ assert.match(voiceBrief(c),/cleared/i);assert.match(voiceBrief(c),/products|engagement/i);
+ const d=eveContext(snap,'daniel');assert.match(voiceBrief(d),/monitoring.*complete/i);
+ }finally{e.close();}
 });
