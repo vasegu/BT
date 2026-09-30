@@ -86,8 +86,8 @@ export function householdOutcome(s: Snapshot, person: PersonId) {
 }
 /** The clock is the spine: each stop is one source signal, read across all three homes at once. */
 export const moments = [
-  { time: "20:45", title: "Before the signal", lead: "No network signal yet, but each home already has a history. Daniel’s line has been dropping since yesterday, tonight’s restart didn’t fix it, and Aisha has promised to call at 21:15. His hub still looks healthy to our systems." },
-  { time: "21:00", title: "Three homes, one minute", lead: "Daniel’s and Maya’s routers miss the same heartbeat. Sam switches on a new hub for the first time, and it won’t connect." },
+  { time: "20:45", title: "Before the signal", lead: "No network signal yet, but each home already has a history. Daniel’s line has been dropping since yesterday: our line monitoring spotted it before Daniel did, and Aisha got in touch first. Tonight’s restart didn’t fix it, and Aisha has promised to call at 21:15." },
+  { time: "21:00", title: "Three homes, one minute", lead: "The network loses contact with three hubs at once. Daniel’s and Maya’s go quiet; Sam’s is switched on for the first time and can’t connect. To the network it’s one alarm. Memory says three different things." },
   { time: "21:03", title: "A network incident is confirmed", lead: "The affected-service register names exactly which homes are in scope." },
   { time: "21:12", title: "The line comes back", lead: "The incident clears and fresh evidence arrives. A working line does not close every thread." },
   { time: "21:15", title: "A promise is kept", lead: "The named adviser makes the promised call, on time." },

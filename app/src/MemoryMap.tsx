@@ -6,7 +6,7 @@ import { GRID_W, GRID_H, CONTOUR_LEVELS, CONTOUR_ALPHAS, gaussianKDE, makeContou
 import "./memory-map.css";
 
 // Small multiples: one memory space per person, built from their own records alone, drawn
-// identically. The same signal lands in each; what it sits closest to is what it reminds us
+// identically. The same alarm lands in each; what it sits closest to is what it reminds us
 // of in that person's history. Individual memory, not a segment.
 const PEOPLE: PersonId[] = ["daniel", "sam", "maya"];
 const LAYERS: [MemoryLayer, string, string][] = [

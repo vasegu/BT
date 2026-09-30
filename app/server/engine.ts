@@ -416,7 +416,7 @@ export class Engine {
           subject: "daniel",
           source: "crm_simulator",
           description:
-            "Two connection drops reported. Aisha owns case DR-2041.",
+            "BT spotted two connection drops before Daniel reported them. Aisha owns case DR-2041.",
           payload: { owner: "Aisha", caseId: "DR-2041" },
           occurredAt: "2026-09-24T17:10:00Z",
         },

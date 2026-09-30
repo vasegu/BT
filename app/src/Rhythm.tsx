@@ -80,6 +80,7 @@ export function rhythmGrid(snapshot: Snapshot, person: PersonId, DAYS = 30) {
         // A fault is something that went wrong: a failed or intermittent test, or a fault case
         // (not an activation case, which is a setup still in progress).
         (e.type === "service.failure_observed" ||
+          e.type === "line.drops_detected" ||
           (e.type === "diagnostic.completed" && ["intermittent", "not_resolved", "failed"].includes(String((e.payload as { result?: string }).result))) ||
           (e.type === "case.opened" && (e.payload as { owner?: string }).owner !== "Activation team")) &&
         Date.parse(e.receivedAt) <= clock,
@@ -100,7 +101,7 @@ export function rhythmGrid(snapshot: Snapshot, person: PersonId, DAYS = 30) {
     : silent && silent >= observed.length / 2
       ? `No heartbeat since the hub was delivered · ${silent} silent windows`
       : gaps.length === 0 && faults.length
-        ? "Hub always reachable, yet drops were reported this week · the heartbeat alone would miss them"
+        ? "Hub always reachable, yet the line dropped this week · line monitoring caught it; the heartbeat alone would miss it"
         : gaps.length === 0
         ? "Management heartbeat steady for 30 days · tonight is the exception"
         : nightGaps / gaps.length > 0.7
@@ -150,7 +151,7 @@ export function Rhythm({ snapshot, person }: { snapshot: Snapshot; person: Perso
       <div className="rhythm-axis" aria-hidden="true">
         <span>−30d</span>
         <span>−15d</span>
-        {faults.length > 0 && <span className="is-fault">▲ reported fault</span>}
+        {faults.length > 0 && <span className="is-fault">▲ fault on record</span>}
         <span className={quietNow ? "is-quiet" : ""}>tonight{quietNow ? " · quiet now" : ""}</span>
       </div>
     </figure>

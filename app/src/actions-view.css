@@ -90,7 +90,7 @@
 .av-moments {
   flex: 1;
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(9, minmax(0, 1fr));
   margin: 0;
   padding: 0;
   list-style: none;
@@ -121,6 +121,9 @@
 }
 .av-moments button[aria-current="step"] time {
   color: var(--brand);
+}
+.av-moments li:nth-child(7) button {
+  border-left-style: dashed;
 }
 .av-moments span {
   font-size: 11px;
@@ -641,4 +644,12 @@
 .av-signoff.is-withdrawn b {
   text-decoration: line-through;
   text-decoration-color: #a39bad;
+}
+@media (max-width: 1100px) {
+  .av-moments span {
+    display: none;
+  }
+  .av-moments time {
+    font-size: 10px;
+  }
 }

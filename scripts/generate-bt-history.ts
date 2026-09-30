@@ -410,12 +410,27 @@ export function generateHistory(
     { caseId: "DR-1804" },
     "daniel-old-case",
   );
+  // v2.2 · Proactive: line monitoring spots Daniel's drops before he reports them, and BT
+  // gets in touch first. The hub stayed reachable, so the heartbeat alone never saw it.
+  if (since("2.2"))
+    emit(
+      "daniel",
+      "daniel-drops-detected",
+      "line.drops_detected",
+      "2026-09-24T15:40:00Z",
+      "Line monitoring spotted two short drops today, at 14:05 and 16:20. The hub stayed reachable, so the heartbeat never missed.",
+      { drops: 2, times: ["14:05", "16:20"] },
+      null,
+      "diagnostics",
+    );
   caseRow(
     "daniel",
     "daniel-case",
     "DR-2041",
-    "2026-09-24T17:10:00Z",
-    "Two connection drops reported. Aisha owns case DR-2041.",
+    since("2.2") ? "2026-09-24T15:50:00Z" : "2026-09-24T17:10:00Z",
+    since("2.2")
+      ? "BT spotted two connection drops before Daniel reported them. Aisha owns case DR-2041."
+      : "Two connection drops reported. Aisha owns case DR-2041.",
     "Aisha",
   );
   caseRow(
@@ -465,9 +480,30 @@ export function generateHistory(
   conversation(
     "daniel",
     "daniel-support",
-    "2026-09-24T17:10:00Z",
+    since("2.2") ? "2026-09-24T15:50:00Z" : "2026-09-24T17:10:00Z",
     "daniel-case",
-    [
+    since("2.2") ? [
+      [
+        "adviser",
+        "Aisha",
+        "Hi Daniel, our monitoring spotted two short drops on your line today, at 14:05 and 16:20. I’ve opened case DR-2041 and I’ll look after it.",
+      ],
+      [
+        "customer",
+        "daniel",
+        "Thanks, I noticed one during a work call. Glad you caught it.",
+      ],
+      [
+        "customer",
+        "daniel",
+        "Please keep the details so I do not have to start again with the next person.",
+      ],
+      [
+        "adviser",
+        "Aisha",
+        "I will record the checks and any agreed follow-up against this case.",
+      ],
+    ] : [
       [
         "customer",
         "daniel",
@@ -1048,7 +1084,7 @@ export function generateHistory(
     const contact = (a: string, key: string, at: string, channel: string, withWhom: string, topic: string, outcome: string) =>
       put("profile.contacts", `contact-${a}-${key}`, { person: a, at, channel, with: withWhom, topic, outcome, valid_from: at });
     contact("daniel", "wifi", "2026-05-14T11:20:00Z", "Chat", "Care team", "Wi-Fi weak upstairs", "Hub moved; resolved on the same day");
-    contact("daniel", "drops", "2026-09-24T17:10:00Z", "Call", "Aisha", "Two connection drops", "Case DR-2041 opened; line check found intermittent sync");
+    contact("daniel", "drops", "2026-09-24T15:50:00Z", "In-app chat", "Aisha", "BT spotted two drops and got in touch first", "Case DR-2041 opened; line check found intermittent sync");
     contact("daniel", "restart", "2026-09-25T19:40:00Z", "Chat", "Aisha", "Restart didn’t fix it", "Aisha promised a call at 21:15");
     contact("daniel", "callback", "2026-09-25T20:15:00Z", "Call", "Aisha", "The promised 21:15 call", "Explained the network fault and the line re-profile; agreed extra monitoring over the weekend");
     contact("sam", "hub", "2026-09-23T18:05:00Z", "Chat", "Activation team", "Is my broadband ready?", "Provisioning check promised before any setup steps");

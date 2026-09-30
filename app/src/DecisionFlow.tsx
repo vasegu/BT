@@ -6,13 +6,18 @@ import "./decision-flow.css";
 const at = (iso: string) =>
   new Date(iso).toLocaleTimeString("en-GB", { timeZone: "Europe/London", hour: "2-digit", minute: "2-digit" });
 
-type Fact = { text: string; weight?: "high" | "low" };
+export type Fact = { text: string; weight?: "high" | "low" };
 
-function memoryFacts(h: Household): Fact[] {
+export function memoryFacts(h: Household): Fact[] {
   const first = h.name.split(" ")[0];
   const out: Fact[] = [];
   if (h.caseStatus === "open" && h.owner && h.owner !== "Activation team")
-    out.push({ text: `Open case with ${h.owner}; line dropping since before tonight`, weight: "high" });
+    out.push({
+      text: h.evidence.some((e) => e.type === "line.drops_detected")
+        ? `Our monitoring spotted drops before ${first} noticed; ${h.owner} opened the case and got in touch first`
+        : `Open case with ${h.owner}; line dropping since before tonight`,
+      weight: "high",
+    });
   if (h.promise && !h.promiseFulfilled) out.push({ text: `${h.owner ?? "Adviser"} promised a call at ${at(h.promise)}`, weight: "high" });
   if (h.promise && h.promiseFulfilled) out.push({ text: `${h.owner ?? "Adviser"} kept the ${at(h.promise)} call` });
   if (h.restartTried && !h.restored) out.push({ text: "A restart was already tried and failed", weight: "high" });
@@ -27,7 +32,7 @@ function memoryFacts(h: Household): Fact[] {
   return out;
 }
 
-function operationsFacts(h: Household, s: Snapshot): Fact[] {
+export function operationsFacts(h: Household, s: Snapshot): Fact[] {
   const out: Fact[] = [];
   const signals = s.events.filter((e) => e.revision === s.cutoff && s.cutoff > 0 && (e.subject === h.id || e.subject === "shared"));
   const labels: Record<string, string> = {
@@ -56,7 +61,7 @@ function operationsFacts(h: Household, s: Snapshot): Fact[] {
   return out;
 }
 
-function governanceFacts(h: Household, d: Decision): Fact[] {
+export function governanceFacts(h: Household, d: Decision): Fact[] {
   const out: Fact[] = [];
   const chosen = d.trace?.candidates.find((c) => c.id === d.trace?.selectedId);
   if (d.moment) out.push({ text: `${d.moment.kind === "routine" ? "Routine moment" : "Load-bearing moment"}: ${d.moment.why}`, weight: "high" });
@@ -141,5 +146,71 @@ export function DecisionFlow({ h, snapshot, decision, compact = false }: { h: Ho
         )}
       </article>
     </section>
+  );
+}
+
+function outcomeFacts(h: Household, s: Snapshot): Fact[] {
+  const mine = s.operations.outcomes.filter((o) => o.person === h.id);
+  if (!mine.length) return [{ text: "Nothing promised or expected yet", weight: "low" }];
+  const label = { met: "proven", waiting: "waiting", unverified: "not yet proven", contradicted: "contradicted" } as const;
+  return mine
+    .slice(-4)
+    .map((o) => ({ text: `${o.title}: ${label[o.check.status]}`, weight: o.check.status === "waiting" ? undefined : ("high" as const) }));
+}
+
+function experienceFacts(h: Household, s: Snapshot): Fact[] {
+  const first = h.name.split(" ")[0];
+  const sent = s.actions.filter((a) => a.person === h.id);
+  const now = sent.filter((a) => a.revision === s.cutoff);
+  const out: Fact[] = now.map((a) => ({ text: `New on the phone: “${a.title}”`, weight: "high" as const }));
+  if (!now.length) out.push({ text: s.cutoff === 0 ? `What ${first} can already see before tonight` : "Nothing new on the phone at this moment", weight: "low" });
+  out.push({ text: sent.length ? `${sent.length} update${sent.length === 1 ? "" : "s"} from Eve so far, each with a delivery receipt` : "No updates from Eve yet", weight: "low" });
+  if (h.confirmed) out.push({ text: `${first} replied that it works` });
+  if (!h.contactAllowed) out.push({ text: "No permission to message, so nothing is sent", weight: "high" });
+  return out;
+}
+
+/** The panel's own column from the arbiter's view: what it contributes at this moment. */
+export function PanelNotes({ panel, h, snapshot, decision }: { panel: string; h: Household; snapshot: Snapshot; decision?: Decision }) {
+  const first = h.name.split(" ")[0];
+  const reads = "what the arbiter reads from here";
+  const spec: Record<string, [string, () => Fact[]]> = {
+    "Customer memory": [`What we know about ${first} · ${reads}`, () => memoryFacts(h)],
+    "Operational memory": [`What is happening on the network · ${reads}`, () => operationsFacts(h, snapshot)],
+    Governance: [`What we are allowed to do · ${reads}`, () => (decision ? governanceFacts(h, decision) : [{ text: "No decision to authorise yet", weight: "low" }])],
+    "Actions & outcomes": ["What we expect to see, and whether we have · the arbiter checks these next", () => outcomeFacts(h, snapshot)],
+    "Customer experience": [`What ${first} sees · the result of the decision`, () => experienceFacts(h, snapshot)],
+  };
+  const entry = spec[panel];
+  if (!entry) return null;
+  return (
+    <article className="df-input df-notes" aria-label={`${panel} at this moment`}>
+      <header>
+        <b>
+          {panel} · at {moments[snapshot.cutoff].time}
+        </b>
+        <small>{entry[0]}</small>
+      </header>
+      <ul>
+        {entry[1]().map((f, i) => (
+          <li key={i} className={f.weight === "high" ? "is-key" : f.weight === "low" ? "is-quiet" : ""}>
+            {f.text}
+          </li>
+        ))}
+      </ul>
+    </article>
+  );
+}
+
+/** The same bullets without the card, for overview tiles. */
+export function NoteList({ facts }: { facts: Fact[] }) {
+  return (
+    <ul className="df-notelist">
+      {facts.map((f, i) => (
+        <li key={i} className={f.weight === "high" ? "is-key" : f.weight === "low" ? "is-quiet" : ""}>
+          {f.text}
+        </li>
+      ))}
+    </ul>
   );
 }

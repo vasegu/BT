@@ -21,7 +21,7 @@ export function layerOf(e: Pick<FixtureEvent, "type" | "payload">): MemoryLayer 
   if (t.startsWith("order.") || t.startsWith("activation.") || t.startsWith("case.") || t.startsWith("diagnostic.") || t === "service.restored_observed")
     return "service";
   if (t === "service.reprofiled" || t.startsWith("monitoring.") || t === "case.closed" || t === "product.activated" || t === "early_life.checkpoint") return "service";
-  if (t === "line.degradation_detected") return "context";
+  if (t === "line.degradation_detected" || t === "line.drops_detected") return "context";
   if (t === "usage.observed" || t === "usage.pattern") return "behavioural";
   if (t === "preference.offers_opt_in") return "intentional";
   if (t === "conversation.message") return (e.payload as { speakerRole?: string }).speakerRole === "customer" ? "emotional" : null;

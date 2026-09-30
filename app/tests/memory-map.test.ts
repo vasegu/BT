@@ -21,7 +21,7 @@ test("memory map gives each person their own space and places tonight's signal i
   }
   // The same 21:00 signal reminds us of something different in each home.
   const first = (person: string) => byKey.get(`${person}/${m.queries.find((q) => q.person === person && q.revision === 1)!.neighbours[0].id}`)!.type;
-  assert.equal(first("daniel"), "case.opened");
+  assert.equal(first("daniel"), "line.drops_detected");
   assert.equal(first("sam"), "order.delivered");
   assert.equal(first("maya"), "router.heartbeat_received");
   const baked = JSON.parse(readFileSync(new URL("../public/memory-map.json", import.meta.url), "utf8"));

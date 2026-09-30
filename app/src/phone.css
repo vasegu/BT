@@ -658,3 +658,172 @@
   line-height: 1.4;
   cursor: pointer;
 }
+
+/* One conversation with Eve: people at BT, the customer and Eve's updates, in time order. */
+.phone-native .eve-thread {
+  margin: 14px 0 8px;
+  padding: 12px 11px 11px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #f6f1fc, #fbfafd 60%);
+  border: 1px solid #ebe3f4;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.phone-native .eve-thread > header {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #ece5f3;
+}
+.phone-native .eve-thread > header strong {
+  display: block;
+  font-size: 12px;
+  color: #513668;
+  font-weight: 600;
+}
+.phone-native .eve-thread > header small {
+  font-size: 9px;
+  color: #9885aa;
+}
+.phone-native .eve-thread .eve-entry-icon {
+  width: 26px;
+  height: 26px;
+  font-size: 22px;
+  border-radius: 8px;
+}
+.phone-native .eve-thread .eve-entry-icon > span {
+  font-size: 9px;
+  margin-top: 9px;
+}
+.phone-native .eve-quiet {
+  margin: 2px 2px;
+  font-size: 10px;
+  line-height: 1.5;
+  color: #8a7d95;
+}
+.phone-native .eve-bubble {
+  max-width: 88%;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: white;
+  border: 1px solid #ece6f2;
+  font-size: 10.5px;
+  line-height: 1.45;
+  color: #2d2338;
+}
+.phone-native .eve-bubble > small {
+  display: block;
+  font-size: 8.5px;
+  color: #9a8ea5;
+  margin-bottom: 2px;
+}
+.phone-native .eve-bubble > p {
+  margin: 0;
+}
+.phone-native .eve-bubble > b {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+.phone-native .eve-bubble.is-you {
+  align-self: flex-end;
+  background: #5514b4;
+  border-color: #5514b4;
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+.phone-native .eve-bubble.is-you > small {
+  color: #d9c9f0;
+}
+.phone-native .eve-bubble.is-person {
+  border-bottom-left-radius: 4px;
+}
+.phone-native .eve-bubble.is-eve {
+  border-color: #ddd0ee;
+  border-bottom-left-radius: 4px;
+}
+.phone-native .eve-bubble.is-eve:not(.is-latest) > p {
+  color: #6f6479;
+}
+.phone-native .eve-bubble.is-latest {
+  max-width: 100%;
+  box-shadow: 0 4px 14px rgba(85, 20, 180, 0.08);
+}
+.phone-native .eve-bubble .next-cta,
+.phone-native .eve-bubble .confirm-button,
+.phone-native .eve-bubble .phone-promise {
+  margin-top: 8px;
+}
+.phone-native .eve-bubble .phone-ai-line {
+  margin-top: 6px;
+}
+.phone-native .eve-compose {
+  margin-top: 2px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid #e2d8ee;
+  background: white;
+  text-align: left;
+  font-size: 10.5px;
+  color: #9a8ea5;
+  cursor: pointer;
+}
+.phone-native .eve-compose:hover {
+  border-color: #5514b4;
+  color: #5514b4;
+}
+.phone-native .phone-service-group.has-case {
+  border: 1px solid #ece6f2;
+  border-radius: 15px;
+  overflow: hidden;
+  background: white;
+}
+.phone-native .phone-service-group.has-case > .phone-service {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.phone-native .phone-service-group.has-case > .phone-case {
+  margin: 0;
+  border: 0;
+  border-top: 1px solid #f0ebf5;
+  border-radius: 0;
+}
+.phone-native .eve-earlier {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.phone-native .eve-earlier[open] {
+  padding-bottom: 6px;
+  border-bottom: 1px dashed #e2d8ee;
+}
+.phone-native .eve-earlier > summary {
+  align-self: center;
+  list-style: none;
+  cursor: pointer;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #efe8f8;
+  font-size: 9.5px;
+  color: #6f5a86;
+}
+.phone-native .eve-earlier > summary::-webkit-details-marker {
+  display: none;
+}
+.phone-native .eve-earlier > .eve-bubble {
+  margin-bottom: 8px;
+}
+.phone-native .eve-why {
+  margin-left: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 8.5px;
+  color: #5514b4;
+  text-decoration: underline;
+  cursor: pointer;
+}

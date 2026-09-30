@@ -344,7 +344,7 @@ export function CustomerMemoryView({
       <section className="av-step">
         <header>
           <span>06</span>
-          <h3>Same signal, three memories</h3>
+          <h3>Same alarm, three memories</h3>
           <small className="cm-hint">each person’s memory as its own space, placed by meaning · the star is tonight’s signal, joined to what it reminds us of in their history</small>
           <ScopeTag scope="moment" snapshot={snapshot} person={h.id} />
         </header>

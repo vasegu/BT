@@ -3,6 +3,7 @@ import type { PersonId, Snapshot } from "./types";
 import { moments, householdNames } from "./presentation";
 import "./actions-view.css";
 import { ScopeTag, type ScopeKind } from "./Scope";
+import { PanelNotes } from "./DecisionFlow";
 
 /** Where each panel sits in the five-part architecture, and who is accountable for it. */
 export const ARCHITECTURE: Record<string, { component: string; owner: string }> = {
@@ -87,7 +88,7 @@ export function FocusHeader({
                 onClick={() => onCutoff(i)}
                 title={m.title}
               >
-                <time>{m.time}</time>
+                <time>{m.time.replace(/ \d\d:\d\d$/, "")}</time>
                 <span>{m.title}</span>
               </button>
             </li>
@@ -95,6 +96,14 @@ export function FocusHeader({
         </ol>
         )}
       </div>
+      )}
+      {snapshot.households.some((x) => x.id === person) && (
+        <PanelNotes
+          panel={panel}
+          h={snapshot.households.find((x) => x.id === person)!}
+          snapshot={snapshot}
+          decision={snapshot.decisions.filter((d) => d.person === person).at(-1)}
+        />
       )}
     </>
   );

@@ -65,6 +65,8 @@ function because(e: SourceEvent, h: Household): { text: string; used: string } |
       return { text: "We adjusted your line remotely to keep it stable.", used: "Tests already run on your line" };
     case "monitoring.completed":
       return { text: "We watched your line closely after the fix: no drops.", used: "Your hub’s status signal" };
+    case "line.drops_detected":
+      return { text: `Our monitoring spotted short drops on your line on ${day(e.occurredAt)}, before you had to tell us.`, used: "Tests already run on your line" };
     case "line.degradation_detected":
       return { text: "A routine overnight check found your line getting weaker.", used: "Tests already run on your line" };
     case "early_life.checkpoint":
@@ -266,16 +268,14 @@ export function PhoneExperience({
   const [page, setPage] = useState<(typeof tabs)[number]>(
     startChat ? "Help" : "Home",
   );
-  const messages = [...actions].reverse();
-  // Today's conversation with a person at BT is part of this customer's own story.
+  // Conversations with people at BT are part of this customer's own story; older days fold away.
   const clockDay = new Date(snapshot.clock).toDateString();
   const chat = snapshot.events
     .filter(
       (e) =>
         e.subject === h.id &&
         e.type === "conversation.message" &&
-        Date.parse(e.receivedAt) <= Date.parse(snapshot.clock) &&
-        new Date(e.occurredAt).toDateString() === clockDay,
+        Date.parse(e.receivedAt) <= Date.parse(snapshot.clock),
     )
     .map((e) => {
       const p = e.payload as { speakerRole?: string; speaker?: string };
@@ -327,7 +327,7 @@ export function PhoneExperience({
       : openCase && h.promise
         ? h.promiseFulfilled
           ? `Case open · ${h.owner} called you`
-          : `Case open · ${h.owner} will call at ${time(h.promise)}`
+          : "Case open · we're on it"
         : openCase
           ? `Case open · ${h.owner} has it`
           : h.activation.includes("unconfirmed")
@@ -338,22 +338,69 @@ export function PhoneExperience({
   const tried = h.evidence.filter(
     (e) => e.type === "diagnostic.completed" && opened && Date.parse(e.occurredAt) >= Date.parse(opened.occurredAt),
   );
-  // Title a conversation by what was promised in it, if anything.
-  const chatTitle =
-    chat
-      .filter((m) => m.who !== "You")
-      .flatMap((m) => m.text.split(/(?<=\.)\s+/))
-      .find((line) => /\bcall\b/i.test(line))
-      ?.replace(/,.*$/, "")
-      .replace(/\.$/, "") ?? chat.find((m) => m.who !== "You")?.text.split(".")[0] ?? "Your conversation";
+  // One conversation, in time order: people at BT, the customer, and Eve's updates.
+  type ThreadItem = { kind: "chat"; who: string; text: string; at: string } | { kind: "eve"; action: DemoAction; at: string; latest: boolean };
+  const latestAction = actions.at(-1);
+  const thread: ThreadItem[] = [
+    ...chat.map((m) => ({ kind: "chat" as const, who: m.who, text: m.text, at: m.at })),
+    ...actions.map((a) => ({ kind: "eve" as const, action: a, at: a.time, latest: a.id === latestAction?.id })),
+  ].sort((a, b) => Date.parse(a.at) - Date.parse(b.at));
+  const stamp = (iso: string) =>
+    new Date(iso).toDateString() === clockDay ? time(iso) : `${day(iso)}, ${time(iso)}`;
+  // Anything before the most recent day with news folds away, so the thread opens on what's current.
+  const lastDay = thread.length ? new Date(thread.at(-1)!.at).toDateString() : clockDay;
+  const earlier = thread.filter((t) => new Date(t.at).toDateString() !== lastDay);
+  const recent = thread.filter((t) => new Date(t.at).toDateString() === lastDay);
+  const bubble = (item: ThreadItem, i: number) =>
+    item.kind === "chat" ? (
+      <div key={`c${i}${item.at}`} className={`eve-bubble ${item.who === "You" ? "is-you" : "is-person"}`}>
+        <small>
+          {item.who === "You" ? "You" : `${item.who} · BT`} · {stamp(item.at)}
+        </small>
+        <p>{item.text}</p>
+      </div>
+    ) : (
+      <div key={item.action.id} className={`eve-bubble is-eve${item.latest ? " is-latest" : ""}`}>
+        <small>
+          Eve · {stamp(item.action.time)}
+          {!item.latest && (
+            <button className="eve-why" onClick={() => setWhy(item.action)}>
+              Why?
+            </button>
+          )}
+        </small>
+        <b>{item.action.title}</b>
+        <p>{item.action.body}</p>
+        {item.latest && stepFor(item.action) && (
+          <button className="next-cta" onClick={() => setNext(stepFor(item.action)!)}>
+            {stepFor(item.action)!.cta} <PhoneIcon kind="chevron" />
+          </button>
+        )}
+        {item.latest && h.id === "daniel" && snapshot.nextStep === "confirm" && !snapshot.historical && (
+          <button className="confirm-button" disabled={busy} onClick={onConfirm}>
+            It’s working again <PhoneIcon kind="check" />
+          </button>
+        )}
+        {item.latest && (
+          <div className="phone-ai-line">
+            <span>Sent automatically · AI-assisted</span>
+            <button onClick={() => setWhy(item.action)}>Why am I seeing this?</button>
+          </div>
+        )}
+      </div>
+    );
   const caseCard =
     openCase && opened && !h.confirmed ? (
       <div className="phone-case">
         <div className="phone-case-head">
           <strong>Your open case · {String((opened.payload as { caseId?: string }).caseId ?? "")}</strong>
-          <small>Reported {day(opened.occurredAt)}</small>
+          <small>Opened {day(opened.occurredAt)}</small>
         </div>
-        <p>{opened.description.split(".")[0]}.</p>
+        <p>
+          {h.evidence.some((e) => e.type === "line.drops_detected")
+            ? "We spotted short drops on your line and got in touch before you had to."
+            : `${opened.description.split(".")[0]}.`}
+        </p>
         <ul>
           {tried.map((e) => (
             <li key={e.id}>
@@ -445,10 +492,8 @@ export function PhoneExperience({
                     Good evening, {h.name.split(" ")[0]}
                   </p>
                   <h2>{headline}</h2>
-                  <button
-                    className="phone-service"
-                    onClick={() => setPage("Services")}
-                  >
+<div className={`phone-service-group${caseCard ? " has-case" : ""}`}>
+                  <button className="phone-service phone-service-card" onClick={() => setPage("Services")}>
                     <PhoneIcon kind="wifi" />
                     <span>
                       <strong>Broadband</strong>
@@ -457,121 +502,36 @@ export function PhoneExperience({
                     <PhoneIcon kind="chevron" />
                   </button>
                   {caseCard}
-                  {eveEntry}
-                  <div className="phone-section-title">
-                    <span>Your updates</span>
-                    <span>
-                      {messages.length + (chat.length ? 1 : 0)
-                        ? `${messages.length + (chat.length ? 1 : 0)} tonight`
-                        : "All caught up"}
-                    </span>
                   </div>
-                  <div className="phone-messages">
-                    {messages.length ? (
-                      messages.map((a, i) => (
-                        <details
-                          className={`phone-message ${i ? "older" : ""}`}
-                          key={a.id}
-                          open={i === 0 ? true : undefined}
-                        >
-                          <summary>
-                            <div className="message-meta">
-                              <span>
-                                <i className="eve-mini" aria-hidden="true">e</i>
-                                Eve · BT
-                              </span>
-                              <time>{time(a.time)}</time>
-                            </div>
-                            <h3>
-                              {a.title}
-                              <PhoneIcon kind="chevron" />
-                            </h3>
-                          </summary>
-                          <p>{a.body}</p>
-                          {i === 0 && stepFor(a) && (
-                            <button
-                              className="next-cta"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                setNext(stepFor(a)!);
-                              }}
-                            >
-                              {stepFor(a)!.cta} <PhoneIcon kind="chevron" />
-                            </button>
-                          )}
-                          <div className="phone-ai-line">
-                            <span>Sent automatically · AI-assisted</span>
-                            <button
-                              onClick={(e) => {
-                                e.preventDefault();
-                                setWhy(a);
-                              }}
-                            >
-                              Why am I seeing this?
-                            </button>
-                          </div>
-                          {i === 0 &&
-                            h.id === "daniel" &&
-                            snapshot.nextStep === "confirm" &&
-                            !snapshot.historical && (
-                              <button
-                                className="confirm-button"
-                                disabled={busy}
-                                onClick={onConfirm}
-                              >
-                                It’s working again <PhoneIcon kind="check" />
-                              </button>
-                            )}
-                          {i === 0 && h.promise && !h.promiseFulfilled && (
-                            <div className="phone-promise">
-                              <PhoneIcon kind="clock" />
-                              <div>
-                                <strong>{h.owner} will call</strong>
-                                <small>{callback} · your existing case</small>
-                              </div>
-                            </div>
-                          )}
-                        </details>
-                      ))
-                    ) : chat.length ? null : (
-                      <div className="phone-quiet">
-                        <span className="phone-quiet-check">
-                          <PhoneIcon kind="check" />
-                        </span>
-                        <strong>You’re all caught up.</strong>
-                        <p>
-                          Your service updates will appear here.
-                          <br />
-                          Eve is here whenever you need a hand.
-                        </p>
-                      </div>
+                  <section className="eve-thread" aria-label="Your conversation with Eve">
+                    <header>
+                      <i className="eve-entry-icon" aria-hidden="true">
+                        e<span>•</span>
+                      </i>
+                      <span>
+                        <strong>Eve</strong>
+                        <small>Knows your home and everything so far</small>
+                      </span>
+                    </header>
+                    {thread.length === 0 ? (
+                      <p className="eve-quiet">Nothing needs you right now. Eve will let you know if that changes.</p>
+                    ) : (
+                      <>
+                        {earlier.length > 0 && (
+                          <details className="eve-earlier">
+                            <summary>
+                              Earlier · {earlier.length} message{earlier.length === 1 ? "" : "s"}
+                            </summary>
+                            {earlier.map(bubble)}
+                          </details>
+                        )}
+                        {recent.map(bubble)}
+                      </>
                     )}
-                    {chat.length > 0 && (
-                      // Tonight's conversation is one more update, oldest last, in the same list.
-                      <details className={`phone-message phone-chat-item${messages.length ? " older" : ""}`} open={messages.length ? undefined : true}>
-                        <summary>
-                          <div className="message-meta">
-                            <span>
-                              <img src={btLogo} alt="" />
-                              {chat.find((m) => m.who !== "You")?.who ?? "BT"} · your conversation
-                            </span>
-                            <time>{time(chat[0].at)}</time>
-                          </div>
-                          <h3>
-                            {chatTitle}
-                            <PhoneIcon kind="chevron" />
-                          </h3>
-                        </summary>
-                        <div className="phone-chat">
-                          {chat.map((m, i) => (
-                            <p key={i} className={m.who === "You" ? "is-you" : ""}>
-                              <b>{m.who}</b> {m.text}
-                            </p>
-                          ))}
-                        </div>
-                      </details>
-                    )}
-                  </div>
+                    <button className="eve-compose" onClick={() => open("Help")}>
+                      Message Eve…
+                    </button>
+                  </section>
                 </>
               ) : page === "Services" ? (
                 <>

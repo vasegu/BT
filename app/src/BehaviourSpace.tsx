@@ -134,7 +134,7 @@ export function ContextContrasts({
             aria-pressed={mode === "signal"}
             onClick={() => setMode("signal")}
           >
-            Same signal
+            Same moment
           </button>
           <button
             aria-pressed={mode === "time"}
@@ -188,7 +188,7 @@ export function ContextContrasts({
       {!visible.length && (
         <p className="om-empty">
           {filter !== "all" && mode === "signal"
-            ? "Choose all three people to compare the same signal across households, or compare this person across time."
+            ? "Choose all three people to compare one moment across households, or compare this person across time."
             : "No comparable model distributions at this cutoff. Recorded policy decisions remain inspectable."}
         </p>
       )}

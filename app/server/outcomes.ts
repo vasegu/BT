@@ -48,7 +48,7 @@ export function contractsFor(
         goal: "service",
         anchor: latest("case.opened"),
         title: "Working connection",
-        baseline: "Connection drops reported",
+        baseline: "Connection dropping",
         target: "Fresh line test passes for this service",
         expectedEvent: "service.restored_observed",
         dueAt: verificationWindow,

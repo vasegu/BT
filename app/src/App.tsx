@@ -21,7 +21,8 @@ import { GovernanceTile } from "./GovernanceView";
 import { FutureView } from "./FutureView";
 import type { Snapshot, PersonId, SourceEvent, Step } from "./types";
 
-import { momentView } from "./presentation";
+import { momentView, moments } from "./presentation";
+import { NoteList, memoryFacts, operationsFacts, governanceFacts } from "./DecisionFlow";
 import { MomentSpine, MomentLanes, MomentSkeleton } from "./GuidedPresentation";
 const formatTime = (iso: string) =>
   new Intl.DateTimeFormat("en-GB", {
@@ -30,14 +31,7 @@ const formatTime = (iso: string) =>
     minute: "2-digit",
   }).format(new Date(iso));
 const short = (id: string) => id.slice(0, 8);
-const stepLabels = [
-  "Ready",
-  "Heartbeat overdue",
-  "Incident confirmed",
-  "Restoration observed",
-  "Callback kept",
-  "Customer confirmed",
-];
+const stepLabels = moments.map((m) => m.title);
 const names = { daniel: "Daniel Reed", sam: "Sam Morgan", maya: "Maya Patel" };
 const panelNames = {
   customer: "Customer memory",
@@ -505,32 +499,7 @@ export function App() {
           </div>
           <span className="tag">synthetic</span>
         </div>
-        <Attributes
-          rows={[
-            [
-              "Case",
-              h.caseStatus === "none"
-                ? "No open case"
-                : h.caseStatus === "closed"
-                  ? h.confirmed
-                    ? "Closed · confirmed by the customer"
-                    : h.firstUseObserved
-                      ? "Closed · first use observed"
-                      : "Closed"
-                  : h.owner === "Activation team"
-                    ? "Open activation case"
-                    : "Open service case",
-            ],
-            ["Owner", h.owner || "None assigned"],
-            [
-              "Commitment",
-              h.promise
-                ? `${formatTime(h.promise)} callback · ${h.promiseFulfilled ? "fulfilled" : "outstanding"}`
-                : "None recorded",
-            ],
-            ["Service", h.serviceState],
-          ]}
-        />
+        <NoteList facts={memoryFacts(h)} />
         {snapshot && <Rhythm snapshot={snapshot} person={person} />}
         <Section
           title="Relevant source records"
@@ -551,52 +520,11 @@ export function App() {
             </button>
           ))}
         </Section>
-        <div className="context-note">
-          <Glyph />
-          <p>
-            {h.id === "daniel"
-              ? "Failed diagnostics and the named promise stay attached to this case."
-              : h.id === "sam"
-                ? h.firstUseObserved
-                  ? "Successful first use is now observed, separately from delivery and provisioning."
-                  : "Delivery is a fact. Successful first use is still unknown."
-                : "A stated habit provides context; contrary evidence would reopen the watch."}
-          </p>
-        </div>
       </Panel>
     );
     const operations = h && snapshot && (
       <Panel id="operations" panel={panel} onOpen={openPanel} storyFocus={changedPanels.includes("operations")}>
-        <Attributes
-          rows={[
-            [
-              "Shared incident",
-              snapshot.operations.incident ? (
-                <>
-                  <span className="status-dot orange" />{" "}
-                  {snapshot.operations.incident.id} ·{" "}
-                  {snapshot.operations.incident.status}
-                </>
-              ) : (
-                "No confirmed incident"
-              ),
-            ],
-            [
-              "This service",
-              snapshot.operations.incident
-                ? h.incident
-                  ? h.incidentCleared
-                    ? "In scope · incident cleared"
-                    : "Confirmed in scope"
-                  : "Confirmed outside scope"
-                : "Membership not established",
-            ],
-            [
-              "Latest ops record",
-              `${formatTime(snapshot.events.filter((e) => e.subject === "shared").at(-1)!.occurredAt)} · source time`,
-            ],
-          ]}
-        />
+        <NoteList facts={operationsFacts(h, snapshot)} />
         <Section title="Affected-service register" note="explicit membership">
           <div className="scope-table">
             {snapshot.households.map((p) => (
@@ -687,34 +615,7 @@ export function App() {
               <h3>{decision.title}</h3>
               <p>{decision.reason}</p>
             </div>
-            <Attributes
-              rows={[
-                ["Evidence", `${decision.evidenceIds.length} source records`],
-                [
-                  "Obligation",
-                  h.promise
-                    ? h.promiseFulfilled
-                      ? "Fulfilled independently"
-                      : `${formatTime(h.promise)} · retain`
-                    : "None recorded",
-                ],
-                [
-                  "Scope",
-                  h.incident
-                    ? `${snapshot.operations.incident?.id || "Incident"} / ${h.incidentCleared ? "cleared" : "confirmed"}`
-                    : snapshot.operations.incident
-                      ? `Outside ${snapshot.operations.incident.id}`
-                      : "No verified incident impact",
-                ],
-                [
-                  "Contact authority",
-                  h.contactAllowed
-                    ? "Verified / service / in-app"
-                    : "Not established · no send",
-                ],
-                ["Policy", decision.policyVersion],
-              ]}
-            />
+            <NoteList facts={governanceFacts(h, decision)} />
             <div className="held-action">
               <span className="tag amber">held</span>
               <span>
@@ -742,8 +643,8 @@ export function App() {
             <Glyph />
             <h3>Ready to read the wider context.</h3>
             <p>
-              Run the scenario. One event will be evaluated for three different
-              households.
+              Play the evening. At 21:00 the same alarm fires for three homes,
+              and each gets a different response.
             </p>
           </div>
         )}
@@ -933,8 +834,8 @@ export function App() {
       {!focused && !presenting && (
         <div className="replay-bar">
           <div className="scenario-time">
-            <span>THREE HOMES, ONE EVENING</span>
-            <strong>{snapshot ? formatTime(snapshot.clock) : "20:45"}</strong>
+            <span>{snapshot && snapshot.cutoff >= 6 ? "THE WEEKS AFTER" : "THREE HOMES, ONE EVENING"}</span>
+            <strong>{snapshot ? moments[snapshot.cutoff].time : "20:45"}</strong>
           </div>
           <div className="replay-main">
             <span className="eyebrow">
@@ -990,7 +891,7 @@ export function App() {
                 value={i}
                 disabled={!snapshot || i > snapshot.session.step}
               >
-                {i} / {name}
+                {moments[i].time} · {name}
               </option>
             ))}
           </select>
@@ -1110,7 +1011,7 @@ export function App() {
                     ? "Evidence / append-only source ledger"
                     : panel
                       ? "Account / " + panelNames[panel]
-                      : "One signal · three different contexts"}
+                      : "One alarm · three different homes"}
               </p>
               <h1>
                 {review
@@ -1330,7 +1231,7 @@ export function App() {
             phone={phone}
             inspect={inspect}
           />
-        ) : (
+        ) : presenting && view ? null : (
           <div className={presenting ? "presentation-stage" : ""}>
             <div className="overview">
               <div className="panel-stack left-stack">

@@ -20,7 +20,7 @@ const quietByDesign = (lane: MomentLane) =>
   lane.decision?.disposition === "watch" ||
   lane.decision?.disposition === "suppress";
 
-/** The clock is the presenter's only navigation: each stop is one signal. */
+/** The clock is the presenter's only navigation: each stop is one moment in the story. */
 export function MomentSpine({
   snapshot,
   status,
@@ -133,6 +133,7 @@ function storySoFar(snapshot: Snapshot, person: PersonId) {
     (e) =>
       e === opened ||
       (e.type === "diagnostic.completed" && Date.parse(e.occurredAt) >= since) ||
+      e.type === "line.drops_detected" ||
       (e.type === "order.delivered" && setupCase),
   );
   const said = known.filter((e) => e.type === "conversation.message" && !/^thank/i.test(e.description));
@@ -150,21 +151,36 @@ function storySoFar(snapshot: Snapshot, person: PersonId) {
 
 /** The one-glance summary: what changed in each panel for this customer at this moment. */
 function ChangeStrip({ rows, time, name, onOpen, deciding }: { rows: ChangeRow[]; time: string; name: string; onOpen?: (panel: string) => void; deciding: boolean }) {
+  // What moved gets a card; what held still is one quiet line, so the eye lands on the change.
+  const moved = deciding ? rows : rows.filter((r) => r.changed);
+  const still = deciding ? [] : rows.filter((r) => !r.changed);
   return (
     <section className="change-strip" aria-label={`What changed at ${time} for ${name}`}>
       <span className="eyebrow">What changed at {time} for {name}</span>
-      <ol>
-        {rows.map((r, i) => (
-          <li key={r.panel} className={r.changed && !deciding ? "is-changed" : ""}>
-            <button onClick={() => onOpen?.(r.panel)} title={`Open ${r.name}`}>
-              <small>
-                {String(i + 1).padStart(2, "0")} · {r.name}
-              </small>
-              <span>{deciding && r.panel !== "customer" && r.panel !== "operations" ? "Deciding…" : r.text}</span>
+      {moved.length > 0 && (
+        <ol style={{ gridTemplateColumns: `repeat(${Math.min(moved.length, 3)}, minmax(0, 1fr))` }}>
+          {moved.map((r) => (
+            <li key={r.panel} className={deciding ? "" : "is-changed"}>
+              <button onClick={() => onOpen?.(r.panel)} title={`Open ${r.name}`}>
+                <small>
+                  {String(rows.indexOf(r) + 1).padStart(2, "0")} · {r.name}
+                </small>
+                <span>{deciding && r.panel !== "customer" && r.panel !== "operations" ? "Deciding…" : r.text}</span>
+              </button>
+            </li>
+          ))}
+        </ol>
+      )}
+      {still.length > 0 && (
+        <p className="change-still">
+          <span>{moved.length ? "Unchanged" : "Nothing moved yet"}</span>
+          {still.map((r) => (
+            <button key={r.panel} onClick={() => onOpen?.(r.panel)} title={r.text}>
+              {r.name}
             </button>
-          </li>
-        ))}
-      </ol>
+          ))}
+        </p>
+      )}
     </section>
   );
 }
