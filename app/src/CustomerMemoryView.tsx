@@ -2,6 +2,7 @@ import type { Decision, Household, PersonId, Snapshot, SourceEvent } from "./typ
 import { FocusHeader } from "./FocusHeader";
 import { Rhythm, rhythmGrid } from "./Rhythm";
 import { MemoryMap } from "./MemoryMap";
+import { HouseholdCard, RelationshipCard, HistoryCard, RightNowCard, profileNotes } from "./CustomerProfile";
 import { ScopeTag } from "./Scope";
 import "./customer-memory-view.css";
 
@@ -135,6 +136,59 @@ function layers(h: Household, snapshot: Snapshot): Record<Layer, Fact[]> {
   return out;
 }
 
+/** Which kind of situation this household is in, read from its memory rather than its name. */
+function situation(h: Household): "fault" | "setup" | "routine" | "none" {
+  if (h.activation !== "Activation confirmed" || h.firstUseObserved) return "setup";
+  if (h.caseStatus === "open" || h.promise || h.restartTried) return "fault";
+  if (h.habit) return "routine";
+  return "none";
+}
+const NOTES: Record<"rhythm" | "layers" | "map", Record<ReturnType<typeof situation>, (first: string, owner: string) => [string, string]>> = {
+  rhythm: {
+    fault: (f) => ["Thirty days of the hub’s check-ins, set against what the customer and our tests reported.", `${f}’s hub always checks in, yet the line drops. So the agent won’t read “online” as “fine”: it trusts the reported drops and the failed restart instead.`],
+    setup: (f) => ["Thirty days of the hub’s check-ins, set against when it was delivered.", `${f}’s hub has never checked in, so there is no normal to compare against. The agent treats tonight as a first setup to guide, not a fault to fix.`],
+    routine: (f) => ["Thirty days of the hub’s check-ins, set against the hours it is usually off.", `${f}’s hub is off most nights and back by morning. The agent reads tonight’s quiet as normal for this home and watches, instead of sending an alert.`],
+    none: () => ["Thirty days of the hub’s check-ins.", "Nothing unusual in the pattern, so the agent starts from the standard response."],
+  },
+  layers: {
+    fault: (f, o) => ["Everything we hold about this home, sorted into six layers and tagged by how we know it.", `The Intentional layer carries ${o}’s promise, so every action keeps that call rather than starting a new conversation with ${f}.`],
+    setup: (f) => ["Everything we hold about this home, sorted into six layers and tagged by how we know it.", `The Service layer shows a hub delivered but never connected, so ${f} gets setup help, not troubleshooting.`],
+    routine: (f) => ["Everything we hold about this home, sorted into six layers and tagged by how we know it.", `The Intentional layer holds ${f}’s own request not to be alerted at night. The agent honours it unless new fault evidence overrides it.`],
+    none: () => ["Everything we hold about this home, sorted into six layers and tagged by how we know it.", "No layer changes the standard response here."],
+  },
+  map: {
+    fault: (f) => ["Each dot is a memory, placed by meaning. The star is tonight’s signal.", `For ${f}, tonight’s signal sits closest to the open fault case, so the agent handles it as the same problem, not a new one.`],
+    setup: (f) => ["Each dot is a memory, placed by meaning. The star is tonight’s signal.", `For ${f}, it sits closest to “delivered, not connected”, so the agent treats it as setup.`],
+    routine: (f) => ["Each dot is a memory, placed by meaning. The star is tonight’s signal.", `For ${f}, it sits closest to the usual overnight gap, so the agent treats it as normal.`],
+    none: () => ["Each dot is a memory, placed by meaning. The star is tonight’s signal.", "Its nearest memories set the starting point for the response."],
+  },
+};
+function PNote({ note: [what, so] }: { note: [string, string] }) {
+  return (
+    <aside className="cm-note">
+      <p>
+        <b>What you’re looking at</b> {what}
+      </p>
+      <p>
+        <b>How the agent uses it</b> {so}
+      </p>
+    </aside>
+  );
+}
+function Note({ kind, h }: { kind: keyof typeof NOTES; h: Household }) {
+  const [what, so] = NOTES[kind][situation(h)](h.name.split(" ")[0], h.owner ?? "the adviser");
+  return (
+    <aside className="cm-note">
+      <p>
+        <b>What you’re looking at</b> {what}
+      </p>
+      <p>
+        <b>How the agent uses it</b> {so}
+      </p>
+    </aside>
+  );
+}
+
 export function CustomerMemoryView({
   h,
   snapshot,
@@ -176,6 +230,8 @@ export function CustomerMemoryView({
     ...(household?.members.filter((m) => m.name !== h.name).map((m) => `${m.name} (household member)`) ?? []),
     ...(household?.services.filter((s) => s.product !== "broadband").map((s) => `${s.product} service`) ?? []),
   ];
+  const p = h.profile;
+  const pNotes = p ? profileNotes(h) : null;
   return (
     <div className="av cm">
       <FocusHeader
@@ -187,22 +243,72 @@ export function CustomerMemoryView({
         onPerson={onPerson}
         onCutoff={onCutoff}
       />
+      {p && pNotes && (
+        <>
+          <div className="cm-pair">
+            <section className="av-step">
+              <header>
+                <span>01</span>
+                <h3>Household and network</h3>
+                <ScopeTag scope="both" snapshot={snapshot} person={h.id} />
+              </header>
+              <HouseholdCard p={p} />
+              <PNote note={pNotes.household} />
+            </section>
+            <section className="av-step">
+              <header>
+                <span>02</span>
+                <h3>Relationship and value</h3>
+                <ScopeTag scope="both" snapshot={snapshot} person={h.id} />
+              </header>
+              <RelationshipCard p={p} />
+              <PNote note={pNotes.relationship} />
+            </section>
+          </div>
+          <div className="cm-pair">
+            <section className="av-step">
+              <header>
+                <span>03</span>
+                <h3>History with us</h3>
+                <small className="cm-hint">every contact, on every channel</small>
+                <ScopeTag scope="both" snapshot={snapshot} person={h.id} />
+              </header>
+              <HistoryCard p={p} sent={snapshot.actions.filter((a) => a.person === h.id).map((a) => ({ at: a.time, title: a.title }))} />
+              <PNote note={pNotes.history} />
+            </section>
+            <section className="av-step">
+              <header>
+                <span>04</span>
+                <h3>How much right now matters</h3>
+                <ScopeTag scope="both" snapshot={snapshot} person={h.id} />
+              </header>
+              <RightNowCard p={p} />
+              <PNote note={pNotes.now} />
+              <Rhythm snapshot={snapshot} person={h.id} />
+              <Note kind="rhythm" h={h} />
+            </section>
+          </div>
+        </>
+      )}
+      {!p && (
+        <section className="av-step">
+          <header>
+            <span>01</span>
+            <h3>What normal looks like</h3>
+            <ScopeTag scope="both" snapshot={snapshot} person={h.id} />
+          </header>
+          <Rhythm snapshot={snapshot} person={h.id} />
+          <Note kind="rhythm" h={h} />
+        </section>
+      )}
       <section className="av-step">
         <header>
-          <span>01</span>
-          <h3>What normal looks like</h3>
-          <small className="cm-hint">the same quiet router means different things in different homes</small>
-          <ScopeTag scope="both" snapshot={snapshot} person={h.id} />
-        </header>
-        <Rhythm snapshot={snapshot} person={h.id} />
-      </section>
-      <section className="av-step">
-        <header>
-          <span>02</span>
+          <span>05</span>
           <h3>Six layers of memory</h3>
           <small className="cm-hint">each fact tagged by how we know it and how old it is · usable now, not after a nightly batch</small>
           <ScopeTag scope="both" snapshot={snapshot} person={h.id} />
         </header>
+        <Note kind="layers" h={h} />
         <div className="cm-layers">
           {LAYERS.map(([id, name, what]) => (
             <article key={id} className="cm-layer">
@@ -237,41 +343,40 @@ export function CustomerMemoryView({
       </section>
       <section className="av-step">
         <header>
-          <span>03</span>
+          <span>06</span>
           <h3>Same signal, three memories</h3>
           <small className="cm-hint">each person’s memory as its own space, placed by meaning · the star is tonight’s signal, joined to what it reminds us of in their history</small>
           <ScopeTag scope="moment" snapshot={snapshot} person={h.id} />
         </header>
+        <Note kind="map" h={h} />
         <MemoryMap h={h} snapshot={snapshot} inspect={inspect} onPerson={onPerson} />
       </section>
-      <div className="cm-pair">
+      <div className={p ? "cm-single" : "cm-pair"}>
+        {!p && (
+          <section className="av-step">
+            <header>
+              <span>03</span>
+              <h3>What’s already been said, and by which channel</h3>
+              <ScopeTag scope="both" snapshot={snapshot} person={h.id} />
+            </header>
+            <ol className="cm-said">
+              {said.map((s, i) => (
+                <li key={i}>
+                  <time>
+                    {day(s.at)} · {time(s.at)}
+                  </time>
+                  <span className="cm-channel">{s.channel}</span>
+                  {s.event ? <button onClick={() => inspect(s.event!)}>{s.text}</button> : <span>{s.text}</span>}
+                  <small>{s.who}</small>
+                </li>
+              ))}
+              {!said.length && <p className="cm-none">Nothing said yet.</p>}
+            </ol>
+          </section>
+        )}
         <section className="av-step">
           <header>
-            <span>04</span>
-            <h3>What’s already been said, and by which channel</h3>
-            <ScopeTag scope="both" snapshot={snapshot} person={h.id} />
-          </header>
-          <ol className="cm-said">
-            {said.map((s, i) => (
-              <li key={i}>
-                <time>
-                  {day(s.at)} · {time(s.at)}
-                </time>
-                <span className="cm-channel">{s.channel}</span>
-                {s.event ? (
-                  <button onClick={() => inspect(s.event!)}>{s.text}</button>
-                ) : (
-                  <span>{s.text}</span>
-                )}
-                <small>{s.who}</small>
-              </li>
-            ))}
-            {!said.length && <p className="cm-none">Nothing said yet.</p>}
-          </ol>
-        </section>
-        <section className="av-step">
-          <header>
-            <span>05</span>
+            <span>07</span>
             <h3>What this decision used, and what it held back</h3>
             <ScopeTag scope="both" snapshot={snapshot} person={h.id} />
           </header>

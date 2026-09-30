@@ -21,16 +21,17 @@ async function replay() {
 }
 test("the spine's clock labels match the engine's recorded clocks", () => {
   assert.equal(moments.length, clocks.length);
-  clocks.forEach((iso, i) =>
-    assert.equal(
-      moments[i].time,
-      new Date(iso).toLocaleTimeString("en-GB", {
-        timeZone: "Europe/London",
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-    ),
-  );
+  // Tonight's labels are the time; later chapters add the day, or give the date when weeks pass.
+  clocks.forEach((iso, i) => {
+    const d = new Date(iso);
+    const hm = d.toLocaleTimeString("en-GB", { timeZone: "Europe/London", hour: "2-digit", minute: "2-digit" });
+    const date = d.toLocaleDateString("en-GB", { timeZone: "Europe/London", day: "numeric", month: "short" });
+    const weekday = d.toLocaleDateString("en-GB", { timeZone: "Europe/London", weekday: "short" });
+    assert.ok(
+      moments[i].time === hm || moments[i].time === `${weekday} ${hm}` || moments[i].time === date,
+      `moment ${i} label "${moments[i].time}" does not match ${iso}`,
+    );
+  });
 });
 test("every moment reads all three homes at once from recorded decisions only", async () => {
   for (const s of await replay()) {

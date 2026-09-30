@@ -4,6 +4,7 @@ import { ArbiterWorkbench } from "./ArbiterWorkbench";
 import { CustomerMemoryView } from "./CustomerMemoryView";
 import { FocusHeader } from "./FocusHeader";
 import { GovernanceView } from "./GovernanceView";
+import { DecisionFlow } from "./DecisionFlow";
 import type { ReactNode } from "react";
 import type {
   Snapshot,
@@ -85,6 +86,7 @@ export function SectionView({
           onPerson={onPerson}
           onCutoff={onCutoff}
         />
+        <DecisionFlow h={h} snapshot={snapshot} decision={decision} />
         <ArbiterWorkbench
           key={`${h.id}/${snapshot.cutoff}`}
           h={h}

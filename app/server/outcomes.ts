@@ -115,6 +115,43 @@ export function contractsFor(
       attribution:
         "Returning telemetry supports ending this watch. Zero messages is observable; avoided calls and satisfaction are not measured.",
     });
+  // The weeks after: a fix that must hold, products that must be used, an offer that needs an answer.
+  if (selected === "monitor")
+    definitions.push({
+      goal: "monitoring",
+      anchor: latest("monitoring.started"),
+      title: "Line holds for 72 hours",
+      baseline: "Line re-profiled after repeat drops",
+      target: "Heightened monitoring completes with no drops",
+      expectedEvent: "monitoring.completed",
+      dueAt: minutes(latest("monitoring.started")?.occurredAt ?? d.time, 72 * 60),
+      deadlineBasis: "Policy: 72 hours of heightened monitoring after a remote fix",
+      attribution: "A clean monitoring window shows the fix held. It does not prove the customer noticed a difference.",
+    });
+  if (selected === "early-life")
+    definitions.push({
+      goal: "early-life",
+      anchor: latest("early_life.checkpoint"),
+      title: "Everything included in use",
+      baseline: `Not set up: ${(h.unused ?? []).join(", ")}`,
+      target: "The household is using every product it pays for",
+      expectedEvent: "usage.observed",
+      dueAt: minutes(d.time, 3 * 24 * 60),
+      deadlineBasis: "Early-life policy: check use within three days of the guide",
+      attribution: "Use after the guide is observed. The guide’s share of the credit is not measured.",
+    });
+  if (selected === "offer")
+    definitions.push({
+      goal: "offer",
+      anchor: latest("usage.pattern"),
+      title: "Customer answers the offer",
+      baseline: "Offer sent once, in the app",
+      target: "A yes, or a no; either is fine",
+      expectedEvent: "offer.answered",
+      dueAt: minutes(d.time, 7 * 24 * 60),
+      deadlineBasis: "Offer policy: one message, no follow-up for 7 days",
+      attribution: "An answer is observable. Whether the offer changed long-term value is not measured here.",
+    });
   return definitions
     .filter((x) => x.anchor)
     .map(({ anchor, ...x }) => ({
@@ -160,6 +197,10 @@ export function verifyOutcome(
           ? e.payload.successful === true
           : c.goal === "watch"
             ? e.payload.status === undefined || e.payload.status === "received"
+            : c.goal === "monitoring"
+              ? e.payload.drops === 0
+              : c.goal === "early-life" || c.goal === "offer"
+                ? true
             : typeof e.payload.statement === "string" &&
               !!e.payload.statement.trim());
   // A fresh case or replacement promise breaks the old scope: it cannot fulfil it.
@@ -230,6 +271,12 @@ export function verifyOutcome(
       "Record successful first use. Do not send setup advice for an already completed activation.",
     watch:
       "End this watch without contact. Recheck fresh incident scope and complaints before using the habit again.",
+    monitoring:
+      "The fix held. Close the extra checks and tell the customer at a sensible time.",
+    "early-life":
+      "Everything is in use. Stop setup guidance; the relationship moves on to ordinary care.",
+    offer:
+      "Record the answer either way. No follow-up message for 7 days.",
   };
   return {
     revision: s.cutoff,

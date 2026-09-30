@@ -227,3 +227,31 @@
   color: var(--muted);
   cursor: pointer;
 }
+/* Annotation: what the chart is, and how the agent turns it into a non-generic action. */
+.cm-note {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 18px;
+  padding: 10px 12px;
+  border-left: 3px solid var(--brand);
+  border-radius: 0 8px 8px 0;
+  background: #faf6ff;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.cm-note p {
+  margin: 0;
+}
+.cm-note b {
+  display: block;
+  font: 600 9.5px var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--brand);
+  margin-bottom: 2px;
+}
+@media (max-width: 780px) {
+  .cm-note {
+    grid-template-columns: 1fr;
+  }
+}

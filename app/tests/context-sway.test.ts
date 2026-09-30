@@ -16,10 +16,10 @@ test("context sway replays every recorded moment with each fact flipped, without
     const before = JSON.stringify(snap);
     const r = await contextSway(snap, (at) => engine.snapshot(s.id, at));
     assert.equal(JSON.stringify(snap), before, "read-only: the snapshot is not mutated");
-    assert.equal(r.bases, 15);
+    assert.equal(r.bases, steps.length * 3);
     const pairs = (FACTORS.length * (FACTORS.length - 1)) / 2;
     assert.equal(r.points.length, r.bases * (2 + FACTORS.length + pairs));
-    assert.equal(r.points.filter((p) => p.kind === "recorded").length, 15);
+    assert.equal(r.points.filter((p) => p.kind === "recorded").length, steps.length * 3);
     // Rules-only replay: the live decision and the policy replay must agree.
     assert.equal(r.policyAgreement, 1);
     // The policy must not be moved by an unverified customer claim in the prompt.

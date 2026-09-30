@@ -1,3 +1,4 @@
+import { profileFor } from "./profile.ts";
 import type { HouseholdFixture, Row } from "./data-model.ts";
 import type { Household, PersonId, SourceEvent } from "../src/types.ts";
 import { project, projectOperations, clocks } from "./engine.ts";
@@ -81,7 +82,7 @@ export function buildContext(input: {
       (e.personId === personId && e.serviceId === serviceId) ||
       (!e.personId &&
         !e.serviceId &&
-        ["incident.confirmed", "incident.cleared", "capacity.recorded"].includes(e.type)),
+        ["incident.confirmed", "incident.cleared", "capacity.recorded", "policy.offer_approved"].includes(e.type)),
   );
   const cases = scoped.filter((e) => e.type === "case.opened");
   const currentCase = cases.at(-1)?.caseId;
@@ -165,6 +166,7 @@ export function buildContext(input: {
     if (!inside) evidence.splice(i, 1);
   }
   const household = project({ id: alias, name: String(person.name) }, evidence);
+  household.profile = profileFor(fixture, alias, cutoff);
   household.linkedServices = fixture.tables["customer.services"]
     .filter(
       (s) =>

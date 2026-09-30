@@ -20,6 +20,10 @@ export function layerOf(e: Pick<FixtureEvent, "type" | "payload">): MemoryLayer 
   if (t === "router.heartbeat_overdue" || t === "router.setup_attempted" || t === "incident.confirmed" || t === "incident.cleared") return "context";
   if (t.startsWith("order.") || t.startsWith("activation.") || t.startsWith("case.") || t.startsWith("diagnostic.") || t === "service.restored_observed")
     return "service";
+  if (t === "service.reprofiled" || t.startsWith("monitoring.") || t === "case.closed" || t === "product.activated" || t === "early_life.checkpoint") return "service";
+  if (t === "line.degradation_detected") return "context";
+  if (t === "usage.observed" || t === "usage.pattern") return "behavioural";
+  if (t === "preference.offers_opt_in") return "intentional";
   if (t === "conversation.message") return (e.payload as { speakerRole?: string }).speakerRole === "customer" ? "emotional" : null;
   if (t.startsWith("promise.") || t === "preference.stated" || t === "customer.confirmed_working" || t === "interest.stated") return "intentional";
   return null;
@@ -129,7 +133,7 @@ export async function buildMemoryMap(fixture: HouseholdFixture): Promise<MemoryM
     return { ...q, x: xy.get(rows.length + j)![0], y: xy.get(rows.length + j)![1], neighbours };
   });
   const fingerprint = createHash("sha256")
-    .update(JSON.stringify(["memory-map-v11", fixture.datasetVersion, fixture.seed, texts]))
+    .update(JSON.stringify(["memory-map-v12", fixture.datasetVersion, fixture.seed, texts]))
     .digest("hex");
   return {
     fingerprint,

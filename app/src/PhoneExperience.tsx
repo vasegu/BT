@@ -61,6 +61,22 @@ function because(e: SourceEvent, h: Household): { text: string; used: string } |
       return { text: `Your hub stopped checking in with us at ${time(e.occurredAt)}.`, used: "Your hub’s status signal" };
     case "router.heartbeat_received":
       return { text: `Your hub checked in again at ${time(e.occurredAt)}.`, used: "Your hub’s status signal" };
+    case "service.reprofiled":
+      return { text: "We adjusted your line remotely to keep it stable.", used: "Tests already run on your line" };
+    case "monitoring.completed":
+      return { text: "We watched your line closely after the fix: no drops.", used: "Your hub’s status signal" };
+    case "line.degradation_detected":
+      return { text: "A routine overnight check found your line getting weaker.", used: "Tests already run on your line" };
+    case "early_life.checkpoint":
+      return { text: "Your plan includes BT TV and Netflix, and they weren’t set up yet.", used: "Your order" };
+    case "product.activated":
+      return { text: `You set up ${String(p.product ?? "a product")}.`, used: "Your order" };
+    case "usage.observed":
+      return { text: "Your household has been using everything.", used: "How you use your services" };
+    case "usage.pattern":
+      return { text: "Your household watches live sport on most weekends.", used: "How you use your services" };
+    case "preference.offers_opt_in":
+      return { text: "You said you’d like to hear about relevant offers.", used: "What you told us" };
     case "router.setup_attempted":
       return { text: `You switched on your new hub at ${time(e.occurredAt)}, and it hasn’t connected yet.`, used: "Your hub’s status signal" };
     case "incident.cleared":
@@ -148,6 +164,88 @@ function WhySheet({ action, snapshot, h, onClose }: { action: DemoAction; snapsh
   );
 }
 
+/** The story's next step for an Eve message: what the customer can do next, in one tap. */
+const NEXT_STEP: Record<string, { cta: string; title: string; lines: string[]; primary: string; secondary?: string; done: string; declined?: string }> = {
+  "early-life": {
+    cta: "Start setup",
+    title: "Set up BT TV and Netflix",
+    lines: [
+      "Plug the BT TV box into your TV and into the hub.",
+      "Switch it on. It finds your account by itself.",
+      "Open Netflix on the box and sign in with the code we’ll send you.",
+    ],
+    primary: "I’ve done it",
+    secondary: "Remind me tonight",
+    done: "Great. Eve will check it’s all working.",
+    declined: "No problem. Eve will remind you at 19:00.",
+  },
+  offer: {
+    cta: "See the offer",
+    title: "TNT Sports on your BT TV",
+    lines: [
+      "Why you’re seeing this: your household watched live sport through apps on 5 of the last 6 weekends.",
+      "Watch it on the living-room TV instead. First month free, then £25 a month.",
+      "Cancel any time in the app. If you say no, we won’t ask again for a while.",
+    ],
+    primary: "Start my free month",
+    secondary: "No thanks",
+    done: "Demo only: nothing has been ordered.",
+    declined: "Got it. We won’t ask again for a while.",
+  },
+  "quiet-fix": {
+    cta: "See what we fixed",
+    title: "What we fixed overnight",
+    lines: [
+      "02:10 · A routine check found your line getting weaker (noise margin 3.1 dB; normally about 6 dB).",
+      "03:40 · We adjusted your line remotely. Nobody needed to visit.",
+      "Since then · Your line has been healthy. Nothing you need to do.",
+    ],
+    primary: "Thanks",
+    done: "Glad it didn’t get in the way of your morning.",
+  },
+  "monitor-closed": {
+    cta: "See the checks",
+    title: "Your weekend of extra checks",
+    lines: [
+      "Friday 21:12 · Your line was adjusted remotely to stop the drops.",
+      "Friday to Monday · We watched it closely: no drops at all.",
+      "Monday 08:25 · Aisha closed your case.",
+    ],
+    primary: "Thanks",
+    done: "You’re all set for the week.",
+  },
+};
+
+function NextStepSheet({ step, onClose }: { step: (typeof NEXT_STEP)[string]; onClose: (note: string | null) => void }) {
+  return (
+    <div className="why-sheet next-sheet" role="dialog" aria-label={step.title}>
+      <div className="why-grab" />
+      <header>
+        <strong>{step.title}</strong>
+        <button onClick={() => onClose(null)} aria-label="Close">×</button>
+      </header>
+      <ol>
+        {step.lines.map((l) => (
+          <li key={l}>{l}</li>
+        ))}
+      </ol>
+      <div className="next-actions">
+        <button className="next-primary" onClick={() => onClose(step.done)}>
+          {step.primary}
+        </button>
+        {step.secondary && (
+          <button className="next-secondary" onClick={() => onClose(step.declined ?? null)}>
+            {step.secondary}
+          </button>
+        )}
+      </div>
+      <footer>
+        <small>Demo · nothing is ordered or sent</small>
+      </footer>
+    </div>
+  );
+}
+
 export function PhoneExperience({
   snapshot,
   customer: h,
@@ -184,6 +282,13 @@ export function PhoneExperience({
       return { who: p.speakerRole === "customer" ? "You" : p.speaker ?? "BT", text: e.description, at: e.occurredAt };
     });
   const [why, setWhy] = useState<DemoAction | null>(null);
+  const [next, setNext] = useState<(typeof NEXT_STEP)[string] | null>(null);
+  const [note, setNote] = useState<string | null>(null);
+  const STEP_KEY: Record<string, string> = { "early-life": "early-life", offer: "offer", "quiet-fix-note": "quiet-fix", "monitor-close": "monitor-closed" };
+  const stepFor = (a: DemoAction) => {
+    const id = snapshot.decisions.find((d) => d.id === a.decisionId)?.trace?.selectedId;
+    return id && STEP_KEY[id] ? NEXT_STEP[STEP_KEY[id]] : null;
+  };
   // The headline follows the household's actual state rather than a marketing line. A recovery
   // is only news to a customer we told about the problem; a quiet watch stays quiet.
   // An open service case with a named owner is live before tonight's first signal.
@@ -289,6 +394,20 @@ export function PhoneExperience({
       >
         <div className="island" aria-hidden="true" />
         {why && page === "Home" && <WhySheet action={why} snapshot={snapshot} h={h} onClose={() => setWhy(null)} />}
+        {next && page === "Home" && (
+          <NextStepSheet
+            step={next}
+            onClose={(n) => {
+              setNext(null);
+              setNote(n);
+            }}
+          />
+        )}
+        {note && page === "Home" && (
+          <div className="phone-toast" role="status" onClick={() => setNote(null)}>
+            {note}
+          </div>
+        )}
         <div className="phone-status">
           <strong>{time(snapshot.clock)}</strong>
           <span>
@@ -358,11 +477,8 @@ export function PhoneExperience({
                           <summary>
                             <div className="message-meta">
                               <span>
-                                <img
-                                  src={btLogo}
-                                  alt=""
-                                />
-                                Your BT team
+                                <i className="eve-mini" aria-hidden="true">e</i>
+                                Eve · BT
                               </span>
                               <time>{time(a.time)}</time>
                             </div>
@@ -372,6 +488,17 @@ export function PhoneExperience({
                             </h3>
                           </summary>
                           <p>{a.body}</p>
+                          {i === 0 && stepFor(a) && (
+                            <button
+                              className="next-cta"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setNext(stepFor(a)!);
+                              }}
+                            >
+                              {stepFor(a)!.cta} <PhoneIcon kind="chevron" />
+                            </button>
+                          )}
                           <div className="phone-ai-line">
                             <span>Sent automatically · AI-assisted</span>
                             <button

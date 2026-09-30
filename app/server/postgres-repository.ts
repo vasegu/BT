@@ -236,7 +236,7 @@ export class PostgresRepository {
   async snapshot(id: string, cutoff?: number): Promise<Snapshot> {
     if (
       cutoff !== undefined &&
-      (!Number.isInteger(cutoff) || cutoff < 0 || cutoff > 5)
+      (!Number.isInteger(cutoff) || cutoff < 0 || cutoff > steps.length)
     )
       throw new DomainError("Invalid historical cutoff");
     const settled = cutoff === undefined ? undefined : this.settled.get(`${id}/${cutoff}`);

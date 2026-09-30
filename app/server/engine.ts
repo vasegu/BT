@@ -26,6 +26,10 @@ export const steps: Step[] = [
   "restore",
   "callback",
   "confirm",
+  // The weeks after tonight: outcomes, early life, monitoring and the learning loop.
+  "morning",
+  "monday",
+  "weeks",
 ];
 export const clocks = [
   "2026-09-25T19:45:00Z",
@@ -34,6 +38,9 @@ export const clocks = [
   "2026-09-25T20:12:00Z",
   "2026-09-25T20:15:00Z",
   "2026-09-25T20:18:00Z",
+  "2026-09-26T07:30:00Z",
+  "2026-09-28T07:30:00Z",
+  "2026-11-06T19:00:00Z",
 ];
 const people = [
   { id: "daniel", name: "Daniel Reed" },
@@ -154,6 +161,38 @@ export function project(
         h.serviceState = "Heartbeat observed";
         if (gapOpen) h.restored = true;
         gapOpen = false;
+        break;
+      case "service.reprofiled":
+        h.reprofiled = true;
+        if (h.quietFix === "detected") h.quietFix = "fixed";
+        break;
+      case "monitoring.started":
+        h.monitoring = "active";
+        break;
+      case "monitoring.completed":
+        h.monitoring = "complete";
+        break;
+      case "line.degradation_detected":
+        h.quietFix = "detected";
+        h.serviceState = "Line quality falling · found by a routine test";
+        break;
+      case "early_life.checkpoint":
+        h.unused = Array.isArray(e.payload.unused) ? (e.payload.unused as string[]) : [];
+        break;
+      case "product.activated":
+        h.unused = (h.unused ?? []).filter((x) => x !== e.payload.product);
+        break;
+      case "usage.observed":
+        h.engaged = true;
+        break;
+      case "usage.pattern":
+        h.offerSignal = e.description;
+        break;
+      case "preference.offers_opt_in":
+        h.offersAllowed = true;
+        break;
+      case "policy.offer_approved":
+        h.offerApproved = true;
         break;
       case "router.setup_attempted":
         h.serviceState = "Hub switched on · not connected yet";
@@ -543,6 +582,45 @@ export class Engine {
             payload: { status: "received" },
             occurredAt: "2026-09-25T20:10:00Z",
           },
+        );
+      if (step === "restore")
+        inputs.push(
+          {
+            type: "service.reprofiled",
+            subject: "daniel",
+            source: "diagnostics_simulator",
+            description: "Remote line re-profile applied to stop the intermittent sync seen since 24 September. No customer action needed.",
+            payload: { action: "dlm_reprofile", reason: "intermittent_sync" },
+          },
+          {
+            type: "monitoring.started",
+            subject: "daniel",
+            source: "diagnostics_simulator",
+            description: "Heightened monitoring for 72 hours after the re-profile: any drop opens a fresh investigation straight away.",
+            payload: { window: "72h" },
+          },
+        );
+      // The weeks after tonight: monitoring, a quiet overnight fix, early life, then an offer.
+      if (step === "morning")
+        inputs.push(
+          { type: "monitoring.checked", subject: "daniel", source: "router_simulator", occurredAt: "2026-09-26T06:00:00Z", description: "Overnight: no drops in ten hours of heightened monitoring. Line sync stable.", payload: { drops: 0 } },
+          { type: "line.degradation_detected", subject: "maya", source: "diagnostics_simulator", occurredAt: "2026-09-26T01:10:00Z", description: "Routine overnight line test: the noise margin on Maya’s line is falling. Unrelated to INC-017.", payload: { snrMarginDb: 3.1 } },
+          { type: "service.reprofiled", subject: "maya", source: "diagnostics_simulator", occurredAt: "2026-09-26T02:40:00Z", description: "Remote line re-profile restored a healthy noise margin before anyone in the home noticed.", payload: { action: "dlm_reprofile" } },
+          { type: "early_life.checkpoint", subject: "sam", source: "provisioning_simulator", occurredAt: "2026-09-26T07:00:00Z", description: "Morning after the first connection: BT TV and Netflix are included in Sam’s plan but not set up.", payload: { unused: ["BT TV", "Netflix"] } },
+        );
+      if (step === "monday")
+        inputs.push(
+          { type: "monitoring.completed", subject: "daniel", source: "router_simulator", occurredAt: "2026-09-28T07:20:00Z", description: "Heightened monitoring finished early on the working day: no drops since Friday 21:12.", payload: { drops: 0 } },
+          { type: "case.closed", subject: "daniel", source: "crm_simulator", occurredAt: "2026-09-28T07:25:00Z", description: "Aisha closed case DR-2041: fault fixed, promise kept, line stable since Friday.", payload: { caseId: "DR-2041" } },
+          { type: "product.activated", subject: "sam", source: "provisioning_simulator", occurredAt: "2026-09-26T10:05:00Z", description: "BT TV box activated in the living room.", payload: { product: "BT TV" } },
+          { type: "product.activated", subject: "sam", source: "provisioning_simulator", occurredAt: "2026-09-27T19:00:00Z", description: "Netflix linked to Sam’s BT account.", payload: { product: "Netflix" } },
+          { type: "usage.observed", subject: "sam", source: "router_simulator", occurredAt: "2026-09-28T07:00:00Z", description: "Since Saturday: 11 hours of TV and Netflix watched across the household.", payload: { hours: 11 } },
+        );
+      if (step === "weeks")
+        inputs.push(
+          { type: "preference.offers_opt_in", subject: "sam", source: "crm_simulator", occurredAt: "2026-09-18T10:05:00Z", description: "Sam opted in to hearing about relevant offers when ordering.", payload: { channel: "in_app" } },
+          { type: "policy.offer_approved", subject: "shared", source: "crm_simulator", occurredAt: "2026-10-01T09:00:00Z", description: "Autumn TV upgrade offer approved by the Memory & Trust Officer for customers who opted in, with no open fault in the last 30 days.", payload: { offerId: "AUTUMN-TV-26" } },
+          { type: "usage.pattern", subject: "sam", source: "router_simulator", occurredAt: "2026-11-06T18:30:00Z", description: "Live sport watched through apps on 5 of the last 6 weekends; three TVs streaming at once on most evenings.", payload: { sportWeekends: 5 } },
         );
       if (step === "callback")
         inputs.push({

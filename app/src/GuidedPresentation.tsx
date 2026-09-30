@@ -1,6 +1,7 @@
+import type { ReactNode } from "react";
 import type { Snapshot, PersonId, SourceEvent } from "./types";
-import { householdNames, moments } from "./presentation";
-import type { MomentLane, momentView } from "./presentation";
+import { householdNames, moments, changeSummary } from "./presentation";
+import type { ChangeRow, MomentLane, momentView } from "./presentation";
 import "./presentation.css";
 
 const roles: Record<PersonId, string> = {
@@ -138,18 +139,49 @@ function storySoFar(snapshot: Snapshot, person: PersonId) {
     });
 }
 
+/** The one-glance summary: what changed in each panel for this customer at this moment. */
+function ChangeStrip({ rows, time, name, onOpen, deciding }: { rows: ChangeRow[]; time: string; name: string; onOpen?: (panel: string) => void; deciding: boolean }) {
+  return (
+    <section className="change-strip" aria-label={`What changed at ${time} for ${name}`}>
+      <span className="eyebrow">What changed at {time} for {name}</span>
+      <ol>
+        {rows.map((r, i) => (
+          <li key={r.panel} className={r.changed && !deciding ? "is-changed" : ""}>
+            <button onClick={() => onOpen?.(r.panel)} title={`Open ${r.name}`}>
+              <small>
+                {String(i + 1).padStart(2, "0")} · {r.name}
+              </small>
+              <span>{deciding && r.panel !== "customer" && r.panel !== "operations" ? "Deciding…" : r.text}</span>
+            </button>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
 export function MomentLanes({
   snapshot,
   view,
   focus,
   onFocus,
   onInspect,
+  compare = false,
+  onCompare,
+  onOpen,
+  phone,
 }: {
   snapshot: Snapshot;
   view: ReturnType<typeof momentView>;
   focus: PersonId;
   onFocus: (person: PersonId) => void;
   onInspect: (e: SourceEvent) => void;
+  /** Show all three homes side by side instead of one at a time. */
+  compare?: boolean;
+  onCompare?: (on: boolean) => void;
+  onOpen?: (panel: string) => void;
+  /** The chosen customer's phone, shown beside their story. */
+  phone?: ReactNode;
 }) {
   const { moment, lanes, status, signals } = view;
   const final = snapshot.cutoff === moments.length - 1;
@@ -185,8 +217,30 @@ export function MomentLanes({
           Switch to Explore to inspect it.
         </div>
       )}
-      <div className="lanes">
+      <div className="moment-picker" role="tablist" aria-label="Customer">
         {lanes.map((lane) => (
+          <button
+            key={lane.person}
+            role="tab"
+            aria-selected={!compare && focus === lane.person}
+            onClick={() => {
+              onCompare?.(false);
+              onFocus(lane.person);
+            }}
+          >
+            <span className={`lane-avatar lane-${lane.person}`}>{initials(lane.person)}</span>
+            {householdNames[lane.person]}
+          </button>
+        ))}
+        <button role="tab" aria-selected={compare} className="is-compare" onClick={() => onCompare?.(true)}>
+          Compare all three
+        </button>
+      </div>
+      {!compare && (
+        <ChangeStrip rows={changeSummary(snapshot, focus)} time={moment.time} name={first(focus)} onOpen={onOpen} deciding={status === "deciding"} />
+      )}
+      <div className={compare ? "lanes" : "moment-focus"}>
+        {lanes.filter((lane) => compare || lane.person === focus).map((lane) => (
           <Lane
             key={lane.person}
             lane={lane}
@@ -195,9 +249,14 @@ export function MomentLanes({
             focused={focus === lane.person}
             opening={snapshot.cutoff === 0}
             story={storySoFar(snapshot, lane.person)}
-            onFocus={() => onFocus(lane.person)}
+            single={!compare}
+            onFocus={() => {
+              onCompare?.(false);
+              onFocus(lane.person);
+            }}
           />
         ))}
+        {!compare && phone && <div className="moment-phone">{phone}</div>}
       </div>
     </section>
   );
@@ -211,6 +270,7 @@ function Lane({
   opening,
   story,
   onFocus,
+  single = false,
 }: {
   lane: MomentLane;
   deciding: boolean;
@@ -219,6 +279,8 @@ function Lane({
   opening: boolean;
   story: { at: string; text: string }[];
   onFocus: () => void;
+  /** Shown on its own, as the chosen customer's story. */
+  single?: boolean;
 }) {
   const { person, decision, previous, changed, message, lastMessage, outcome } = lane;
   const state = deciding
@@ -317,7 +379,7 @@ function Lane({
           ))}
         </dl>
       )}
-      <footer>{focused ? "Panels below show this home" : `Show ${first(person)} below ↓`}</footer>
+      {single ? null : <footer>{`Follow ${first(person)}’s story →`}</footer>}
     </article>
   );
 }

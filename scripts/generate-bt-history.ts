@@ -40,8 +40,11 @@ export function generateHistory(
     version = options.datasetVersion ?? stories.datasetVersion,
     variant = options.variant ?? "canonical";
   // Later dataset versions add checkpoints; earlier versions stay byte-for-byte reproducible.
-  const minor = (v: string) => Number(/v1\.(\d+)/.exec(v)?.[1] ?? 0);
-  const since = (v: string) => minor(version) >= minor(`v${v}`);
+  const rank = (v: string) => {
+    const m = /v(\d+)\.(\d+)/.exec(v);
+    return m ? Number(m[1]) * 1000 + Number(m[2]) : 0;
+  };
+  const since = (v: string) => rank(version) >= rank(`v${v}`);
   if (!Object.hasOwn(stories.variants, variant))
     throw new Error("Unknown history variant");
   const f: HouseholdFixture = {
@@ -767,7 +770,9 @@ export function generateHistory(
       "incident-cleared",
       "incident.cleared",
       "2026-09-25T20:12:00Z",
-      "INC-017 cleared: the network is restored across the affected area. Each customer’s own line is confirmed separately.",
+      since("2.0")
+        ? "INC-017 cleared: the network team replaced a failed line card in cabinet ACCESS-17. Each customer’s own line is confirmed separately."
+        : "INC-017 cleared: the network is restored across the affected area. Each customer’s own line is confirmed separately.",
       { incidentId: "INC-017", affected: ["daniel", "sam"] },
       null,
       "network",
@@ -949,6 +954,160 @@ export function generateHistory(
       "daniel-case",
       "diagnostics",
     );
+  // v2.0 · Customer memory as the moat: who lives there, what's on the network, what they buy
+  // and use, the contract, churn risk, usage by hour, every past contact and preferences.
+  // Time-aware rows (valid_from) so the profile changes as the story plays. The profile.*
+  // tables are not imported into Supabase; current-version sessions read the fixture.
+  if (since("2.0")) {
+    const member = (a: string, key: string, name: string, relation: string, from: string) => {
+      put("customer.people", `person-${key}`, { alias: key, name });
+      put("customer.household_memberships", `membership-${key}`, {
+        person_id: id(`person-${key}`),
+        household_id: id(`household-${a}`),
+        valid_from: from,
+        valid_to: null,
+      });
+      put("profile.members", `member-${key}`, { person: a, name, relation, valid_from: from });
+    };
+    put("profile.members", "member-daniel-self", { person: "daniel", name: "Daniel Reed", relation: "Account holder", valid_from: "2025-10-01T09:00:00Z" });
+    member("daniel", "daniel_partner", "Jo Reed", "Partner", "2025-10-01T09:00:00Z");
+    put("profile.members", "member-sam-self", { person: "sam", name: "Sam Morgan", relation: "Account holder", valid_from: "2026-09-18T10:00:00Z" });
+    member("sam", "sam_partner", "Priya Morgan", "Partner", "2026-09-18T10:00:00Z");
+    member("sam", "sam_teen1", "Leo Morgan", "Son, 16", "2026-09-18T10:00:00Z");
+    member("sam", "sam_teen2", "Ava Morgan", "Daughter, 13", "2026-09-18T10:00:00Z");
+    put("profile.members", "member-maya-self", { person: "maya", name: "Maya Patel", relation: "Account holder", valid_from: "2025-05-01T09:00:00Z" });
+    put("profile.members", "member-maya-guest", { person: "maya", name: "Alex Patel", relation: "Partner · not on the account", valid_from: "2026-03-27T00:00:00Z" });
+
+    const device = (a: string, key: string, name: string, kind: string, owner: string, from: string) =>
+      put("profile.devices", `device-${a}-${key}`, { person: a, name, kind, owner, valid_from: from });
+    device("daniel", "laptop", "Work laptop", "laptop", "Daniel", "2025-10-08T09:00:00Z");
+    device("daniel", "phone", "Daniel’s phone", "phone", "Daniel", "2025-10-08T09:00:00Z");
+    device("daniel", "phone2", "Jo’s phone", "phone", "Jo", "2025-10-08T09:00:00Z");
+    device("daniel", "tv", "Living-room smart TV", "tv", "Household", "2025-10-09T19:00:00Z");
+    device("daniel", "speaker", "Smart speaker", "speaker", "Household", "2025-12-26T10:00:00Z");
+    // Sam's devices appear only once the hub connects for the first time (21:17 on Friday).
+    for (const [key, name, kind, owner] of [
+      ["phone1", "Sam’s phone", "phone", "Sam"],
+      ["phone2", "Priya’s phone", "phone", "Priya"],
+      ["phone3", "Leo’s phone", "phone", "Leo"],
+      ["phone4", "Ava’s phone", "phone", "Ava"],
+      ["laptop1", "Family laptop", "laptop", "Household"],
+      ["console", "Games console", "console", "Leo"],
+    ])
+      device("sam", key, name, kind, owner, "2026-09-25T20:17:00Z");
+    device("sam", "tvbox", "BT TV box · living room", "tv", "Household", "2026-09-26T10:05:00Z");
+    device("sam", "tv2", "Bedroom TV", "tv", "Leo", "2026-09-26T18:00:00Z");
+    device("sam", "laptop2", "Priya’s work laptop", "laptop", "Priya", "2026-09-28T07:10:00Z");
+    device("maya", "phone", "Maya’s phone", "phone", "Maya", "2025-05-08T09:00:00Z");
+    device("maya", "phone2", "Alex’s phone", "phone", "Alex", "2026-03-27T00:00:00Z");
+    device("maya", "laptop", "Laptop", "laptop", "Maya", "2025-05-08T09:00:00Z");
+    device("maya", "tablet", "Tablet", "tablet", "Household", "2025-08-12T18:00:00Z");
+    device("maya", "speaker", "Smart speaker", "speaker", "Household", "2025-12-25T10:00:00Z");
+    device("maya", "laptop2", "Alex’s new laptop", "laptop", "Alex", "2026-10-30T19:00:00Z");
+    device("maya", "console", "Games console", "console", "Alex", "2026-11-02T17:00:00Z");
+
+    const product = (a: string, key: string, from: string, fields: Record<string, unknown>) =>
+      put("profile.product_usage", `usage-${a}-${key}-${from}`, { person: a, product: key, valid_from: from, ...fields });
+    product("daniel", "broadband", "2025-10-08T09:00:00Z", { name: "BT Full Fibre 150", brand: "BT", since: "2025-10-08", status: "in use", detail: "Work calls on weekdays, streaming in the evening" });
+    product("daniel", "mobile", "2024-03-01T09:00:00Z", { name: "EE SIM plan · 30GB", brand: "EE", since: "2024-03-01", status: "in use", detail: "Separate EE account, same household" });
+    product("sam", "broadband", "2026-09-18T10:00:00Z", { name: "BT Full Fibre 500", brand: "BT", since: "2026-09-18", status: "not connected", detail: "Hub delivered 22 Sept" });
+    product("sam", "broadband", "2026-09-25T20:17:00Z", { name: "BT Full Fibre 500", brand: "BT", since: "2026-09-18", status: "in use", detail: "Connected for the first time on Friday" });
+    product("sam", "broadband", "2026-11-06T19:00:00Z", { name: "BT Full Fibre 500", brand: "BT", since: "2026-09-18", status: "in use", detail: "Often three TVs streaming at once in the evening" });
+    product("sam", "tv", "2026-09-18T10:00:00Z", { name: "BT TV Entertainment", brand: "BT", since: "2026-09-18", status: "not set up", detail: "Included in the plan" });
+    product("sam", "tv", "2026-09-26T10:05:00Z", { name: "BT TV Entertainment", brand: "BT", since: "2026-09-18", status: "in use", detail: "Box activated Saturday; 11 hours watched by Monday" });
+    product("sam", "tv", "2026-11-06T19:00:00Z", { name: "BT TV Entertainment", brand: "BT", since: "2026-09-18", status: "in use", detail: "26 hours a week; live sport on 5 of the last 6 weekends, via apps" });
+    product("sam", "netflix", "2026-09-18T10:00:00Z", { name: "Netflix Standard · via BT", brand: "BT", since: "2026-09-18", status: "not set up", detail: "Included in the plan" });
+    product("sam", "netflix", "2026-09-27T19:00:00Z", { name: "Netflix Standard · via BT", brand: "BT", since: "2026-09-18", status: "in use", detail: "Linked on Sunday" });
+    product("maya", "broadband", "2025-05-08T09:00:00Z", { name: "BT Fibre 2", brand: "BT", since: "2025-05-08", status: "in use", detail: "Off most nights by choice" });
+    product("maya", "mobile", "2026-02-03T10:00:00Z", { name: "BT Mobile · 20GB", brand: "BT", since: "2026-02-03", status: "in use", detail: "Linked to the same account" });
+
+    put("profile.contracts", "contract-daniel", { person: "daniel", start: "2025-11-21", end: "2026-11-21", arpu: 52, extra: "EE mobile £18 a month, separate account", valid_from: "2025-10-01T09:00:00Z" });
+    put("profile.contracts", "contract-sam", { person: "sam", start: "2026-09-18", end: "2028-09-18", arpu: 79, extra: null, valid_from: "2026-09-18T10:00:00Z" });
+    put("profile.contracts", "contract-maya", { person: "maya", start: "2025-05-08", end: "2026-05-08", arpu: 61, extra: "BT Mobile included", valid_from: "2025-05-01T09:00:00Z" });
+
+    const churn = (a: string, from: string, level: string, score: number, drivers: string[]) =>
+      put("profile.churn", `churn-${a}-${from}`, { person: a, valid_from: from, level, score, drivers: JSON.stringify(drivers) });
+    churn("daniel", "2026-09-18T00:00:00Z", "low", 0.21, ["Settled customer for 11 months"]);
+    churn("daniel", "2026-09-25T19:45:00Z", "high", 0.64, ["Two connection faults in seven days", "Three contacts this week", "Contract ends in eight weeks"]);
+    churn("daniel", "2026-09-28T07:30:00Z", "medium", 0.38, ["Fault fixed and the promise kept", "Contract ends in eight weeks"]);
+    churn("daniel", "2026-11-06T19:00:00Z", "low", 0.18, ["Line stable for six weeks", "Case closed with a kept promise"]);
+    churn("sam", "2026-09-18T10:00:00Z", "medium", 0.41, ["First week as a customer", "Hub delivered but not connected"]);
+    churn("sam", "2026-09-25T20:17:00Z", "low", 0.24, ["Connected for the first time"]);
+    churn("sam", "2026-09-28T07:30:00Z", "low", 0.12, ["All three products in use"]);
+    churn("sam", "2026-11-06T19:00:00Z", "low", 0.08, ["Heavy, growing use across the household"]);
+    churn("maya", "2026-06-01T00:00:00Z", "medium", 0.35, ["Out of contract since May"]);
+    churn("maya", "2026-09-28T07:30:00Z", "medium", 0.29, ["Out of contract since May", "Read our note about a proactive fix"]);
+
+    // Share of the household's weekly use, by hour (0–23, London).
+    const shape = (peaks: [number, number, number][]) =>
+      JSON.stringify(Array.from({ length: 24 }, (_, h) => Number(Math.min(1, peaks.reduce((v, [from, to, level]) => (h >= from && h < to ? Math.max(v, level) : v), 0.04)).toFixed(2))));
+    put("profile.usage", "usage-daniel", { person: "daniel", weekday: shape([[7, 9, 0.3], [9, 17, 0.95], [17, 19, 0.4], [19, 23, 0.6]]), weekend: shape([[9, 12, 0.4], [12, 19, 0.35], [19, 23, 0.7]]), note: "Works from home, Monday to Friday, 09:00–17:00", valid_from: "2025-10-08T09:00:00Z" });
+    put("profile.usage", "usage-sam", { person: "sam", weekday: shape([[7, 9, 0.35], [16, 18, 0.55], [18, 23, 1]]), weekend: shape([[9, 13, 0.6], [13, 18, 0.7], [18, 23, 1]]), note: "Family evenings: several screens at once", valid_from: "2026-09-25T20:17:00Z" });
+    put("profile.usage", "usage-maya", { person: "maya", weekday: shape([[7, 9, 0.5], [17, 22, 0.7]]), weekend: shape([[8, 22, 0.55]]), note: "Hub off from about 22:00 most nights", valid_from: "2025-05-08T09:00:00Z" });
+
+    const contact = (a: string, key: string, at: string, channel: string, withWhom: string, topic: string, outcome: string) =>
+      put("profile.contacts", `contact-${a}-${key}`, { person: a, at, channel, with: withWhom, topic, outcome, valid_from: at });
+    contact("daniel", "wifi", "2026-05-14T11:20:00Z", "Chat", "Care team", "Wi-Fi weak upstairs", "Hub moved; resolved on the same day");
+    contact("daniel", "drops", "2026-09-24T17:10:00Z", "Call", "Aisha", "Two connection drops", "Case DR-2041 opened; line check found intermittent sync");
+    contact("daniel", "restart", "2026-09-25T19:40:00Z", "Chat", "Aisha", "Restart didn’t fix it", "Aisha promised a call at 21:15");
+    contact("daniel", "callback", "2026-09-25T20:15:00Z", "Call", "Aisha", "The promised 21:15 call", "Explained the network fault and the line re-profile; agreed extra monitoring over the weekend");
+    contact("sam", "hub", "2026-09-23T18:05:00Z", "Chat", "Activation team", "Is my broadband ready?", "Provisioning check promised before any setup steps");
+    contact("maya", "habit", "2026-09-18T14:00:00Z", "Chat", "Care team", "Please don’t alert me at night", "Preference recorded: quiet hours 22:00–07:00");
+
+    put("profile.preferences", "prefs-daniel", { person: "daniel", channel: "In-app, and a call from Aisha for anything about the case", quietHours: null, offers: false, valid_from: "2025-10-01T09:00:00Z" });
+    put("profile.preferences", "prefs-sam", { person: "sam", channel: "In-app and SMS", quietHours: null, offers: true, offersNote: "Opted in to offers when ordering", valid_from: "2026-09-18T10:00:00Z" });
+    put("profile.preferences", "prefs-maya", { person: "maya", channel: "In-app, not at night", quietHours: "22:00–07:00", offers: false, valid_from: "2026-09-18T14:00:00Z" });
+  }
+  // v2.0 · The weeks after tonight. Every beat is a record, so the arbiter reasons from evidence.
+  if (since("2.0")) {
+    const at = (alias: string | null, key: string, type: string, time: string, description: string, payload: Record<string, unknown>, source: string, known?: string) => {
+      const e = emit(alias, key, type, time, description, payload, null, source);
+      if (known) e.knownAt = known;
+      return e;
+    };
+    // Daniel · the real fix, then heightened monitoring.
+    at("daniel", "daniel-reprofile", "service.reprofiled", "2026-09-25T20:12:00Z",
+      "Remote line re-profile applied to stop the intermittent sync seen since 24 September. No customer action needed.",
+      { action: "dlm_reprofile", reason: "intermittent_sync" }, "diagnostics");
+    at("daniel", "daniel-monitoring-start", "monitoring.started", "2026-09-25T20:12:00Z",
+      "Heightened monitoring for 72 hours after the re-profile: any drop opens a fresh investigation straight away.",
+      { window: "72h", until: "2026-09-28T20:12:00Z" }, "diagnostics");
+    at("daniel", "daniel-monitoring-night", "monitoring.checked", "2026-09-26T06:00:00Z",
+      "Overnight: no drops in ten hours of heightened monitoring. Line sync stable.",
+      { drops: 0, hours: 10 }, "router");
+    at("daniel", "daniel-monitoring-done", "monitoring.completed", "2026-09-28T07:20:00Z",
+      "Heightened monitoring finished early on the working day: no drops since Friday 21:12. Line sync stable.",
+      { drops: 0, hours: 59 }, "router");
+    at("daniel", "daniel-case-closed", "case.closed", "2026-09-28T07:25:00Z",
+      "Aisha closed case DR-2041: fault fixed, promise kept, line stable since Friday.",
+      { caseId: "DR-2041", owner: "Aisha" }, "crm").caseId = id("daniel-case");
+    // Maya · a quiet fix overnight, told in the morning.
+    at("maya", "maya-degradation", "line.degradation_detected", "2026-09-26T01:10:00Z",
+      "Routine overnight line test: the noise margin on Maya’s line is falling. Unrelated to INC-017.",
+      { snrMarginDb: 3.1, normalDb: 6 }, "diagnostics");
+    at("maya", "maya-reprofile", "service.reprofiled", "2026-09-26T02:40:00Z",
+      "Remote line re-profile restored a healthy noise margin before anyone in the home noticed.",
+      { action: "dlm_reprofile", reason: "falling_noise_margin" }, "diagnostics");
+    // Sam · early life, every step, then a relevant offer.
+    at("sam", "sam-early-life", "early_life.checkpoint", "2026-09-26T07:00:00Z",
+      "Morning after the first connection: BT TV and Netflix are included in Sam’s plan but not set up.",
+      { unused: ["BT TV", "Netflix"] }, "orders");
+    at("sam", "sam-tv-on", "product.activated", "2026-09-26T10:05:00Z",
+      "BT TV box activated in the living room.", { product: "BT TV" }, "orders");
+    at("sam", "sam-netflix-on", "product.activated", "2026-09-27T19:00:00Z",
+      "Netflix linked to Sam’s BT account.", { product: "Netflix" }, "orders");
+    at("sam", "sam-usage", "usage.observed", "2026-09-28T07:00:00Z",
+      "Since Saturday: 11 hours of TV and Netflix watched across the household.",
+      { hours: 11, products: ["BT TV", "Netflix"] }, "router");
+    at("sam", "sam-offers-opt-in", "preference.offers_opt_in", "2026-09-18T10:05:00Z",
+      "Sam opted in to hearing about relevant offers when ordering.", { channel: "in_app" }, "crm");
+    at("sam", "sam-sport", "usage.pattern", "2026-11-06T18:30:00Z",
+      "Live sport watched through apps on 5 of the last 6 weekends; three TVs streaming at once on most evenings.",
+      { sportWeekends: 5, of: 6, concurrentStreams: 3 }, "router");
+    at(null, "offer-approved", "policy.offer_approved", "2026-10-01T09:00:00Z",
+      "Autumn TV upgrade offer approved by the Memory & Trust Officer for customers who opted in, with no open fault in the last 30 days.",
+      { offerId: "AUTUMN-TV-26", approver: "Memory & Trust Officer" }, "crm");
+  }
   f.events.sort(
     (a, b) =>
       Date.parse(a.knownAt) - Date.parse(b.knownAt) ||

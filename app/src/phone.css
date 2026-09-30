@@ -586,3 +586,75 @@
   color: #5514b4;
   font-weight: 600;
 }
+/* Eve is the voice of every update; each message ends in the story's next step. */
+.eve-mini {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  margin-right: 5px;
+  border-radius: 50%;
+  background: #5514b4;
+  color: #fff;
+  font: 700 10px/1 var(--sans);
+  font-style: normal;
+}
+.next-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  padding: 7px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: #5514b4;
+  color: #fff;
+  font: 600 12px var(--sans);
+  cursor: pointer;
+}
+.next-cta svg {
+  width: 12px;
+  height: 12px;
+}
+.next-sheet ol {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.next-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 12px;
+}
+.next-primary,
+.next-secondary {
+  padding: 10px 12px;
+  border-radius: 12px;
+  font: 600 13px var(--sans);
+  cursor: pointer;
+}
+.next-primary {
+  border: 0;
+  background: #5514b4;
+  color: #fff;
+}
+.next-secondary {
+  border: 1px solid #ddd6e6;
+  background: #fff;
+  color: #1c1a22;
+}
+.phone-toast {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 84px;
+  z-index: 5;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #1c1a22;
+  color: #fff;
+  font-size: 12px;
+  line-height: 1.4;
+  cursor: pointer;
+}

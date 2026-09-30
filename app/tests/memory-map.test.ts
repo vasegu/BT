@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { generateHistory } from "../../scripts/generate-bt-history.ts";
 import { buildMemoryMap, layerOf } from "../server/memory-map.ts";
+import { clocks } from "../server/engine.ts";
 
 test("memory map gives each person their own space and places tonight's signal in it", { timeout: 300000 }, async () => {
   const m = await buildMemoryMap(generateHistory({ variant: "canonical" }));
@@ -11,7 +12,7 @@ test("memory map gives each person their own space and places tonight's signal i
     assert.equal(layerOf({ type: p.type, payload: { speakerRole: "customer" } } as never), p.layer);
     assert.equal(p.count, p.ids.length);
   }
-  assert.equal(m.queries.length, 15);
+  assert.equal(m.queries.length, (clocks.length - 1) * 3);
   const byKey = new Map(m.points.map((p) => [`${p.person}/${p.id}`, p]));
   for (const q of m.queries) {
     assert.ok(q.neighbours.length > 0 && q.neighbours.length <= 5);

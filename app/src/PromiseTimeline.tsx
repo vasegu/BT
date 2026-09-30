@@ -61,7 +61,8 @@ export function PromiseTimeline({
     "service.restored_observed": ["Line test passed", "restore"],
     "activation.first_use_observed": ["First use observed", "restore"],
   };
-  for (const e of [...mine, ...shared]) {
+  // Tonight only: the weeks after have their own view.
+  for (const e of [...mine, ...shared].filter((x) => at(x) <= end)) {
     if (net[e.type]) marks.push({ lane: 0, t: at(e), label: net[e.type][0], tone: net[e.type][1], event: e });
     if (e.type === "incident.confirmed") marks.push({ lane: 0, t: at(e), label: "Incident confirmed", sub: "service in scope", tone: "alert", event: e });
     if (e.type === "promise.created")

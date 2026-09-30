@@ -4,7 +4,10 @@ export type Step =
   | "incident"
   | "restore"
   | "callback"
-  | "confirm";
+  | "confirm"
+  | "morning"
+  | "monday"
+  | "weeks";
 export type SourceEvent = {
   serviceId?: string | null;
   affectedServiceIds?: string[];
@@ -19,7 +22,20 @@ export type SourceEvent = {
   description: string;
   payload: Record<string, unknown>;
 };
+/** Customer memory beyond tonight: who, what, how much, and how it has gone before. */
+export type HouseholdProfile = {
+  members: { name: string; relation: string }[];
+  devices: { name: string; kind: string; owner: string; since: string }[];
+  products: { key: string; name: string; brand: string; since: string; status: string; detail: string }[];
+  contract: { start: string; end: string; arpu: number; extra: string | null; monthsLeft: number; outOfContract: boolean } | null;
+  churn: { level: "low" | "medium" | "high"; score: number; drivers: string[]; asOf: string } | null;
+  usage: { weekday: number[]; weekend: number[]; note: string } | null;
+  now: { hour: number; weekend: boolean; share: number; label: string } | null;
+  contacts: { at: string; channel: string; with: string; topic: string; outcome: string }[];
+  preferences: { channel: string; quietHours: string | null; offers: boolean; offersNote?: string } | null;
+};
 export type Household = {
+  profile?: HouseholdProfile;
   linkedServices?: { reference: string; product: string; state: string; recent?: { id: string; at: string; description: string } }[];
   memory?: { hash: string; items: import('../server/memory.ts').MemoryItem[] };
   id: PersonId;
@@ -39,6 +55,15 @@ export type Household = {
   incident: boolean;
   /** The confirmed incident this service was in has been cleared by the network team. */
   incidentCleared?: boolean;
+  /** The weeks after: a remote line fix, heightened monitoring, a quiet fix, early life, an offer. */
+  reprofiled?: boolean;
+  monitoring?: "active" | "complete";
+  quietFix?: "detected" | "fixed";
+  unused?: string[];
+  engaged?: boolean;
+  offerSignal?: string | null;
+  offersAllowed?: boolean;
+  offerApproved?: boolean;
   contactAllowed: boolean;
   evidence: SourceEvent[];
 };
@@ -181,7 +206,10 @@ export type OutcomeGoal =
   | "callback"
   | "confirmation"
   | "activation"
-  | "watch";
+  | "watch"
+  | "monitoring"
+  | "early-life"
+  | "offer";
 export type OutcomeContract = {
   id: string;
   person: PersonId;

@@ -60,9 +60,22 @@ export function arbitrate(
   const linked = h.linkedServices?.find((s) => s.recent);
   // The network team has cleared the incident this service was in.
   const cleared = !!h.incidentCleared;
+  // An incident that cleared within the last day still owes affected customers a closing update.
+  const clearedAt = latest("incident.cleared");
+  const clearedRecently = !!clearedAt && Date.parse(time) - Date.parse(clearedAt.occurredAt) < 24 * 3600e3;
   // The case owner has only just spoken to the customer and made a promise: a message now would
   // repeat what they were told, so new evidence goes onto the case instead.
   const justPromised = justSpoken(h, time);
+  // One-shot actions are not repeated at later moments.
+  const done = (id: string) =>
+    snapshot.decisions.some((d) => d.person === h.id && d.revision < revision && d.trace?.selectedId === id);
+  const once = (id: string) =>
+    gate("once", "Not already done", !done(id), done(id) ? "Already done at an earlier moment." : "Not yet done for this customer.");
+  // The household's quiet hours, from their own stated preference.
+  const hour = Number(new Date(time).toLocaleString("en-GB", { timeZone: "Europe/London", hour: "2-digit", hour12: false })) % 24;
+  const quietHours = (!!h.habit || !!h.profile?.preferences?.quietHours) && (hour >= 22 || hour < 7);
+  const lastQuiet = latest("router.heartbeat_overdue");
+  const signalTonight = !!lastQuiet && Date.parse(time) - Date.parse(lastQuiet.occurredAt) < 24 * 3600e3;
   const candidates: Proposal[] = [];
   function propose(
     id: string,
@@ -106,7 +119,8 @@ export function arbitrate(
     [gate("first_use", "Successful first-use observation", h.firstUseObserved === true,
       "Requires a successful first-use record for this service, not delivery or provisioning alone.", "activation.first_use_observed"),
       gate("no_new_fault", "No later contradictory test", !contraryTest,
-        contraryTest ? "A later failed test requires further investigation." : "No contradictory service test is recorded.", "service.failure_observed")],
+        contraryTest ? "A later failed test requires further investigation." : "No contradictory service test is recorded.", "service.failure_observed"),
+      once("first-use")],
     refs("activation.confirmed", "activation.first_use_observed"),
   );
   propose(
@@ -134,6 +148,7 @@ export function arbitrate(
       gate('no_unresolved_test','No contradictory fresh test',!contraryTest,
         contraryTest ? 'The customer reply differs from the latest failed line test. Reconcile them before closing the case.' : 'No newer contradictory service test.',
         'service.failure_observed','service.restored_observed'),
+      once("confirmation"),
     ],
     refs("customer.confirmed_working", "promise.fulfilled"),
   );
@@ -171,7 +186,8 @@ export function arbitrate(
       gate(
         "open",
         "Recovery still pending",
-        (!h.confirmed || contraryTest) && (open || !!h.promise || h.incident),
+        // A line that has never worked before connects for the first time; it isn't "restored".
+        !h.firstUseObserved && (!h.confirmed || contraryTest) && (open || !!h.promise || (h.incident && (!cleared || clearedRecently))),
         "Technical recovery, the callback and customer confirmation are evaluated independently.",
         "incident.confirmed",
         "case.opened",
@@ -282,7 +298,7 @@ export function arbitrate(
       ? `${incidentId} is cleared. Setup was paused for the incident; the hub can connect now.`
       : "Equipment is delivered. Activation and first use are unconfirmed. Check provisioning before setup advice.",
     "Provisioning result or confirmed first use.",
-    "Publish an activation update; retain the activation team's ownership.",
+    cleared ? "Tell the customer they can set up their hub now; retain the activation team's ownership." : "Publish an activation update; retain the activation team's ownership.",
     [
       ["Activation investigation", 55],
       ["Delivery without first use", delivered ? 25 : 0],
@@ -338,6 +354,13 @@ export function arbitrate(
         !!h.habit,
         h.habit || "No quiet-period preference recorded.",
         "preference.stated",
+      ),
+      gate(
+        "tonight",
+        "A quiet signal in the last day",
+        signalTonight,
+        signalTonight ? "The hub went quiet within the last 24 hours." : "No recent quiet signal to watch.",
+        "router.heartbeat_overdue",
       ),
       gate(
         "contrary",
@@ -430,19 +453,24 @@ export function arbitrate(
   propose(
     "offer",
     "commercial.relevance",
-    "Recommend another product",
+    h.offerSignal ? "Offer a TV upgrade with sport" : "Recommend another product",
     "commercial",
-    "hold",
-    "This service signal carries no product mandate. A commercial action needs relevant intent and separate authority.",
+    h.offerSignal && h.offersAllowed && h.offerApproved ? "offer" : "hold",
+    h.offerSignal && h.offersAllowed && h.offerApproved
+      ? `${h.offerSignal} ${h.name.split(" ")[0]} opted in to offers, and this offer was signed off in advance for customers like this.`
+      : "This service signal carries no product mandate. A commercial action needs relevant intent and separate authority.",
     "Service obligations are clear and relevant commercial intent and authority are recorded.",
-    "No commercial message is sent.",
-    [["Commercial relevance", 15]],
+    h.offerSignal ? "Send one relevant offer in the app; if it is ignored, nothing changes." : "No commercial message is sent.",
+    [
+      ["Commercial relevance", 15],
+      ["Evidence of interest", h.offerSignal ? 40 : 0],
+    ],
     [
       gate(
         "service",
         "Service obligations clear",
-        !open && !obligation && !h.incident,
-        open || obligation || h.incident
+        !open && !obligation && (!h.incident || cleared),
+        open || obligation || (h.incident && !cleared)
           ? "An unresolved service relationship takes precedence."
           : "No unresolved obligation recorded.",
         "case.opened",
@@ -453,17 +481,122 @@ export function arbitrate(
       gate(
         "intent",
         "Relevant product intent",
-        null,
-        "No relevant product intent recorded.",
+        h.offerSignal ? true : null,
+        h.offerSignal ?? "No relevant product intent recorded.",
+        "usage.pattern",
       ),
       gate(
         "commercial",
         "Commercial contact authority",
-        null,
-        "Service contact authority does not grant commercial permission.",
-        "contact.authority_recorded",
+        h.offersAllowed && h.offerApproved ? true : null,
+        h.offersAllowed && h.offerApproved
+          ? "The customer opted in to offers, and this offer was signed off in advance by the Memory & Trust Officer."
+          : "Service contact authority does not grant commercial permission.",
+        "preference.offers_opt_in",
+        "policy.offer_approved",
       ),
+      once("offer"),
     ],
+    [],
+  );
+  propose(
+    "monitor",
+    "network.assurance",
+    "Keep the extra monitoring running",
+    "observation",
+    "watch",
+    "The line was re-profiled on Friday and is under 72 hours of heightened monitoring. No drops so far, and nothing new to tell the customer.",
+    "Any drop, or the end of the monitoring window.",
+    "Keep watching the line; send nothing while there is nothing to say.",
+    [["Heightened monitoring", 104]],
+    [
+      gate("active", "Heightened monitoring running", h.monitoring === "active", h.monitoring === "active" ? "Started after Friday’s re-profile." : "No heightened monitoring running.", "monitoring.started"),
+      gate("stable", "No new fault", !contraryTest && h.restored, "No drop or failed test since the fix.", "monitoring.checked"),
+      gate("after", "The customer has already been thanked", done("confirmation"), done("confirmation") ? "The customer confirmed the fix, and we thanked them." : "The customer’s confirmation is still to be acknowledged.", "customer.confirmed_working"),
+    ],
+    refs("monitoring.started", "monitoring.checked", "service.reprofiled"),
+  );
+  propose(
+    "monitor-close",
+    "network.assurance",
+    "Close the extra checks and tell the customer",
+    "recovery",
+    "complete",
+    `Heightened monitoring found no drops since Friday. ${h.profile?.usage?.note.includes("Works from home") ? `${h.name.split(" ")[0]} works from home, so the note goes out before the working day starts.` : "The note goes out at a sensible hour."}`,
+    "A new fault report opens a fresh assessment.",
+    "Close monitoring and the case; send one short note timed to the household’s week.",
+    [["Monitoring complete", 112]],
+    [
+      gate("complete", "Heightened monitoring finished", h.monitoring === "complete", h.monitoring === "complete" ? "No drops across the monitoring window." : "Monitoring still running or not started.", "monitoring.completed"),
+      gate("stable", "No new fault", !contraryTest, "No failed test since the fix.", "service.failure_observed"),
+      once("monitor-close"),
+    ],
+    refs("monitoring.completed", "case.closed", "service.reprofiled"),
+  );
+  propose(
+    "quiet-fix-note",
+    "care.proactive",
+    "Tell the customer about a fix they didn’t notice",
+    "care",
+    "inform",
+    quietHours
+      ? "A fault was fixed while the household was asleep. It waits until their quiet hours end."
+      : "A routine overnight test found the line degrading, and a remote re-profile fixed it before anyone noticed. Worth telling them, outside their quiet hours, in the app.",
+    "The household’s quiet hours end.",
+    "Send one short note in the app: what we found, what we fixed, nothing to do.",
+    [["Proactive fix", 108]],
+    [
+      gate("fixed", "A fault found and fixed without the customer", h.quietFix === "fixed", h.quietFix === "fixed" ? "Found by a routine test; fixed remotely." : "No quiet fix on record.", "line.degradation_detected", "service.reprofiled"),
+      gate("hours", "Outside the household’s quiet hours", !quietHours, quietHours ? "Inside their stated quiet hours." : "Their quiet hours have ended.", "preference.stated"),
+      once("quiet-fix-note"),
+    ],
+    refs("line.degradation_detected", "service.reprofiled"),
+  );
+  propose(
+    "early-life",
+    "activation.early_life",
+    `Help set up ${h.unused?.join(" and ") ?? "what’s included"}`,
+    "activation",
+    "guide",
+    `${h.name.split(" ")[0]}’s broadband works. ${h.unused?.join(" and ")} ${h.unused && h.unused.length > 1 ? "are" : "is"} included in the plan but not set up yet. Help now, so they use everything they pay for.`,
+    "The products are set up, or the customer asks us to stop.",
+    "Send a short setup guide in the app, one step at a time.",
+    [["Early-life guidance", 106]],
+    [
+      gate("connected", "Broadband working", h.firstUseObserved === true, "First connection observed.", "activation.first_use_observed"),
+      gate("unused", "Included products not set up", !!h.unused?.length, h.unused?.length ? `Not set up: ${h.unused.join(", ")}.` : "Everything included is set up.", "early_life.checkpoint"),
+      once("early-life"),
+    ],
+    refs("early_life.checkpoint"),
+  );
+  propose(
+    "early-life-complete",
+    "activation.early_life",
+    "Early life complete: everything in use",
+    "activation",
+    "complete",
+    `Broadband, TV and Netflix are all set up and being used. The early-life journey is complete.`,
+    "A new fault or support request.",
+    "Send one note confirming everything is set up; stop setup guidance.",
+    [["Early life complete", 107]],
+    [
+      gate("all", "Everything included is set up", !!h.unused && h.unused.length === 0, "Every included product is active.", "product.activated"),
+      gate("used", "In use by the household", !!h.engaged, h.engaged ? "Watched across the household since Saturday." : "Not yet used.", "usage.observed"),
+      once("early-life-complete"),
+    ],
+    refs("product.activated", "usage.observed"),
+  );
+  propose(
+    "steady",
+    "behaviour.observation",
+    "Nothing to do: all healthy",
+    "observation",
+    "watch",
+    "No open case, promise or fault, and nothing new that needs the customer. The right action is none.",
+    "Any new signal.",
+    "No action and no message.",
+    [["Baseline", 5]],
+    [gate("clear", "Nothing outstanding", !open && !obligation && !contraryTest && (!h.incident || cleared), "No open case, promise or unresolved fault.", "case.opened", "promise.created")],
     [],
   );
   propose(
@@ -537,6 +670,12 @@ export function arbitrate(
               ? { kind: "routine", why: "A first-week activation check. Fast and automatic is the win; nobody needs to call." }
               : { kind: "routine", why: "No commitment or repeat fault is open. Keep it simple and automatic." };
 
+  // "Nothing to do" is only a fallback: it steps aside whenever a real plan applies.
+  const steady = candidates.find((c) => c.id === "steady");
+  if (steady && candidates.some((c) => c.id !== "steady" && c.status === "held")) {
+    steady.status = "blocked";
+    steady.checks.push({ id: "fallback", label: "No other plan applies", state: "fail", detail: "Another plan applies, so doing nothing is not the choice.", evidenceIds: [] });
+  }
   candidates.sort((a, b) => b.priority - a.priority);
   const winner = candidates.find((c) => c.status === "held");
   if (!winner) throw new Error("No eligible service disposition");
@@ -630,6 +769,38 @@ export function serviceMessage(
       ? ` ${h.owner || "Your care team"} will still call at ${clock(h.promise)}, as promised.`
       : "";
   switch (selected) {
+    case "monitor-close": {
+      const work = h.profile?.usage?.note.includes("Works from home");
+      return {
+        key: "monitor-closed",
+        title: "Your line has been stable since Friday",
+        body: `We kept a closer eye on your line all weekend after Friday’s fix: no drops at all. ${work ? "You’re all set for the working week. " : ""}${h.owner ? `${h.owner} has closed your case. ` : ""}If anything changes, we’ll see it.`,
+      };
+    }
+    case "quiet-fix-note":
+      return {
+        key: "quiet-fix",
+        title: "We fixed something overnight",
+        body: "While you were asleep, a routine check found your line getting weaker. We fixed it remotely before it caused a problem. There’s nothing you need to do.",
+      };
+    case "early-life":
+      return {
+        key: "early-life",
+        title: `Let’s get your ${h.unused?.join(" and ") ?? "extras"} set up`,
+        body: `Your broadband is working. ${h.unused?.join(" and ")} ${h.unused && h.unused.length > 1 ? "are" : "is"} included in your plan too. I can walk you through it, one step at a time: it takes about five minutes.`,
+      };
+    case "early-life-complete":
+      return {
+        key: "early-life-done",
+        title: "You’re all set up",
+        body: "Broadband, BT TV and Netflix are all working, and your household has already watched 11 hours. If anything stops working, we’ll usually spot it before you do.",
+      };
+    case "offer":
+      return {
+        key: "offer",
+        title: "Sport on the big screen?",
+        body: "Your household has watched live sport through apps on most weekends. You could add TNT Sports to your BT TV and watch it on the living-room TV, first month free, then £25 a month. Want to try it? If not, nothing changes.",
+      };
     case "first-use":
       return { key: "first-use", title: "You’re connected",
         body: "Your broadband is active and we’ve now observed a successful connection. You don’t need to repeat the setup steps. Your activation history is here if you need us." };

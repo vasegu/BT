@@ -1148,6 +1148,10 @@ export function App() {
             focus={person}
             onFocus={choosePerson}
             onInspect={inspect}
+            compare={params.get("compare") === "1"}
+            onCompare={(on) => change({ compare: on ? "1" : null })}
+            onOpen={(panel) => openPanel(panel as PanelId)}
+            phone={phone}
           />
         ) : (
           <div className="household-bar">
