@@ -75,7 +75,7 @@ function governanceFacts(h: Household, d: Decision): Fact[] {
   return out;
 }
 
-export function DecisionFlow({ h, snapshot, decision }: { h: Household; snapshot: Snapshot; decision?: Decision }) {
+export function DecisionFlow({ h, snapshot, decision, compact = false }: { h: Household; snapshot: Snapshot; decision?: Decision; compact?: boolean }) {
   if (!decision)
     return (
       <section className="df df-empty">
@@ -91,7 +91,7 @@ export function DecisionFlow({ h, snapshot, decision }: { h: Household; snapshot
     ["Governance", "What we are allowed to do", governanceFacts(h, decision)],
   ];
   return (
-    <section className="df" aria-label="How the three memories combine into this decision">
+    <section className={`df${compact ? " is-compact" : ""}`} aria-label="How the three memories combine into this decision">
       <div className="df-inputs">
         {columns.map(([name, sub, facts]) => (
           <article key={name} className="df-input">

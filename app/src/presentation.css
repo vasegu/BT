@@ -778,3 +778,41 @@
 .lane-avatar.lane-maya {
   background: #a15c07;
 }
+/* One-row clock, grouped into the story's two chapters. */
+.spine {
+  grid-template-columns: 1fr auto auto;
+}
+.spine-chapters {
+  display: flex;
+  gap: 22px;
+  min-width: 0;
+}
+.spine-chapter {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.spine-chapter:first-child {
+  flex: 6;
+}
+.spine-chapter:last-child {
+  flex: 3;
+  padding-left: 22px;
+  border-left: 1px dashed var(--line);
+}
+.spine-chapter > small {
+  font: 600 9px var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.spine-chapter.is-here > small {
+  color: var(--brand);
+}
+.spine-chapter .spine-track {
+  display: grid;
+}
+.spine-chapter .spine-track time {
+  white-space: nowrap;
+}

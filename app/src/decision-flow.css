@@ -184,3 +184,22 @@
     grid-template-columns: 1fr;
   }
 }
+/* In the presenter: inputs across, the decision below. */
+.df.is-compact {
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+.df.is-compact .df-arrow {
+  height: 22px;
+}
+.df.is-compact .df-arrow::before,
+.df.is-compact .df-arrow::after {
+  display: none;
+}
+.df.is-compact .df-arrow span {
+  writing-mode: horizontal-tb;
+  transform: none;
+}
+.df.is-compact .df-arrow span::before {
+  content: "↓ ";
+}

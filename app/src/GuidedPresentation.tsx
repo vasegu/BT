@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
+import { DecisionFlow } from "./DecisionFlow";
 import type { Snapshot, PersonId, SourceEvent } from "./types";
-import { householdNames, moments, changeSummary } from "./presentation";
+import { householdNames, moments, chapters, changeSummary } from "./presentation";
 import type { ChangeRow, MomentLane, momentView } from "./presentation";
 import "./presentation.css";
 
@@ -53,30 +54,30 @@ export function MomentSpine({
   const last = at === moments.length - 1;
   return (
     <div className="spine" role="navigation" aria-label="Scenario clock">
-      <div className="spine-clock">
-        <span>THREE HOMES, ONE EVENING</span>
-        <strong>{snapshot || target !== undefined ? moments[at].time : "--:--"}</strong>
-      </div>
-      <ol className="spine-track">
-        {moments.map((m, i) => (
-          <li
-            key={m.time}
-            className={
-              i === at ? "is-current" : i < at ? "is-past" : i <= recorded ? "is-recorded" : ""
-            }
-          >
-            <button
-              disabled={!snapshot || busy || opening || i > recorded}
-              aria-current={i === at ? "step" : undefined}
-              onClick={() => onGo(i)}
-              title={i > recorded ? "Not played yet" : m.title}
-            >
-              <time>{m.time}</time>
-              <span>{m.title}</span>
-            </button>
-          </li>
+      <div className="spine-chapters">
+        {chapters.map((ch) => (
+          <div key={ch.title} className={`spine-chapter${at >= ch.from && at <= ch.to ? " is-here" : ""}`}>
+            <small>{ch.title}</small>
+            <ol className="spine-track" style={{ gridTemplateColumns: `repeat(${ch.to - ch.from + 1}, 1fr)` }}>
+              {moments.slice(ch.from, ch.to + 1).map((m, k) => {
+                const i = ch.from + k;
+                return (
+                  <li key={m.time} className={i === at ? "is-current" : i < at ? "is-past" : i <= recorded ? "is-recorded" : ""}>
+                    <button
+                      disabled={!snapshot || busy || opening || i > recorded}
+                      aria-current={i === at ? "step" : undefined}
+                      onClick={() => onGo(i)}
+                      title={i > recorded ? "Not played yet" : m.title}
+                    >
+                      <time>{m.time.replace(/ \d\d:\d\d$/, "")}</time>
+                    </button>
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
         ))}
-      </ol>
+      </div>
       <div className="spine-controls">
         <button onClick={onBack} disabled={!snapshot || busy || opening || at === 0} aria-label="Previous moment">
           ←
@@ -193,6 +194,7 @@ export function MomentLanes({
 }) {
   const { moment, lanes, status, signals } = view;
   const final = snapshot.cutoff === moments.length - 1;
+  const focusLane = lanes.find((l) => l.person === focus);
   return (
     <section className="moment" aria-live="polite">
       <header className="moment-head">
@@ -201,7 +203,7 @@ export function MomentLanes({
         </span>
         <div className="moment-title-row">
           <h1>{moment.title}</h1>
-          {signals.length > 0 && (
+          {compare && signals.length > 0 && (
             <div className="moment-signals" aria-label="Source signals at this moment">
               {[...new Set(signals.map((e) => e.type))].map((type) => [type, signals.filter((e) => e.type === type)] as const).map(([type, events]) => (
                 <span key={type} className="signal-chip">
@@ -248,7 +250,10 @@ export function MomentLanes({
         <ChangeStrip rows={changeSummary(snapshot, focus)} time={moment.time} name={first(focus)} onOpen={onOpen} deciding={status === "deciding"} />
       )}
       <div className={compare ? "lanes" : "moment-focus"}>
-        {lanes.filter((lane) => compare || lane.person === focus).map((lane) => (
+        {!compare && focusLane?.decision && status !== "deciding" ? (
+          <DecisionFlow h={snapshot.households.find((x) => x.id === focus)!} snapshot={snapshot} decision={focusLane.decision} compact />
+        ) : null}
+        {lanes.filter((lane) => compare || (lane.person === focus && !(lane.decision && status !== "deciding"))).map((lane) => (
           <Lane
             key={lane.person}
             lane={lane}
