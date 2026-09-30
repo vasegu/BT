@@ -499,6 +499,32 @@ export function App() {
           </div>
           <span className="tag">synthetic</span>
         </div>
+        <Attributes
+          rows={[
+            [
+              "Case",
+              h.caseStatus === "none"
+                ? "No open case"
+                : h.caseStatus === "closed"
+                  ? h.confirmed
+                    ? "Closed · confirmed by the customer"
+                    : h.firstUseObserved
+                      ? "Closed · first use observed"
+                      : "Closed"
+                  : h.owner === "Activation team"
+                    ? "Open activation case"
+                    : "Open service case",
+            ],
+            ["Owner", h.owner || "None assigned"],
+            [
+              "Commitment",
+              h.promise
+                ? `${formatTime(h.promise)} callback · ${h.promiseFulfilled ? "fulfilled" : "outstanding"}`
+                : "None recorded",
+            ],
+            ["Service", h.serviceState],
+          ]}
+        />
         <NoteList facts={memoryFacts(h)} />
         {snapshot && <Rhythm snapshot={snapshot} person={person} />}
         <Section
@@ -520,6 +546,18 @@ export function App() {
             </button>
           ))}
         </Section>
+        <div className="context-note">
+          <Glyph />
+          <p>
+            {h.id === "daniel"
+              ? "Failed diagnostics and the named promise stay attached to this case."
+              : h.id === "sam"
+                ? h.firstUseObserved
+                  ? "Successful first use is now observed, separately from delivery and provisioning."
+                  : "Delivery is a fact. Successful first use is still unknown."
+                : "A stated habit provides context; contrary evidence would reopen the watch."}
+          </p>
+        </div>
       </Panel>
     );
     const operations = h && snapshot && (
