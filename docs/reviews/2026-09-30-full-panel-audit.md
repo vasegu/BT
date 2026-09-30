@@ -70,3 +70,7 @@ Detailed code locations, reproduction and evidence are in [persona/time findings
 Implemented lifecycle corrections, historical decision-time explanations, dated contact-authority checks, operational/device change indicators, dated outcome evidence, London batch timing, explicit evaluation provenance and shared presenter detail components. Rebuilt memory and context-review artifacts. Invalidated the prior client snapshot cache shape.
 
 Verification: production build passed; 130 tests, 127 passed, 3 skipped, 0 failed. A fresh v2.4 replay completed all nine moments with 24 decisions. All 189 overview combinations were measured at 1440 × 720; that pass identified compact-layout overflow in customer memory, operational memory and one arbiter state. Subsequent shared layout corrections removed overflow in all 63 Daniel combinations. The Sam/Maya repeat and the post-fix expanded-view repeat were not completed before the requested commit; the earlier expanded audit covered all 189 loaded combinations. Do not interpret this as a completed post-fix visual sign-off.
+
+## Follow-up: Mark’s feedback implementation
+
+The outstanding compact Sam/Maya and expanded sweeps have now been completed. See `marks-feedback-acceptance.md` and `2026-09-30-marks-feedback-matrix.csv`: 378 overview observations across two desktop sizes plus 189 expanded states, no measured final layout overflow. These supersede the incomplete post-fix visual sign-off described above; nested interaction and live-voice limitations remain explicit in the acceptance report.

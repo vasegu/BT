@@ -1029,3 +1029,23 @@
   .presenter-detail .aw-check button { margin-top:0; }
   .presenter-detail header h2 { margin:3px 0; }
 }
+
+.decision-context { border:1px solid var(--line); border-radius:8px; padding:12px; background:var(--surface,#fff); }
+.context-inputs { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+.context-inputs button { display:block; text-align:left; border:0; background:none; color:var(--ink); padding:5px 0 0; font:inherit; font-size:12px; line-height:1.45; cursor:pointer; }
+.decision-context p { font-size:12px; line-height:1.5; margin:10px 0 0; }
+.decision-context small { display:block; color:var(--muted); margin-top:8px; }
+.decision-context.is-compact { padding:8px 10px; }
+.decision-context.is-compact button { font-size:11px; }
+@media(max-width:650px) { .context-inputs { grid-template-columns:1fr; } }
+@media(min-width:1101px) and (max-height:760px) {
+  .presenter-detail .ops-telemetry { margin:0; }
+  .presenter-detail .presenter-evidence button { padding:3px 0; }
+  .presenter-detail .av-proofs > header { margin-bottom:6px; }
+}
+.presenter-detail .cp-members li { padding:3px 8px; }
+.presenter-detail .cp-household .cp-devices em { background:none; padding:2px 0; }
+@media(min-width:1101px) and (max-height:760px) {
+  .presenter-detail .presenter-count { line-height:1.25; }
+  .presenter-detail .presenter-alternatives article { padding:2px 0; }
+}

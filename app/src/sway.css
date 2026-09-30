@@ -728,3 +728,11 @@
     grid-template-columns: 1fr;
   }
 }
+.hodo-guided { padding:18px; border:1px solid var(--line); border-radius:8px; margin:16px 0; background:var(--surface,#fff); }
+.hodo-guided h3 { margin:6px 0; }
+.hodo-guided p { font-size:13px; line-height:1.5; color:var(--muted); }
+.hodo-guided > div { display:grid; grid-template-columns:1fr 1fr; gap:24px; margin:14px 0; }
+.hodo-guided article { border-left:2px solid var(--brand); padding-left:12px; }
+.hodo-guided small { display:block; color:var(--muted); font-size:11px; margin-top:8px; }
+.hodo-guided button { border:1px solid var(--line); border-radius:5px; background:var(--surface,#fff); color:var(--brand); padding:6px 9px; margin:10px 6px 0 0; cursor:pointer; }
+@media(max-width:650px) { .hodo-guided > div { grid-template-columns:1fr; } }

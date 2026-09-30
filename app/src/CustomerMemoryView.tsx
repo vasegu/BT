@@ -1,3 +1,4 @@
+import { DecisionContext } from './DecisionContext';
 import type { Decision, Household, PersonId, Snapshot, SourceEvent } from "./types";
 import { FocusHeader } from "./FocusHeader";
 import { Rhythm, rhythmGrid } from "./Rhythm";
@@ -357,7 +358,7 @@ export function CustomerMemoryView({
           <small className="cm-hint">each person’s memory as its own space, placed by meaning · the star is tonight’s signal, joined to what it reminds us of in their history</small>
           <ScopeTag scope="moment" snapshot={snapshot} person={h.id} />
         </header>
-        <Note kind="map" h={h} />
+        <Note kind="map" h={h} /><p className="cm-hint">Each point is a memory record positioned by semantic similarity. Nearby points may be useful to retrieve; proximity does not establish truth, permission or eligibility. The cited records below show what the decision actually used.</p>
         <MemoryMap h={h} snapshot={snapshot} inspect={inspect} onPerson={onPerson} />
       </section>
       <div className={p ? "cm-single" : "cm-pair"}>
@@ -389,6 +390,7 @@ export function CustomerMemoryView({
             <h3>What this decision used, and what it held back</h3>
             <ScopeTag scope="both" snapshot={snapshot} person={h.id} />
           </header>
+          <DecisionContext snapshot={snapshot} person={h.id} inspect={inspect} />
           {decision ? (
             <>
               <p className="cm-decision">

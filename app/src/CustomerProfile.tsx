@@ -10,7 +10,7 @@ const time = (iso: string) =>
   new Date(iso).toLocaleTimeString("en-GB", { timeZone: "Europe/London", hour: "2-digit", minute: "2-digit" });
 const KIND_NAME: Record<string, string> = { laptop: "Laptops", phone: "Phones", tv: "TVs", speaker: "Speakers", tablet: "Tablets", console: "Consoles" };
 
-export function HouseholdCard({ p }: { p: HouseholdProfile }) {
+export function HouseholdCard({ p, compact = false }: { p: HouseholdProfile; compact?: boolean }) {
   const kinds = [...new Set(p.devices.map((d) => d.kind))];
   return (
     <div className="cp-household">
@@ -33,7 +33,7 @@ export function HouseholdCard({ p }: { p: HouseholdProfile }) {
               <li key={k}>
                 <small>{KIND_NAME[k] ?? k}</small>
                 <span>
-                  {p.devices
+                  {compact ? <em>{p.devices.filter(d => d.kind === k).length} observed</em> : p.devices
                     .filter((d) => d.kind === k)
                     .map((d) => (
                       <em key={d.name} title={`${d.owner} · first seen ${shortDay(d.since)}`}>
@@ -185,38 +185,38 @@ export function profileNotes(h: Household): Record<"household" | "relationship" 
   const renewing = p.contract && !p.contract.outOfContract && p.contract.monthsLeft <= 3;
   return {
     household: [
-      "Who lives here and every device the hub can see.",
+      "Household members and devices observed so far.",
       p.usage?.note.includes("Works from home")
-        ? `Someone works from home here, so a weekday outage stops a working day. The agent treats weekday faults as urgent and times messages around work.`
+        ? `Work-from-home history makes timing relevant. The recorded decision below shows whether that context affected this action.`
         : p.devices.length === 0
-          ? `Nothing has connected yet, so there is no one to disrupt: the job is to get ${first}’s home online.`
+          ? `No device observations are available yet. The immediate goal is to get ${first}’s home online.`
           : `${p.members.length} people and ${p.devices.length} devices. The agent uses this to judge who is affected when the line drops.`,
     ],
     relationship: [
-      "Every product the household buys, whether it’s used, the contract, what it’s worth and how likely they are to leave.",
+      "Recorded products, usage, contract and illustrative retention indicators; these are synthetic profiles, not calibrated churn predictions.",
       unused.length
         ? `${unused.map((x) => x.name).join(" and ")} ${unused.length === 1 ? "is" : "are"} paid for but not in use yet. The agent’s job is to get everything working, not to sell more.`
         : p.churn?.level === "high" && renewing
-          ? `High churn risk with renewal in ${p.contract!.monthsLeft} months. The agent keeps the named owner on it and blocks any sales message until the fault is closed.`
+          ? `The synthetic profile flags high churn risk with renewal in ${p.contract!.monthsLeft} months. That is relationship context, not authority to make an offer.`
           : p.contract?.outOfContract
             ? `Out of contract, so a bad night could end the relationship. A fix they didn’t have to ask for is worth telling ${first} about, at the right time.`
             : p.preferences?.offers
-              ? `Everything is in use and ${first} opted in to offers, so a relevant offer can be made, if the evidence supports it.`
-              : `Everything is in use; no offer is allowed without consent.`,
+              ? `The profile records offer consent for ${first}. A recommendation still needs relevant usage evidence and the decision’s approval checks.`
+              : `No marketing consent is recorded in this profile. Product eligibility and authority must be checked separately.`,
     ],
     history: [
       "Every conversation with us, on every channel, and everything we’ve sent.",
       p.contacts.length > 1
         ? `${first} has already told us about this. The agent carries it forward, so nobody asks ${first} to start again.`
-        : `One conversation on record. The agent respects what was agreed in it.`,
+        : `${p.contacts.length} conversation${p.contacts.length === 1 ? "" : "s"} on record. Only recorded agreements can be carried forward.`,
     ],
     now: [
       "How much this hour matters to this home, from its own use by hour.",
       p.now?.label.startsWith("Peak") || p.now?.label.startsWith("Just before")
-        ? "This is when the home relies on the connection most, so the agent acts now and says so."
+        ? "This is usually an important usage window. A pattern helps interpret impact; it does not establish a current fault."
         : p.now?.label.startsWith("Usually offline")
-          ? "The home is usually offline now, so silence is normal and the agent waits before acting."
-          : "Not a critical hour for this home: the agent can fix quietly and tell them later.",
+          ? "The home is often offline now. Fresh incident or service evidence can override that routine."
+          : "Historically a lower-use hour. The actual action and communication timing still depend on current evidence and permission.",
     ],
   };
 }

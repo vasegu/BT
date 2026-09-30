@@ -120,7 +120,7 @@ export function FutureView({ onBack }: { onBack: () => void }) {
           <span className="eyebrow">A future vision · not part of tonight’s story</span>
           <h2>2030: Maya’s own agent talks to BT’s agent</h2>
           <p>
-            Customers will increasingly send an AI agent to deal with companies for them. The same architecture holds:
+            Illustrative future scenario: a customer delegates a request to their own agent. Products, prices and mandate checks here are a concept, not a live quote or integration. The same architecture holds:
             memory decides what’s relevant, governance decides what may be agreed, and every action is recorded.
           </p>
         </div>

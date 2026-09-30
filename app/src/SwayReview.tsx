@@ -1,3 +1,4 @@
+import { reviewExamples } from "./review-examples";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import type { PersonId } from "./types";
@@ -609,15 +610,25 @@ function Review({ data, onLegacy }: { data: SwayData; onLegacy: () => void }) {
           <small>contexts replayed</small>
         </div>
       </header>
+      <section className="hodo-guided" aria-label="Guided context comparisons">
+        <header><span className="eyebrow">Start here · change one input</span><h3>Should this context change the action?</h3><p>Points are input contexts, coloured by the resulting action. The axes are a semantic projection, not business scores. An outlier is a reason to inspect, not proof of an error.</p></header>
+        <div>{reviewExamples(data).map(example => {
+          const before=data.points.find(p=>p.id===example.baselineId)!;
+          const after=data.points.find(p=>p.id===example.variantId)!;
+          const invariant=before.action===after.action;
+          return <article key={example.variantId}><span className="eyebrow">{example.expected==='invariant'?'Irrelevant claim':'Relevant context'}</span><p>{example.explanation}</p><strong>{nameOf(before.action)} → {nameOf(after.action)}</strong><small>{who(before)} · {when(before)} · {invariant?'Action unchanged':'Action changed'}{example.expected==='invariant'&&!invariant?' · needs review':''}</small><div><button onClick={()=>setSelectedId(before.id)}>Inspect original</button><button onClick={()=>setSelectedId(after.id)}>Inspect changed input ↗</button></div></article>;
+        })}</div>
+        <small>This fixture tests action selection. Tone and wording are not captured here; inspect frozen model requests in the model evaluation view for that evidence.</small>
+      </section>
       <div className="hodo-questions">
         <article className={unexpected.length ? "is-flag" : "is-ok"}>
           <span>01</span>
           <h3>Did any fact swing a decision it shouldn’t have?</h3>
           <p>
-            <b>{unexpected.length ? "Yes: look at these." : "No."}</b>{" "}
+            <b>{unexpected.length ? "Review flagged factors." : "No unexpected factor families flagged."}</b>{" "}
             {unexpected.length
               ? unexpected.map((f) => `${f.label} (${pct(f.sway)} of moments)`).join(", ")
-              : `Every fact that changed a decision is one the policy is meant to use. The strongest: ${swaying
+              : `Changed decisions involve expected factor families; each individual transition still needs review. The strongest: ${swaying
                   .slice(0, 3)
                   .map((f) => `${f.label.toLowerCase()} (${pct(f.sway)})`)
                   .join(", ")}.`}

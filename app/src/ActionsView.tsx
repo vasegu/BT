@@ -290,7 +290,7 @@ export function OutcomeProofs({ snapshot, outcomes, inspect }: { snapshot: Snaps
   return (      <section className="av-proofs">
         <header>
           <h3>Expected → observed</h3>
-          <span>Each committed plan states what should change and when. Only a later source record can prove it.</span>
+          <span>Dated evidence checks each expectation. Observation does not establish causation.</span>
         </header>
         {!outcomes.length && <p className="av-empty">No committed plans yet at {moments[snapshot.cutoff].time}.</p>}
         <div className="av-proof-grid">

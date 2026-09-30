@@ -1,0 +1,568 @@
+surface,viewport,persona,moment,panel,overflow_px,horizontal_overflow
+overview,1440x720,daniel,0,01 Customer,0,False
+overview,1440x720,daniel,0,02 Operational,0,False
+overview,1440x720,daniel,0,03 Arbiter,0,False
+overview,1440x720,daniel,0,04 Customer,0,False
+overview,1440x720,daniel,0,05 Actions,0,False
+overview,1440x720,daniel,0,06 Governance,0,False
+overview,1440x720,daniel,0,07 Agent,0,False
+overview,1440x720,daniel,1,01 Customer,0,False
+overview,1440x720,daniel,1,02 Operational,0,False
+overview,1440x720,daniel,1,03 Arbiter,0,False
+overview,1440x720,daniel,1,04 Customer,0,False
+overview,1440x720,daniel,1,05 Actions,0,False
+overview,1440x720,daniel,1,06 Governance,0,False
+overview,1440x720,daniel,1,07 Agent,0,False
+overview,1440x720,daniel,2,01 Customer,0,False
+overview,1440x720,daniel,2,02 Operational,0,False
+overview,1440x720,daniel,2,03 Arbiter,0,False
+overview,1440x720,daniel,2,04 Customer,0,False
+overview,1440x720,daniel,2,05 Actions,0,False
+overview,1440x720,daniel,2,06 Governance,0,False
+overview,1440x720,daniel,2,07 Agent,0,False
+overview,1440x720,daniel,3,01 Customer,0,False
+overview,1440x720,daniel,3,02 Operational,1,False
+overview,1440x720,daniel,3,03 Arbiter,0,False
+overview,1440x720,daniel,3,04 Customer,0,False
+overview,1440x720,daniel,3,05 Actions,0,False
+overview,1440x720,daniel,3,06 Governance,0,False
+overview,1440x720,daniel,3,07 Agent,0,False
+overview,1440x720,daniel,4,01 Customer,0,False
+overview,1440x720,daniel,4,02 Operational,0,False
+overview,1440x720,daniel,4,03 Arbiter,0,False
+overview,1440x720,daniel,4,04 Customer,0,False
+overview,1440x720,daniel,4,05 Actions,0,False
+overview,1440x720,daniel,4,06 Governance,0,False
+overview,1440x720,daniel,4,07 Agent,0,False
+overview,1440x720,daniel,5,01 Customer,0,False
+overview,1440x720,daniel,5,02 Operational,0,False
+overview,1440x720,daniel,5,03 Arbiter,0,False
+overview,1440x720,daniel,5,04 Customer,0,False
+overview,1440x720,daniel,5,05 Actions,0,False
+overview,1440x720,daniel,5,06 Governance,0,False
+overview,1440x720,daniel,5,07 Agent,0,False
+overview,1440x720,daniel,6,01 Customer,0,False
+overview,1440x720,daniel,6,02 Operational,0,False
+overview,1440x720,daniel,6,03 Arbiter,0,False
+overview,1440x720,daniel,6,04 Customer,0,False
+overview,1440x720,daniel,6,05 Actions,0,False
+overview,1440x720,daniel,6,06 Governance,0,False
+overview,1440x720,daniel,6,07 Agent,0,False
+overview,1440x720,daniel,7,01 Customer,0,False
+overview,1440x720,daniel,7,02 Operational,0,False
+overview,1440x720,daniel,7,03 Arbiter,0,False
+overview,1440x720,daniel,7,04 Customer,0,False
+overview,1440x720,daniel,7,05 Actions,0,False
+overview,1440x720,daniel,7,06 Governance,0,False
+overview,1440x720,daniel,7,07 Agent,0,False
+overview,1440x720,daniel,8,01 Customer,0,False
+overview,1440x720,daniel,8,02 Operational,0,False
+overview,1440x720,daniel,8,03 Arbiter,0,False
+overview,1440x720,daniel,8,04 Customer,0,False
+overview,1440x720,daniel,8,05 Actions,0,False
+overview,1440x720,daniel,8,06 Governance,0,False
+overview,1440x720,daniel,8,07 Agent,0,False
+overview,1440x720,sam,0,01 Customer,0,False
+overview,1440x720,sam,0,02 Operational,0,False
+overview,1440x720,sam,0,03 Arbiter,0,False
+overview,1440x720,sam,0,04 Customer,0,False
+overview,1440x720,sam,0,05 Actions,0,False
+overview,1440x720,sam,0,06 Governance,0,False
+overview,1440x720,sam,0,07 Agent,0,False
+overview,1440x720,sam,1,01 Customer,0,False
+overview,1440x720,sam,1,02 Operational,0,False
+overview,1440x720,sam,1,03 Arbiter,0,False
+overview,1440x720,sam,1,04 Customer,0,False
+overview,1440x720,sam,1,05 Actions,0,False
+overview,1440x720,sam,1,06 Governance,0,False
+overview,1440x720,sam,1,07 Agent,0,False
+overview,1440x720,sam,2,01 Customer,0,False
+overview,1440x720,sam,2,02 Operational,0,False
+overview,1440x720,sam,2,03 Arbiter,0,False
+overview,1440x720,sam,2,04 Customer,0,False
+overview,1440x720,sam,2,05 Actions,0,False
+overview,1440x720,sam,2,06 Governance,0,False
+overview,1440x720,sam,2,07 Agent,0,False
+overview,1440x720,sam,3,01 Customer,0,False
+overview,1440x720,sam,3,02 Operational,0,False
+overview,1440x720,sam,3,03 Arbiter,0,False
+overview,1440x720,sam,3,04 Customer,0,False
+overview,1440x720,sam,3,05 Actions,0,False
+overview,1440x720,sam,3,06 Governance,0,False
+overview,1440x720,sam,3,07 Agent,0,False
+overview,1440x720,sam,4,01 Customer,0,False
+overview,1440x720,sam,4,02 Operational,0,False
+overview,1440x720,sam,4,03 Arbiter,0,False
+overview,1440x720,sam,4,04 Customer,0,False
+overview,1440x720,sam,4,05 Actions,0,False
+overview,1440x720,sam,4,06 Governance,0,False
+overview,1440x720,sam,4,07 Agent,0,False
+overview,1440x720,sam,5,01 Customer,0,False
+overview,1440x720,sam,5,02 Operational,0,False
+overview,1440x720,sam,5,03 Arbiter,0,False
+overview,1440x720,sam,5,04 Customer,0,False
+overview,1440x720,sam,5,05 Actions,0,False
+overview,1440x720,sam,5,06 Governance,0,False
+overview,1440x720,sam,5,07 Agent,0,False
+overview,1440x720,sam,6,01 Customer,0,False
+overview,1440x720,sam,6,02 Operational,0,False
+overview,1440x720,sam,6,03 Arbiter,0,False
+overview,1440x720,sam,6,04 Customer,0,False
+overview,1440x720,sam,6,05 Actions,0,False
+overview,1440x720,sam,6,06 Governance,0,False
+overview,1440x720,sam,6,07 Agent,0,False
+overview,1440x720,sam,7,01 Customer,0,False
+overview,1440x720,sam,7,02 Operational,0,False
+overview,1440x720,sam,7,03 Arbiter,0,False
+overview,1440x720,sam,7,04 Customer,0,False
+overview,1440x720,sam,7,05 Actions,0,False
+overview,1440x720,sam,7,06 Governance,0,False
+overview,1440x720,sam,7,07 Agent,0,False
+overview,1440x720,sam,8,01 Customer,0,False
+overview,1440x720,sam,8,02 Operational,0,False
+overview,1440x720,sam,8,03 Arbiter,2,False
+overview,1440x720,sam,8,04 Customer,0,False
+overview,1440x720,sam,8,05 Actions,0,False
+overview,1440x720,sam,8,06 Governance,0,False
+overview,1440x720,sam,8,07 Agent,0,False
+overview,1440x720,maya,0,01 Customer,0,False
+overview,1440x720,maya,0,02 Operational,0,False
+overview,1440x720,maya,0,03 Arbiter,0,False
+overview,1440x720,maya,0,04 Customer,0,False
+overview,1440x720,maya,0,05 Actions,0,False
+overview,1440x720,maya,0,06 Governance,0,False
+overview,1440x720,maya,0,07 Agent,0,False
+overview,1440x720,maya,1,01 Customer,0,False
+overview,1440x720,maya,1,02 Operational,0,False
+overview,1440x720,maya,1,03 Arbiter,0,False
+overview,1440x720,maya,1,04 Customer,0,False
+overview,1440x720,maya,1,05 Actions,0,False
+overview,1440x720,maya,1,06 Governance,0,False
+overview,1440x720,maya,1,07 Agent,0,False
+overview,1440x720,maya,2,01 Customer,0,False
+overview,1440x720,maya,2,02 Operational,0,False
+overview,1440x720,maya,2,03 Arbiter,0,False
+overview,1440x720,maya,2,04 Customer,0,False
+overview,1440x720,maya,2,05 Actions,0,False
+overview,1440x720,maya,2,06 Governance,0,False
+overview,1440x720,maya,2,07 Agent,0,False
+overview,1440x720,maya,3,01 Customer,0,False
+overview,1440x720,maya,3,02 Operational,1,False
+overview,1440x720,maya,3,03 Arbiter,0,False
+overview,1440x720,maya,3,04 Customer,0,False
+overview,1440x720,maya,3,05 Actions,0,False
+overview,1440x720,maya,3,06 Governance,0,False
+overview,1440x720,maya,3,07 Agent,0,False
+overview,1440x720,maya,4,01 Customer,0,False
+overview,1440x720,maya,4,02 Operational,0,False
+overview,1440x720,maya,4,03 Arbiter,0,False
+overview,1440x720,maya,4,04 Customer,0,False
+overview,1440x720,maya,4,05 Actions,0,False
+overview,1440x720,maya,4,06 Governance,0,False
+overview,1440x720,maya,4,07 Agent,0,False
+overview,1440x720,maya,5,01 Customer,0,False
+overview,1440x720,maya,5,02 Operational,0,False
+overview,1440x720,maya,5,03 Arbiter,0,False
+overview,1440x720,maya,5,04 Customer,0,False
+overview,1440x720,maya,5,05 Actions,0,False
+overview,1440x720,maya,5,06 Governance,0,False
+overview,1440x720,maya,5,07 Agent,0,False
+overview,1440x720,maya,6,01 Customer,0,False
+overview,1440x720,maya,6,02 Operational,0,False
+overview,1440x720,maya,6,03 Arbiter,0,False
+overview,1440x720,maya,6,04 Customer,0,False
+overview,1440x720,maya,6,05 Actions,0,False
+overview,1440x720,maya,6,06 Governance,0,False
+overview,1440x720,maya,6,07 Agent,0,False
+overview,1440x720,maya,7,01 Customer,0,False
+overview,1440x720,maya,7,02 Operational,0,False
+overview,1440x720,maya,7,03 Arbiter,0,False
+overview,1440x720,maya,7,04 Customer,0,False
+overview,1440x720,maya,7,05 Actions,0,False
+overview,1440x720,maya,7,06 Governance,0,False
+overview,1440x720,maya,7,07 Agent,0,False
+overview,1440x720,maya,8,01 Customer,0,False
+overview,1440x720,maya,8,02 Operational,0,False
+overview,1440x720,maya,8,03 Arbiter,0,False
+overview,1440x720,maya,8,04 Customer,0,False
+overview,1440x720,maya,8,05 Actions,0,False
+overview,1440x720,maya,8,06 Governance,0,False
+overview,1440x720,maya,8,07 Agent,0,False
+overview,1512x741,daniel,0,01 Customer,0,False
+overview,1512x741,daniel,0,02 Operational,0,False
+overview,1512x741,daniel,0,03 Arbiter,0,False
+overview,1512x741,daniel,0,04 Customer,0,False
+overview,1512x741,daniel,0,05 Actions,0,False
+overview,1512x741,daniel,0,06 Governance,0,False
+overview,1512x741,daniel,0,07 Agent,0,False
+overview,1512x741,daniel,1,01 Customer,0,False
+overview,1512x741,daniel,1,02 Operational,0,False
+overview,1512x741,daniel,1,03 Arbiter,0,False
+overview,1512x741,daniel,1,04 Customer,0,False
+overview,1512x741,daniel,1,05 Actions,0,False
+overview,1512x741,daniel,1,06 Governance,0,False
+overview,1512x741,daniel,1,07 Agent,0,False
+overview,1512x741,daniel,2,01 Customer,0,False
+overview,1512x741,daniel,2,02 Operational,0,False
+overview,1512x741,daniel,2,03 Arbiter,0,False
+overview,1512x741,daniel,2,04 Customer,0,False
+overview,1512x741,daniel,2,05 Actions,0,False
+overview,1512x741,daniel,2,06 Governance,0,False
+overview,1512x741,daniel,2,07 Agent,0,False
+overview,1512x741,daniel,3,01 Customer,0,False
+overview,1512x741,daniel,3,02 Operational,0,False
+overview,1512x741,daniel,3,03 Arbiter,0,False
+overview,1512x741,daniel,3,04 Customer,0,False
+overview,1512x741,daniel,3,05 Actions,0,False
+overview,1512x741,daniel,3,06 Governance,0,False
+overview,1512x741,daniel,3,07 Agent,0,False
+overview,1512x741,daniel,4,01 Customer,0,False
+overview,1512x741,daniel,4,02 Operational,0,False
+overview,1512x741,daniel,4,03 Arbiter,0,False
+overview,1512x741,daniel,4,04 Customer,0,False
+overview,1512x741,daniel,4,05 Actions,0,False
+overview,1512x741,daniel,4,06 Governance,0,False
+overview,1512x741,daniel,4,07 Agent,0,False
+overview,1512x741,daniel,5,01 Customer,0,False
+overview,1512x741,daniel,5,02 Operational,0,False
+overview,1512x741,daniel,5,03 Arbiter,0,False
+overview,1512x741,daniel,5,04 Customer,0,False
+overview,1512x741,daniel,5,05 Actions,0,False
+overview,1512x741,daniel,5,06 Governance,0,False
+overview,1512x741,daniel,5,07 Agent,0,False
+overview,1512x741,daniel,6,01 Customer,0,False
+overview,1512x741,daniel,6,02 Operational,0,False
+overview,1512x741,daniel,6,03 Arbiter,0,False
+overview,1512x741,daniel,6,04 Customer,0,False
+overview,1512x741,daniel,6,05 Actions,0,False
+overview,1512x741,daniel,6,06 Governance,0,False
+overview,1512x741,daniel,6,07 Agent,0,False
+overview,1512x741,daniel,7,01 Customer,0,False
+overview,1512x741,daniel,7,02 Operational,0,False
+overview,1512x741,daniel,7,03 Arbiter,0,False
+overview,1512x741,daniel,7,04 Customer,0,False
+overview,1512x741,daniel,7,05 Actions,0,False
+overview,1512x741,daniel,7,06 Governance,0,False
+overview,1512x741,daniel,7,07 Agent,0,False
+overview,1512x741,daniel,8,01 Customer,0,False
+overview,1512x741,daniel,8,02 Operational,0,False
+overview,1512x741,daniel,8,03 Arbiter,0,False
+overview,1512x741,daniel,8,04 Customer,0,False
+overview,1512x741,daniel,8,05 Actions,0,False
+overview,1512x741,daniel,8,06 Governance,0,False
+overview,1512x741,daniel,8,07 Agent,0,False
+overview,1512x741,sam,0,01 Customer,0,False
+overview,1512x741,sam,0,02 Operational,0,False
+overview,1512x741,sam,0,03 Arbiter,0,False
+overview,1512x741,sam,0,04 Customer,0,False
+overview,1512x741,sam,0,05 Actions,0,False
+overview,1512x741,sam,0,06 Governance,0,False
+overview,1512x741,sam,0,07 Agent,0,False
+overview,1512x741,sam,1,01 Customer,0,False
+overview,1512x741,sam,1,02 Operational,0,False
+overview,1512x741,sam,1,03 Arbiter,0,False
+overview,1512x741,sam,1,04 Customer,0,False
+overview,1512x741,sam,1,05 Actions,0,False
+overview,1512x741,sam,1,06 Governance,0,False
+overview,1512x741,sam,1,07 Agent,0,False
+overview,1512x741,sam,2,01 Customer,0,False
+overview,1512x741,sam,2,02 Operational,0,False
+overview,1512x741,sam,2,03 Arbiter,0,False
+overview,1512x741,sam,2,04 Customer,0,False
+overview,1512x741,sam,2,05 Actions,0,False
+overview,1512x741,sam,2,06 Governance,0,False
+overview,1512x741,sam,2,07 Agent,0,False
+overview,1512x741,sam,3,01 Customer,0,False
+overview,1512x741,sam,3,02 Operational,0,False
+overview,1512x741,sam,3,03 Arbiter,0,False
+overview,1512x741,sam,3,04 Customer,0,False
+overview,1512x741,sam,3,05 Actions,0,False
+overview,1512x741,sam,3,06 Governance,0,False
+overview,1512x741,sam,3,07 Agent,0,False
+overview,1512x741,sam,4,01 Customer,0,False
+overview,1512x741,sam,4,02 Operational,0,False
+overview,1512x741,sam,4,03 Arbiter,0,False
+overview,1512x741,sam,4,04 Customer,0,False
+overview,1512x741,sam,4,05 Actions,0,False
+overview,1512x741,sam,4,06 Governance,0,False
+overview,1512x741,sam,4,07 Agent,0,False
+overview,1512x741,sam,5,01 Customer,0,False
+overview,1512x741,sam,5,02 Operational,0,False
+overview,1512x741,sam,5,03 Arbiter,0,False
+overview,1512x741,sam,5,04 Customer,0,False
+overview,1512x741,sam,5,05 Actions,0,False
+overview,1512x741,sam,5,06 Governance,0,False
+overview,1512x741,sam,5,07 Agent,0,False
+overview,1512x741,sam,6,01 Customer,0,False
+overview,1512x741,sam,6,02 Operational,0,False
+overview,1512x741,sam,6,03 Arbiter,0,False
+overview,1512x741,sam,6,04 Customer,0,False
+overview,1512x741,sam,6,05 Actions,0,False
+overview,1512x741,sam,6,06 Governance,0,False
+overview,1512x741,sam,6,07 Agent,0,False
+overview,1512x741,sam,7,01 Customer,0,False
+overview,1512x741,sam,7,02 Operational,0,False
+overview,1512x741,sam,7,03 Arbiter,0,False
+overview,1512x741,sam,7,04 Customer,0,False
+overview,1512x741,sam,7,05 Actions,0,False
+overview,1512x741,sam,7,06 Governance,0,False
+overview,1512x741,sam,7,07 Agent,0,False
+overview,1512x741,sam,8,01 Customer,0,False
+overview,1512x741,sam,8,02 Operational,0,False
+overview,1512x741,sam,8,03 Arbiter,0,False
+overview,1512x741,sam,8,04 Customer,0,False
+overview,1512x741,sam,8,05 Actions,0,False
+overview,1512x741,sam,8,06 Governance,0,False
+overview,1512x741,sam,8,07 Agent,0,False
+overview,1512x741,maya,0,01 Customer,0,False
+overview,1512x741,maya,0,02 Operational,0,False
+overview,1512x741,maya,0,03 Arbiter,0,False
+overview,1512x741,maya,0,04 Customer,0,False
+overview,1512x741,maya,0,05 Actions,0,False
+overview,1512x741,maya,0,06 Governance,0,False
+overview,1512x741,maya,0,07 Agent,0,False
+overview,1512x741,maya,1,01 Customer,0,False
+overview,1512x741,maya,1,02 Operational,0,False
+overview,1512x741,maya,1,03 Arbiter,0,False
+overview,1512x741,maya,1,04 Customer,0,False
+overview,1512x741,maya,1,05 Actions,0,False
+overview,1512x741,maya,1,06 Governance,0,False
+overview,1512x741,maya,1,07 Agent,0,False
+overview,1512x741,maya,2,01 Customer,0,False
+overview,1512x741,maya,2,02 Operational,0,False
+overview,1512x741,maya,2,03 Arbiter,0,False
+overview,1512x741,maya,2,04 Customer,0,False
+overview,1512x741,maya,2,05 Actions,0,False
+overview,1512x741,maya,2,06 Governance,0,False
+overview,1512x741,maya,2,07 Agent,0,False
+overview,1512x741,maya,3,01 Customer,0,False
+overview,1512x741,maya,3,02 Operational,0,False
+overview,1512x741,maya,3,03 Arbiter,0,False
+overview,1512x741,maya,3,04 Customer,0,False
+overview,1512x741,maya,3,05 Actions,0,False
+overview,1512x741,maya,3,06 Governance,0,False
+overview,1512x741,maya,3,07 Agent,0,False
+overview,1512x741,maya,4,01 Customer,0,False
+overview,1512x741,maya,4,02 Operational,0,False
+overview,1512x741,maya,4,03 Arbiter,0,False
+overview,1512x741,maya,4,04 Customer,0,False
+overview,1512x741,maya,4,05 Actions,0,False
+overview,1512x741,maya,4,06 Governance,0,False
+overview,1512x741,maya,4,07 Agent,0,False
+overview,1512x741,maya,5,01 Customer,0,False
+overview,1512x741,maya,5,02 Operational,0,False
+overview,1512x741,maya,5,03 Arbiter,0,False
+overview,1512x741,maya,5,04 Customer,0,False
+overview,1512x741,maya,5,05 Actions,0,False
+overview,1512x741,maya,5,06 Governance,0,False
+overview,1512x741,maya,5,07 Agent,0,False
+overview,1512x741,maya,6,01 Customer,0,False
+overview,1512x741,maya,6,02 Operational,0,False
+overview,1512x741,maya,6,03 Arbiter,0,False
+overview,1512x741,maya,6,04 Customer,0,False
+overview,1512x741,maya,6,05 Actions,0,False
+overview,1512x741,maya,6,06 Governance,0,False
+overview,1512x741,maya,6,07 Agent,0,False
+overview,1512x741,maya,7,01 Customer,0,False
+overview,1512x741,maya,7,02 Operational,0,False
+overview,1512x741,maya,7,03 Arbiter,0,False
+overview,1512x741,maya,7,04 Customer,0,False
+overview,1512x741,maya,7,05 Actions,0,False
+overview,1512x741,maya,7,06 Governance,0,False
+overview,1512x741,maya,7,07 Agent,0,False
+overview,1512x741,maya,8,01 Customer,0,False
+overview,1512x741,maya,8,02 Operational,0,False
+overview,1512x741,maya,8,03 Arbiter,0,False
+overview,1512x741,maya,8,04 Customer,0,False
+overview,1512x741,maya,8,05 Actions,0,False
+overview,1512x741,maya,8,06 Governance,0,False
+overview,1512x741,maya,8,07 Agent,0,False
+expanded,1440x720,daniel,0,customer,inspector scroll permitted,False
+expanded,1440x720,daniel,1,customer,inspector scroll permitted,False
+expanded,1440x720,daniel,2,customer,inspector scroll permitted,False
+expanded,1440x720,daniel,3,customer,inspector scroll permitted,False
+expanded,1440x720,daniel,4,customer,inspector scroll permitted,False
+expanded,1440x720,daniel,5,customer,inspector scroll permitted,False
+expanded,1440x720,daniel,6,customer,inspector scroll permitted,False
+expanded,1440x720,daniel,7,customer,inspector scroll permitted,False
+expanded,1440x720,daniel,8,customer,inspector scroll permitted,False
+expanded,1440x720,sam,0,customer,inspector scroll permitted,False
+expanded,1440x720,sam,1,customer,inspector scroll permitted,False
+expanded,1440x720,sam,2,customer,inspector scroll permitted,False
+expanded,1440x720,sam,3,customer,inspector scroll permitted,False
+expanded,1440x720,sam,4,customer,inspector scroll permitted,False
+expanded,1440x720,sam,5,customer,inspector scroll permitted,False
+expanded,1440x720,sam,6,customer,inspector scroll permitted,False
+expanded,1440x720,sam,7,customer,inspector scroll permitted,False
+expanded,1440x720,sam,8,customer,inspector scroll permitted,False
+expanded,1440x720,maya,0,customer,inspector scroll permitted,False
+expanded,1440x720,maya,1,customer,inspector scroll permitted,False
+expanded,1440x720,maya,2,customer,inspector scroll permitted,False
+expanded,1440x720,maya,3,customer,inspector scroll permitted,False
+expanded,1440x720,maya,4,customer,inspector scroll permitted,False
+expanded,1440x720,maya,5,customer,inspector scroll permitted,False
+expanded,1440x720,maya,6,customer,inspector scroll permitted,False
+expanded,1440x720,maya,7,customer,inspector scroll permitted,False
+expanded,1440x720,maya,8,customer,inspector scroll permitted,False
+expanded,1440x720,daniel,0,operations,inspector scroll permitted,False
+expanded,1440x720,daniel,1,operations,inspector scroll permitted,False
+expanded,1440x720,daniel,2,operations,inspector scroll permitted,False
+expanded,1440x720,daniel,3,operations,inspector scroll permitted,False
+expanded,1440x720,daniel,4,operations,inspector scroll permitted,False
+expanded,1440x720,daniel,5,operations,inspector scroll permitted,False
+expanded,1440x720,daniel,6,operations,inspector scroll permitted,False
+expanded,1440x720,daniel,7,operations,inspector scroll permitted,False
+expanded,1440x720,daniel,8,operations,inspector scroll permitted,False
+expanded,1440x720,sam,0,operations,inspector scroll permitted,False
+expanded,1440x720,sam,1,operations,inspector scroll permitted,False
+expanded,1440x720,sam,2,operations,inspector scroll permitted,False
+expanded,1440x720,sam,3,operations,inspector scroll permitted,False
+expanded,1440x720,sam,4,operations,inspector scroll permitted,False
+expanded,1440x720,sam,5,operations,inspector scroll permitted,False
+expanded,1440x720,sam,6,operations,inspector scroll permitted,False
+expanded,1440x720,sam,7,operations,inspector scroll permitted,False
+expanded,1440x720,sam,8,operations,inspector scroll permitted,False
+expanded,1440x720,maya,0,operations,inspector scroll permitted,False
+expanded,1440x720,maya,1,operations,inspector scroll permitted,False
+expanded,1440x720,maya,2,operations,inspector scroll permitted,False
+expanded,1440x720,maya,3,operations,inspector scroll permitted,False
+expanded,1440x720,maya,4,operations,inspector scroll permitted,False
+expanded,1440x720,maya,5,operations,inspector scroll permitted,False
+expanded,1440x720,maya,6,operations,inspector scroll permitted,False
+expanded,1440x720,maya,7,operations,inspector scroll permitted,False
+expanded,1440x720,maya,8,operations,inspector scroll permitted,False
+expanded,1440x720,daniel,0,arbiter,inspector scroll permitted,False
+expanded,1440x720,daniel,1,arbiter,inspector scroll permitted,False
+expanded,1440x720,daniel,2,arbiter,inspector scroll permitted,False
+expanded,1440x720,daniel,3,arbiter,inspector scroll permitted,False
+expanded,1440x720,daniel,4,arbiter,inspector scroll permitted,False
+expanded,1440x720,daniel,5,arbiter,inspector scroll permitted,False
+expanded,1440x720,daniel,6,arbiter,inspector scroll permitted,False
+expanded,1440x720,daniel,7,arbiter,inspector scroll permitted,False
+expanded,1440x720,daniel,8,arbiter,inspector scroll permitted,False
+expanded,1440x720,sam,0,arbiter,inspector scroll permitted,False
+expanded,1440x720,sam,1,arbiter,inspector scroll permitted,False
+expanded,1440x720,sam,2,arbiter,inspector scroll permitted,False
+expanded,1440x720,sam,3,arbiter,inspector scroll permitted,False
+expanded,1440x720,sam,4,arbiter,inspector scroll permitted,False
+expanded,1440x720,sam,5,arbiter,inspector scroll permitted,False
+expanded,1440x720,sam,6,arbiter,inspector scroll permitted,False
+expanded,1440x720,sam,7,arbiter,inspector scroll permitted,False
+expanded,1440x720,sam,8,arbiter,inspector scroll permitted,False
+expanded,1440x720,maya,0,arbiter,inspector scroll permitted,False
+expanded,1440x720,maya,1,arbiter,inspector scroll permitted,False
+expanded,1440x720,maya,2,arbiter,inspector scroll permitted,False
+expanded,1440x720,maya,3,arbiter,inspector scroll permitted,False
+expanded,1440x720,maya,4,arbiter,inspector scroll permitted,False
+expanded,1440x720,maya,5,arbiter,inspector scroll permitted,False
+expanded,1440x720,maya,6,arbiter,inspector scroll permitted,False
+expanded,1440x720,maya,7,arbiter,inspector scroll permitted,False
+expanded,1440x720,maya,8,arbiter,inspector scroll permitted,False
+expanded,1440x720,daniel,0,phone,inspector scroll permitted,False
+expanded,1440x720,daniel,1,phone,inspector scroll permitted,False
+expanded,1440x720,daniel,2,phone,inspector scroll permitted,False
+expanded,1440x720,daniel,3,phone,inspector scroll permitted,False
+expanded,1440x720,daniel,4,phone,inspector scroll permitted,False
+expanded,1440x720,daniel,5,phone,inspector scroll permitted,False
+expanded,1440x720,daniel,6,phone,inspector scroll permitted,False
+expanded,1440x720,daniel,7,phone,inspector scroll permitted,False
+expanded,1440x720,daniel,8,phone,inspector scroll permitted,False
+expanded,1440x720,sam,0,phone,inspector scroll permitted,False
+expanded,1440x720,sam,1,phone,inspector scroll permitted,False
+expanded,1440x720,sam,2,phone,inspector scroll permitted,False
+expanded,1440x720,sam,3,phone,inspector scroll permitted,False
+expanded,1440x720,sam,4,phone,inspector scroll permitted,False
+expanded,1440x720,sam,5,phone,inspector scroll permitted,False
+expanded,1440x720,sam,6,phone,inspector scroll permitted,False
+expanded,1440x720,sam,7,phone,inspector scroll permitted,False
+expanded,1440x720,sam,8,phone,inspector scroll permitted,False
+expanded,1440x720,maya,0,phone,inspector scroll permitted,False
+expanded,1440x720,maya,1,phone,inspector scroll permitted,False
+expanded,1440x720,maya,2,phone,inspector scroll permitted,False
+expanded,1440x720,maya,3,phone,inspector scroll permitted,False
+expanded,1440x720,maya,4,phone,inspector scroll permitted,False
+expanded,1440x720,maya,5,phone,inspector scroll permitted,False
+expanded,1440x720,maya,6,phone,inspector scroll permitted,False
+expanded,1440x720,maya,7,phone,inspector scroll permitted,False
+expanded,1440x720,maya,8,phone,inspector scroll permitted,False
+expanded,1440x720,daniel,0,actions,inspector scroll permitted,False
+expanded,1440x720,daniel,1,actions,inspector scroll permitted,False
+expanded,1440x720,daniel,2,actions,inspector scroll permitted,False
+expanded,1440x720,daniel,3,actions,inspector scroll permitted,False
+expanded,1440x720,daniel,4,actions,inspector scroll permitted,False
+expanded,1440x720,daniel,5,actions,inspector scroll permitted,False
+expanded,1440x720,daniel,6,actions,inspector scroll permitted,False
+expanded,1440x720,daniel,7,actions,inspector scroll permitted,False
+expanded,1440x720,daniel,8,actions,inspector scroll permitted,False
+expanded,1440x720,sam,0,actions,inspector scroll permitted,False
+expanded,1440x720,sam,1,actions,inspector scroll permitted,False
+expanded,1440x720,sam,2,actions,inspector scroll permitted,False
+expanded,1440x720,sam,3,actions,inspector scroll permitted,False
+expanded,1440x720,sam,4,actions,inspector scroll permitted,False
+expanded,1440x720,sam,5,actions,inspector scroll permitted,False
+expanded,1440x720,sam,6,actions,inspector scroll permitted,False
+expanded,1440x720,sam,7,actions,inspector scroll permitted,False
+expanded,1440x720,sam,8,actions,inspector scroll permitted,False
+expanded,1440x720,maya,0,actions,inspector scroll permitted,False
+expanded,1440x720,maya,1,actions,inspector scroll permitted,False
+expanded,1440x720,maya,2,actions,inspector scroll permitted,False
+expanded,1440x720,maya,3,actions,inspector scroll permitted,False
+expanded,1440x720,maya,4,actions,inspector scroll permitted,False
+expanded,1440x720,maya,5,actions,inspector scroll permitted,False
+expanded,1440x720,maya,6,actions,inspector scroll permitted,False
+expanded,1440x720,maya,7,actions,inspector scroll permitted,False
+expanded,1440x720,maya,8,actions,inspector scroll permitted,False
+expanded,1440x720,daniel,0,governance,inspector scroll permitted,False
+expanded,1440x720,daniel,1,governance,inspector scroll permitted,False
+expanded,1440x720,daniel,2,governance,inspector scroll permitted,False
+expanded,1440x720,daniel,3,governance,inspector scroll permitted,False
+expanded,1440x720,daniel,4,governance,inspector scroll permitted,False
+expanded,1440x720,daniel,5,governance,inspector scroll permitted,False
+expanded,1440x720,daniel,6,governance,inspector scroll permitted,False
+expanded,1440x720,daniel,7,governance,inspector scroll permitted,False
+expanded,1440x720,daniel,8,governance,inspector scroll permitted,False
+expanded,1440x720,sam,0,governance,inspector scroll permitted,False
+expanded,1440x720,sam,1,governance,inspector scroll permitted,False
+expanded,1440x720,sam,2,governance,inspector scroll permitted,False
+expanded,1440x720,sam,3,governance,inspector scroll permitted,False
+expanded,1440x720,sam,4,governance,inspector scroll permitted,False
+expanded,1440x720,sam,5,governance,inspector scroll permitted,False
+expanded,1440x720,sam,6,governance,inspector scroll permitted,False
+expanded,1440x720,sam,7,governance,inspector scroll permitted,False
+expanded,1440x720,sam,8,governance,inspector scroll permitted,False
+expanded,1440x720,maya,0,governance,inspector scroll permitted,False
+expanded,1440x720,maya,1,governance,inspector scroll permitted,False
+expanded,1440x720,maya,2,governance,inspector scroll permitted,False
+expanded,1440x720,maya,3,governance,inspector scroll permitted,False
+expanded,1440x720,maya,4,governance,inspector scroll permitted,False
+expanded,1440x720,maya,5,governance,inspector scroll permitted,False
+expanded,1440x720,maya,6,governance,inspector scroll permitted,False
+expanded,1440x720,maya,7,governance,inspector scroll permitted,False
+expanded,1440x720,maya,8,governance,inspector scroll permitted,False
+expanded,1440x720,daniel,0,review,inspector scroll permitted,False
+expanded,1440x720,daniel,1,review,inspector scroll permitted,False
+expanded,1440x720,daniel,2,review,inspector scroll permitted,False
+expanded,1440x720,daniel,3,review,inspector scroll permitted,False
+expanded,1440x720,daniel,4,review,inspector scroll permitted,False
+expanded,1440x720,daniel,5,review,inspector scroll permitted,False
+expanded,1440x720,daniel,6,review,inspector scroll permitted,False
+expanded,1440x720,daniel,7,review,inspector scroll permitted,False
+expanded,1440x720,daniel,8,review,inspector scroll permitted,False
+expanded,1440x720,sam,0,review,inspector scroll permitted,False
+expanded,1440x720,sam,1,review,inspector scroll permitted,False
+expanded,1440x720,sam,2,review,inspector scroll permitted,False
+expanded,1440x720,sam,3,review,inspector scroll permitted,False
+expanded,1440x720,sam,4,review,inspector scroll permitted,False
+expanded,1440x720,sam,5,review,inspector scroll permitted,False
+expanded,1440x720,sam,6,review,inspector scroll permitted,False
+expanded,1440x720,sam,7,review,inspector scroll permitted,False
+expanded,1440x720,sam,8,review,inspector scroll permitted,False
+expanded,1440x720,maya,0,review,inspector scroll permitted,False
+expanded,1440x720,maya,1,review,inspector scroll permitted,False
+expanded,1440x720,maya,2,review,inspector scroll permitted,False
+expanded,1440x720,maya,3,review,inspector scroll permitted,False
+expanded,1440x720,maya,4,review,inspector scroll permitted,False
+expanded,1440x720,maya,5,review,inspector scroll permitted,False
+expanded,1440x720,maya,6,review,inspector scroll permitted,False
+expanded,1440x720,maya,7,review,inspector scroll permitted,False
+expanded,1440x720,maya,8,review,inspector scroll permitted,False

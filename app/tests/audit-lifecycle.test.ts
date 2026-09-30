@@ -80,3 +80,14 @@ test("recovery memory copy distinguishes active checks, kept promises and formal
     else assert.match(note, /case closure.*recorded/);
   }
 });
+
+test('story summaries never infer closure, adoption or delivery from the replay position alone', async () => {
+ const {householdOutcome}=await import('../src/presentation.ts');
+ const s=structuredClone(snapshots[8]);
+ const d=s.households.find(h=>h.id==='daniel')!;d.monitoring='active';d.caseStatus='open';
+ assert.doesNotMatch(householdOutcome(s,'daniel').title,/retained|closed/);
+ const sam=s.households.find(h=>h.id==='sam')!;sam.engaged=false;sam.unused=['TV'];sam.offerSignal='usage';
+ assert.doesNotMatch(householdOutcome(s,'sam').title,/Using it all/);
+ const m=s.households.find(h=>h.id==='maya')!;m.quietFix='fixed';
+ assert.doesNotMatch(householdOutcome(s,'maya').title,/Nothing needed|Told/);
+});

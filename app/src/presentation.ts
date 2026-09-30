@@ -10,6 +10,11 @@ export const householdNames: Record<PersonId, string> = {
   sam: "Sam Morgan",
   maya: "Maya Patel",
 };
+export const storyValue: Record<PersonId, string> = {
+  daniel: "Trust through follow-through: remember the failed fix, keep the promise, verify recovery.",
+  sam: "Value from the whole plan: get connected, use included services, then consider what fits next.",
+  maya: "Care without interruption: investigate the evidence, intervene when needed, explain at the right time.",
+};
 const people: PersonId[] = ["daniel", "sam", "maya"];
 export function householdOutcome(s: Snapshot, person: PersonId) {
   const h = s.households.find((h) => h.id === person)!;
@@ -32,10 +37,10 @@ export function householdOutcome(s: Snapshot, person: PersonId) {
           ? "met"
           : "waiting",
       title:
-        s.cutoff >= 8
-          ? "Recovery retained. No new fault recorded."
+        h.monitoring === "complete" && h.caseStatus === "none"
+          ? "Monitoring completed. Closure recorded."
           : h.monitoring === "complete"
-            ? "Held all weekend. Case closed."
+            ? "Monitoring completed. Closure still unconfirmed."
             : h.monitoring === "active" && s.cutoff >= 6
               ? "Fixed; 72-hour monitoring is still running."
               : h.confirmed && h.restored
@@ -49,8 +54,8 @@ export function householdOutcome(s: Snapshot, person: PersonId) {
   if (person === "sam")
     return {
       state: h.firstUseObserved && met("activation") ? "met" : "waiting",
-      title: h.offerSignal
-        ? "Using it all. Ready for something more."
+      title: h.offerSignal && h.engaged && !h.unused?.length
+        ? "Included services in use. A relevant offer to consider."
         : h.engaged && !h.unused?.length
           ? "Everything they bought, in use."
           : h.unused?.length
@@ -63,7 +68,7 @@ export function householdOutcome(s: Snapshot, person: PersonId) {
             ? "Setup paused by a network issue."
             : h.evidence.some((e) => e.type === "router.setup_attempted")
               ? "Switched on, not connected yet."
-              : "Delivered is not connected.",
+              : "A new home. Let’s get everything working.",
       detail: h.firstUseObserved
         ? "Successful first use observed. The effect of outreach on activation is not measured."
         : "Delivery is recorded. Successful first use is still unconfirmed; the activation team retains ownership.",
@@ -71,10 +76,10 @@ export function householdOutcome(s: Snapshot, person: PersonId) {
     };
   return {
     state: met("watch") ? "met" : "waiting",
-    title: s.cutoff >= 7
-      ? "Nothing needed. Nothing sent."
-      : h.quietFix === "fixed"
-        ? "Fixed overnight. Told in the morning."
+    title: h.quietFix === "fixed"
+        ? s.actions.some(a => a.person === person && a.title === "We fixed something overnight")
+          ? "Quiet repair. A useful morning update."
+          : "Repair recorded. Customer update not yet recorded."
         : met("watch")
       ? "The watch ended. The evening stayed quiet."
       : s.cutoff === 0

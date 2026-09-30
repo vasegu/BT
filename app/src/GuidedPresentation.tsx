@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { PresenterWorkspace } from "./PresenterWorkspace";
 import type { Snapshot, PersonId, SourceEvent } from "./types";
-import { householdNames, moments, chapters } from "./presentation";
+import { householdNames, moments, chapters, storyValue, householdOutcome } from "./presentation";
 import type { MomentLane, momentView } from "./presentation";
 import "./presentation.css";
 
@@ -182,7 +182,7 @@ export function MomentLanes({
           {moment.time} · Moment {snapshot.cutoff + 1} of {moments.length}
         </span>
         <div className="moment-title-row">
-          <h1>{moment.title}</h1>
+          <h1>{compare ? moment.title : householdOutcome(snapshot, focus).title}</h1>
           {compare && signals.length > 0 && (
             <div className="moment-signals" aria-label="Source signals at this moment">
               {[...new Set(signals.map((e) => e.type))].map((type) => [type, signals.filter((e) => e.type === type)] as const).map(([type, events]) => (
@@ -199,7 +199,7 @@ export function MomentLanes({
             </div>
           )}
         </div>
-        <p>{moment.lead}</p>
+        <p>{compare ? moment.lead : storyValue[focus]}</p>
       </header>
       {status === "failed" && (
         <div className="moment-alert" role="alert">

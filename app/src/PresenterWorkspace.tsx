@@ -1,3 +1,4 @@
+import { DecisionContext } from './DecisionContext';
 import { useState, type ReactNode } from 'react';
 import type { Snapshot, PersonId, SourceEvent } from './types';
 import { changeSummary, type MomentLane } from './presentation';
@@ -69,16 +70,15 @@ export function PresenterWorkspace({ snapshot, person, lane, deciding, phone, on
       {selected === 'arbiter' && <>
         <p className="presenter-reason">{d?.reason ?? 'The records are available. An action will only be proposed after a signal has been assessed.'}</p>
         {lane.previous && d && changes.length === 0 && lane.previous.title !== d.title && <div className="presenter-before"><span>Previously</span>{lane.previous.title}</div>}
-        {changes.length > 0 && <div className="presenter-changes">{changes.map(c => <div key={c.field}><span className="eyebrow">{c.field.replace(/([a-z])([A-Z])/g, '$1 $2').replaceAll('_', ' ')}</span><p><del>{c.before}</del><span aria-hidden="true"> → </span><strong>{c.after}</strong></p></div>)}</div>}
+        <DecisionContext compact snapshot={snapshot} person={person} inspect={onInspect} />
         <div className="presenter-decision-grid">
         {chosen && <EligibilityChecks checks={previewChecks} context={h.evidence} inspect={onInspect} />}
         {alternatives.length > 0 && <div className="presenter-alternatives"><span className="eyebrow">Why not another action?</span>{alternatives.map(c => <article key={c.id}><small>{c.status} · {c.agent}</small><strong>{c.title}</strong><p>{c.checks.find(check => check.state !== 'pass')?.detail ?? c.reason}</p></article>)}<small className="presenter-count">{allAlternatives} alternatives in the full trace</small></div>}
         </div>
         {chosen && <small className="presenter-count">Showing {previewChecks.length} of {chosen.checks.length} gates · {chosen.checks.filter(c => c.state === "pass").length} passed · full checks in the arbiter</small>}
-        {chosen && <div className="presenter-effect"><span className="eyebrow">Next action</span><p>{chosen.effect}</p></div>}
       </>}
       {facts.length > 0 && <ul className="presenter-facts">{facts.slice(0, 4).map((f, i) => <li key={i}>{f.text}</li>)}</ul>}
-      {selected === 'customer' && h.profile && <HouseholdCard p={h.profile} />}
+      {selected === 'customer' && h.profile && <HouseholdCard compact p={h.profile} />}
       {selected === 'operations' && <RouterTelemetry snapshot={snapshot} focus={person} />}
       {selected === 'phone' && <div className="presenter-effect"><span className="eyebrow">{lane.message ? 'Recorded customer message' : 'No new delivery at this beat'}</span><p>{lane.message?.body ?? 'Earlier messages remain in the thread. No new message is being claimed here.'}</p></div>}
       {selected === 'phone' && !lane.message && d && <div className="presenter-quiet"><span className="eyebrow">Recorded decision · {d.disposition}</span><h3>{d.title}</h3><p>{d.reason}</p>{chosen?.wake && <div className="presenter-effect"><span className="eyebrow">Reconsider when</span><p>{chosen.wake}</p></div>}</div>}
@@ -86,7 +86,7 @@ export function PresenterWorkspace({ snapshot, person, lane, deciding, phone, on
       {selected === 'actions' && <><OutcomeProofs snapshot={snapshot} outcomes={outcomes.slice(-3)} inspect={onInspect} /><small className="presenter-count">Showing {Math.min(3, outcomes.length)} of {outcomes.length} outcome contracts · all evidence in the expanded view</small></>}
       {selected === 'governance' && <GovernanceEvidence snapshot={snapshot} />}
       {selected === 'review' && <><span className="eyebrow">Global study · all households and fixture moments</span><SwayTile /><p className="presenter-reason">Prebuilt rules sensitivity study. Inspect frozen-request model evaluations in the expanded review; this map is not a live safety score for this replay.</p></>}
-      {['customer', 'operations'].includes(selected) && evidence.length > 0 && <div className="presenter-evidence"><span className="eyebrow">Inspect the evidence</span>{evidence.slice(-2).map(e => <button key={e.id} onClick={() => onInspect(e)}><time>{new Date(e.occurredAt).toLocaleDateString('en-GB', { timeZone: 'Europe/London', day:'numeric', month:'short' })}</time><span><strong>{e.description}</strong><small>{e.source} · {e.type}</small></span><span>↗</span></button>)}</div>}
+      {['customer', 'operations'].includes(selected) && evidence.length > 0 && <div className="presenter-evidence"><span className="eyebrow">{selected === 'customer' ? 'Latest source · full history in customer memory' : 'Inspect the evidence'}</span>{evidence.slice(selected === 'customer' ? -1 : -2).map(e => <button key={e.id} onClick={() => onInspect(e)}><time>{new Date(e.occurredAt).toLocaleDateString('en-GB', { timeZone: 'Europe/London', day:'numeric', month:'short' })}</time><span><strong>{e.description}</strong><small>{e.source} · {e.type}</small></span><span>↗</span></button>)}</div>}
       <button className="presenter-open" onClick={() => onOpen?.(selected)}>Open {row.name.toLowerCase()} <span>↗</span></button>
     </section>
     <div className="moment-phone">{phone}</div>
