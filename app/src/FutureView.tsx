@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./future.css";
 
 // 2030, played as its own scenario: new signals arrive for the Morgan household over a month,
@@ -243,15 +243,133 @@ const ASSUMED = [
 
 const WHO = { bt: "BT’s agent", agent: "Sam’s household agent", sam: "Sam" } as const;
 
+/* ---------- The household picture ---------- */
+
+type Kind = "phone" | "laptop" | "tv" | "console" | "speaker" | "tablet" | "camera" | "headset";
+const ICON: Record<Kind, string> = {
+  phone: "M8 3h8a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM11 18h2",
+  laptop: "M5 6h14v9H5zM3 18h18",
+  tv: "M3 5h18v11H3zM9 20h6",
+  console: "M6 9h12a3 3 0 0 1 3 3v2a3 3 0 0 1-5 2l-1-1H9l-1 1a3 3 0 0 1-5-2v-2a3 3 0 0 1 3-3zM8 11v3M6.5 12.5h3",
+  speaker: "M8 3h8v18H8zM12 14a2 2 0 1 0 0-.01M12 7h.01",
+  tablet: "M6 3h12v18H6zM11 18h2",
+  camera: "M12 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM12 9a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM12 18v3",
+  headset: "M3 10h18v6a2 2 0 0 1-2 2h-4l-3-2-3 2H5a2 2 0 0 1-2-2zM7 13h.01M17 13h.01",
+};
+const PEOPLE = [
+  { name: "Sam", role: "Account holder" },
+  { name: "Priya", role: "Partner" },
+  { name: "Leo", role: "20" },
+  { name: "Ava", role: "16 · GCSEs" },
+];
+const DEVICES: { kind: Kind; owner: string; isNew?: boolean }[] = [
+  { kind: "phone", owner: "Sam" }, { kind: "phone", owner: "Priya" }, { kind: "phone", owner: "Leo" }, { kind: "phone", owner: "Ava" },
+  { kind: "laptop", owner: "Priya" }, { kind: "laptop", owner: "Leo" }, { kind: "tv", owner: "Living room" }, { kind: "tv", owner: "Bedroom" },
+  { kind: "console", owner: "Leo" }, { kind: "speaker", owner: "Kitchen" }, { kind: "tablet", owner: "Home" }, { kind: "camera", owner: "Doorbell" },
+  { kind: "laptop", owner: "Ava", isNew: true }, { kind: "headset", owner: "Home", isNew: true },
+];
+const Icon = ({ kind }: { kind: Kind }) => (
+  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d={ICON[kind]} />
+  </svg>
+);
+
+/** Weekday evening demand, Mb/s, from 16:00 to 23:00, against a 500 Mb plan. */
+const HOURS = [16, 17, 18, 19, 20, 21, 22, 23];
+const DEMAND = {
+  normal: [170, 240, 280, 320, 430, 460, 470, 330],
+  crowded: [230, 330, 390, 430, 560, 610, 600, 440],
+};
+const AVA = [70, 70, 70];
+const PLAN = 500;
+
+function UsageChart({ step }: { step: number }) {
+  const data = step === 0 ? DEMAND.normal : DEMAND.crowded;
+  const homework = step >= 2;
+  const boost = step >= 5;
+  const W = 420, H = 210, B = 20, T = 10, max = 700;
+  const bw = W / HOURS.length;
+  const y = (v: number) => T + (H - T - B) * (1 - v / max);
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="fx-chart" role="img" aria-label="Evening demand against the plan limit">
+      {homework && <rect x={0} y={T} width={bw * 3} height={H - T - B} className="fx-band" />}
+      {homework && <text x={4} y={T + 9} className="fx-band-label">homework hours</text>}
+      {data.map((v, i) => {
+        const over = v > PLAN && !(step >= 6 && i < 3);
+        const h = (H - T - B) * (Math.min(v, max) / max);
+        return (
+          <g key={i}>
+            <rect x={i * bw + 6} y={y(v)} width={bw - 12} height={h} rx={2} className={over ? "fx-bar-over" : "fx-bar"} />
+            {boost && i < 3 && (
+              <rect x={i * bw + 6} y={y(AVA[i])} width={bw - 12} height={(H - T - B) * (AVA[i] / max)} rx={2} className={step >= 6 ? "fx-bar-ava" : "fx-bar-ava is-planned"} />
+            )}
+            <text x={i * bw + bw / 2} y={H - 5} className="fx-axis">{HOURS[i]}</text>
+          </g>
+        );
+      })}
+      <line x1={0} x2={W} y1={y(PLAN)} y2={y(PLAN)} className="fx-limit" />
+      <text x={W - 2} y={y(PLAN) - 4} className="fx-limit-label">plan limit 500 Mb</text>
+    </svg>
+  );
+}
+
+/** April to June, with the exam window and today. */
+function Calendar({ step }: { step: number }) {
+  const start = Date.UTC(2030, 3, 1), end = Date.UTC(2030, 6, 1);
+  const pos = (d: number) => `${((d - start) / (end - start)) * 100}%`;
+  const today = [Date.UTC(2030, 3, 1), Date.UTC(2030, 3, 14), Date.UTC(2030, 3, 22), Date.UTC(2030, 3, 22), Date.UTC(2030, 3, 22), Date.UTC(2030, 3, 22), Date.UTC(2030, 4, 3)][step];
+  const examFrom = Date.UTC(2030, 4, 11), examTo = Date.UTC(2030, 5, 19), boostFrom = Date.UTC(2030, 3, 23);
+  return (
+    <div className="fx-cal">
+      <div className="fx-cal-track">
+        {step >= 2 && <span className="fx-cal-exam" style={{ left: pos(examFrom), width: `calc(${pos(examTo)} - ${pos(examFrom)})` }}>GCSEs</span>}
+        {step >= 5 && <span className="fx-cal-boost" style={{ left: pos(boostFrom), width: `calc(${pos(examTo)} - ${pos(boostFrom)})` }}>study boost</span>}
+        <i className="fx-cal-today" style={{ left: pos(today) }} />
+      </div>
+      <div className="fx-cal-months"><span>Apr</span><span>May</span><span>Jun</span></div>
+    </div>
+  );
+}
+
+/** Help or offers: BT only gets in touch when it has something useful to say. */
+function ReasonGauge({ step }: { step: number }) {
+  const slots = [
+    { label: "Device cover", kind: "offer", from: 0 },
+    { label: "Faster plan", kind: "offer", from: 1 },
+    { label: "Study boost", kind: "help", from: 2 },
+  ];
+  const help = step >= 2;
+  return (
+    <div className="fx-gauge">
+      <div className="fx-gauge-slots">
+        {slots.map((s) => (
+          <span key={s.label} className={`is-${s.kind}${step >= s.from ? " is-on" : ""}`}>
+            <small>{s.kind}</small>
+            {s.label}
+          </span>
+        ))}
+      </div>
+      <p className={help ? "is-go" : ""}>{help ? "Something genuinely useful to offer: get in touch, help first." : "Offers only: not a reason to interrupt. Wait."}</p>
+    </div>
+  );
+}
+
+/* ---------- The scenario ---------- */
+
 export function FutureView({ onBack }: { onBack: () => void }) {
   const [step, setStep] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [real, setReal] = useState(false);
+  const threadRef = useRef<HTMLElement>(null);
   const beat = BEATS[step];
+  useEffect(() => {
+    const el = threadRef.current;
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+  }, [step]);
   useEffect(() => {
     if (!playing) return;
     if (step === BEATS.length - 1) return setPlaying(false);
-    const t = setTimeout(() => setStep((s) => s + 1), 6500);
+    const t = setTimeout(() => setStep((s) => s + 1), 7000);
     return () => clearTimeout(t);
   }, [playing, step]);
   useEffect(() => {
@@ -263,11 +381,11 @@ export function FutureView({ onBack }: { onBack: () => void }) {
     addEventListener("keydown", key, true);
     return () => removeEventListener("keydown", key, true);
   }, [onBack]);
-  const feed = BEATS.slice(0, step + 1).flatMap((b, i) => b.signals.map((s) => ({ ...s, at: b.at, now: i === step })));
-  const thread = BEATS.slice(0, step + 1).flatMap((b, i) => b.lines.map((l) => ({ ...l, now: i === step })));
+  const thread = BEATS.slice(0, step + 1).flatMap((b, i) => b.lines.map((l) => ({ ...l, at: b.at, now: i === step })));
   const outcomes = [...BEATS.slice(0, step + 1)].reverse().find((b) => b.outcomes)?.outcomes ?? [];
-  const memory = BEATS.slice(0, step + 1).flatMap((b, i) => b.memory.map((m) => ({ m, now: i === step })));
+  const memory = beat.memory.length ? beat.memory : (BEATS.slice(0, step).reverse().find((b) => b.memory.length)?.memory ?? []);
   const ops = beat.ops.length ? beat.ops : (BEATS.slice(0, step).reverse().find((b) => b.ops.length)?.ops ?? []);
+  const stalls = step >= 6 ? 2 : step >= 1 ? 23 : 6;
   return (
     <div className="fx" role="dialog" aria-label="2030 scenario">
       <header className="fx-bar">
@@ -275,7 +393,7 @@ export function FutureView({ onBack }: { onBack: () => void }) {
           <span className="fx-badge">2030</span>
           <div>
             <strong>The Morgans, four years on</strong>
-            <small>BT’s agent starts the conversation · built on standards that exist today; prices and dates illustrative</small>
+            <small>Built on today’s standards · illustrative</small>
           </div>
         </div>
         <ol className="fx-clock" aria-label="Scenario steps">
@@ -301,72 +419,72 @@ export function FutureView({ onBack }: { onBack: () => void }) {
           <button className="fx-exit" onClick={onBack}>Back to 2026 ✕</button>
         </div>
       </header>
-      <section className="fx-moment" key={step}>
-        <span>{beat.at}</span>
+
+      <section className="fx-moment">
+        <span>Step {step + 1} of {BEATS.length} · {beat.at}</span>
         <h2>{beat.title}</h2>
         <p>{beat.lead}</p>
       </section>
-      <div className="fx-stage">
-        <aside className="fx-feed" aria-label="Signals">
-          <b className="fx-label">Signals · {feed.length}</b>
-          <ol>
-            {[...feed].reverse().map((s, i) => (
-              <li key={`${s.at}${s.type}${s.detail}`} className={s.now ? "is-new" : ""} style={{ animationDelay: `${(feed.length - 1 - i) * 0}ms` }}>
-                <code>{s.type}</code>
-                <span>{s.detail}</span>
-                <small>{s.source} · {s.at.replace(/^\w+ /, "").replace(/ 2030/, "")}</small>
-                {BASIS[s.type] && <small className="fx-basis">{BASIS[s.type]}</small>}
-              </li>
-            ))}
-          </ol>
-        </aside>
-        <div className="fx-arch" key={`a${step}`}>
-          <article className="fx-card">
-            <b className="fx-label">Customer memory</b>
-            <ul>{memory.slice(-5).map((x, i) => <li key={i} className={x.now ? "is-new" : ""}>{x.m}</li>)}</ul>
-          </article>
-          <article className="fx-card">
-            <b className="fx-label">Operational memory</b>
-            <ul>{ops.map((x) => <li key={x} className={beat.ops.length ? "is-new" : ""}>{x}</li>)}</ul>
-          </article>
-          <article className="fx-card fx-arbiter">
-            <b className="fx-label">Arbiter · proposals</b>
-            <ul className="fx-props">
-              {beat.proposals.map((p) => (
-                <li key={p.title} className={`is-${p.state}`}>
-                  <strong>{p.title}</strong>
-                  <em>{p.state}</em>
-                  <small>{p.why}</small>
+
+      <div className="fx-top">
+        <section className="fx-home" aria-label="The Morgan household">
+          <div className="fx-home-col is-left">
+            <b className="fx-label">The household</b>
+            <ul className="fx-people">
+              {PEOPLE.map((p) => (
+                <li key={p.name} className={p.name === "Ava" && step >= 2 ? "is-lit" : ""}>
+                  <strong>{p.name}</strong>
+                  <small>{p.role}</small>
                 </li>
               ))}
             </ul>
-            <p className="fx-decision">{beat.decision}</p>
-          </article>
-          <article className="fx-card">
-            <b className="fx-label">Governance</b>
-            <ul className="fx-checks">
-              {beat.governance.map((g) => (
-                <li key={g.check} className={`is-${g.result}`}>
-                  <i>{g.result === "pass" ? "✓" : g.result === "hold" ? "!" : "·"}</i>
-                  {g.check}
-                  {REF[g.check] && <small className="fx-ref">{REF[g.check]}</small>}
+            <b className="fx-label">On the network · 14 devices · 2 new this month</b>
+            <ul className="fx-devices">
+              {DEVICES.map((d, i) => (
+                <li key={i} className={d.isNew ? (step === 0 ? "is-new is-flash" : "is-new") : ""} title={`${d.kind} · ${d.owner}`}>
+                  <Icon kind={d.kind} />
+                  <small>{d.owner}</small>
                 </li>
               ))}
             </ul>
-          </article>
-          <article className="fx-card fx-outcomes">
-            <b className="fx-label">Tracking</b>
-            {outcomes.length ? (
-              <ul>{outcomes.map((o) => <li key={o.what} className={`is-${o.state}`}><em>{o.state}</em>{o.what}</li>)}</ul>
-            ) : (
-              <p className="fx-quiet">Nothing committed yet, so nothing to track.</p>
-            )}
-          </article>
-        </div>
-        <aside className="fx-thread" aria-label="Conversation">
-          <b className="fx-label">Conversation</b>
+            <div className="fx-sees">
+              <div>
+                <b className="fx-label">BT can see</b>
+                <ul>
+                  <li>Device types and when they joined</li>
+                  <li>How much the line carries, hour by hour</li>
+                  <li>What Sam has told us</li>
+                </ul>
+              </div>
+              <div>
+                <b className="fx-label">BT can’t see</b>
+                <ul className="is-no">
+                  <li>What anyone browses or watches</li>
+                  <li>Messages, searches or content</li>
+                  <li>Anything about Ava beyond what Sam said</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <div className="fx-home-col is-chart">
+            <b className="fx-label">Weekday evenings · demand vs plan</b>
+            <UsageChart step={step} />
+            <p className="fx-chart-note">
+              Video stalls this week <strong className={stalls > 5 ? "is-bad" : "is-good"}>{stalls}</strong>
+              {step >= 5 && <> · Ava’s laptop <span className="fx-key-ava" /> prioritised after school</>}
+            </p>
+            <b className="fx-label">April – June</b>
+            <Calendar step={step} />
+          </div>
+        </section>
+
+        <section className="fx-thread" aria-label="Conversation" ref={threadRef}>
+          <b className="fx-label">Conversation · A2A agent channel</b>
           {thread.length === 0 ? (
-            <p className="fx-quiet">No one has been contacted. BT is still gathering reasons.</p>
+            <div className="fx-silence">
+              <strong>No one has been contacted.</strong>
+              <span>BT is noticing, not selling. It waits until it has something worth saying.</span>
+            </div>
           ) : (
             thread.map((l, i) => (
               <div key={i} className={`fx-msg is-${l.from}${l.now ? " is-new" : ""}`}>
@@ -375,8 +493,64 @@ export function FutureView({ onBack }: { onBack: () => void }) {
               </div>
             ))
           )}
-        </aside>
+        </section>
       </div>
+
+      <section className="fx-chain" aria-label="From signal to tracking">
+        <article>
+          <b className="fx-label">01 · Signals</b>
+          <ul className="fx-sig">
+            {beat.signals.map((s) => (
+              <li key={s.type + s.detail} title={BASIS[s.type]}>
+                <code>{s.type}</code>
+                <span>{s.detail}</span>
+                <small>{BASIS[s.type] ?? s.source}</small>
+              </li>
+            ))}
+          </ul>
+        </article>
+        <article>
+          <b className="fx-label">02 · Memory & operations</b>
+          <ul className="fx-notes">
+            {[...memory.slice(0, 2), ...ops.slice(0, 2)].map((m) => <li key={m}>{m}</li>)}
+          </ul>
+        </article>
+        <article className="fx-arb">
+          <b className="fx-label">03 · Arbiter</b>
+          <ReasonGauge step={step} />
+          <ul className="fx-props">
+            {beat.proposals.map((p) => (
+              <li key={p.title} className={`is-${p.state}`}>
+                <em>{p.state}</em>
+                <strong>{p.title}</strong>
+              </li>
+            ))}
+          </ul>
+          <p className="fx-decision">{beat.decision}</p>
+        </article>
+        <article>
+          <b className="fx-label">04 · Governance</b>
+          <ul className="fx-checks">
+            {beat.governance.slice(0, 4).map((g) => (
+              <li key={g.check} className={`is-${g.result}`}>
+                <i>{g.result === "pass" ? "✓" : g.result === "hold" ? "!" : "·"}</i>
+                <span>{g.check}</span>
+                {REF[g.check] && <small>{REF[g.check]}</small>}
+              </li>
+            ))}
+            {beat.governance.length > 4 && <li className="fx-more">+{beat.governance.length - 4} more checks</li>}
+          </ul>
+        </article>
+        <article>
+          <b className="fx-label">05 · Tracking</b>
+          {outcomes.length ? (
+            <ul className="fx-outs">{outcomes.map((o) => <li key={o.what} className={`is-${o.state}`}><em>{o.state}</em>{o.what}</li>)}</ul>
+          ) : (
+            <p className="fx-quiet">Nothing committed, so nothing to track yet.</p>
+          )}
+        </article>
+      </section>
+
       {real && (
         <aside className="fx-real" aria-label="What this is built on">
           <header>
