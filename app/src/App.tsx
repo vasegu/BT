@@ -866,7 +866,7 @@ export function App() {
           {sessionUnavailable ? "Session unavailable" : error ? "Connection issue" : snapshot?.storage === "supabase" ? "Supabase connected" : "Local"}
         </span>
       </header>
-      {!focused && presenting && (
+      {!focused && presenting && !future && (
         <MomentSpine
           place={intro ? "intro" : future ? "future" : null}
           onIntro={() => change({ view: "intro" })}
@@ -1176,7 +1176,7 @@ export function App() {
         ) : intro ? (
           <IntroView snapshot={snapshot} onStart={() => change({ view: null, at: "0" })} onPerson={(p) => change({ view: null, at: "0", person: p })} />
         ) : future ? (
-          <FutureView onBack={() => change({ view: null })} />
+          <FutureView onBack={() => change({ view: null, at: String(moments.length - 1) })} />
         ) : review ? (
           <AgentReview
             snapshot={snapshot}

@@ -138,6 +138,96 @@ function governance(h: Household, d?: Decision): Column[] {
   ];
 }
 
+
+type Spec = [string, string];
+const id8 = (x?: string | null) => (x ? x.slice(0, 8) : "—");
+const hhmm = (iso: string) => new Date(iso).toLocaleTimeString("en-GB", { timeZone: "Europe/London", hour: "2-digit", minute: "2-digit" });
+
+/** The machine view of each section: identifiers, versions, counts and timings. */
+function specs(section: string, h: Household, s: Snapshot, d?: Decision): Spec[] {
+  const recs = h.evidence.filter((e) => !e.type.startsWith("router.observation_"));
+  const t = d?.trace;
+  const chosen = t?.candidates.find((c) => c.id === t.selectedId);
+  if (section === "customer") {
+    const sources = [...new Set(recs.map((e) => e.source))];
+    const last = recs.at(-1);
+    return [
+      ["records", `${recs.length} · ${new Set(recs.map((e) => e.type)).size} types`],
+      ["sources", `${sources.length} · ${sources.slice(0, 3).join(", ")}`],
+      ["memory items", `${h.memory?.items.length ?? 0} · hash ${id8(h.memory?.hash)}`],
+      ["since", recs[0] ? day(recs[0].occurredAt) : "—"],
+      ["latest", last ? `${last.type} @ ${hhmm(last.receivedAt)}` : "—"],
+      ["profile", h.profile ? `${h.profile.products.length} products · ${h.profile.contacts.length} contacts · valid at ${hhmm(s.clock)}` : "not loaded"],
+    ];
+  }
+  if (section === "operations") {
+    const now = s.events.filter((e) => e.revision === s.cutoff && s.cutoff > 0);
+    const windows = s.events.filter((e) => e.subject === h.id && e.type === "router.observation_window" && Date.parse(e.occurredAt) > Date.parse(s.clock) - 86400e3 && Date.parse(e.occurredAt) <= Date.parse(s.clock));
+    const exp = windows.reduce((n, e) => n + (Number(e.payload.expected) || 0), 0);
+    const got = windows.reduce((n, e) => n + (Number(e.payload.received) || 0), 0);
+    const net = s.operations.network;
+    return [
+      ["events @ rev", `${now.length} · rev ${s.cutoff}/${s.session.revision}`],
+      ["heartbeats 24h", exp ? `${got}/${exp} · ${Math.round((got / exp) * 100)}% · ${windows.length} windows` : "no aggregate"],
+      ["incident", s.operations.incident ? `${s.operations.incident.id} · ${s.operations.incident.status} · ${s.operations.incident.affected.length} in scope` : "none"],
+      ["network", net ? `${net.nodes.length} nodes · ${net.cases.filter((c) => c.status === "open").length} open cases` : "—"],
+      ["promises", net ? `${net.promises.filter((p) => p.kept).length}/${net.promises.length} kept` : "—"],
+      ["slots", `${s.operations.slots.filter((x) => x.owner || x.person).length} held · ${s.operations.slots.filter((x) => !x.owner && !x.person).length} free`],
+    ];
+  }
+  if (section === "arbiter" && d) {
+    const a = t?.assessment;
+    const probs = a ? Object.values(a.answers).flatMap((x) => Object.entries(x.probabilities ?? {})) : [];
+    const p = probs.filter(([k]) => k === t?.selectedId).map(([, v]) => v)[0];
+    const trig = t?.triggerIds[0] ? s.events.find((e) => e.id === t.triggerIds[0])?.type : undefined;
+    return [
+      ["decision", `${id8(d.id)} · ${d.disposition} · ${d.domain}`],
+      ["policy", d.policyVersion],
+      ["trigger", trig ?? "context reassessment"],
+      ["candidates", t ? `${t.candidates.length} · ${t.candidates.filter((c) => c.status === "blocked").length} blocked · ${t.candidates.filter((c) => c.status === "awaiting").length} awaiting` : "—"],
+      ["gates", chosen ? `${chosen.checks.filter((c) => c.state === "pass").length}/${chosen.checks.length} pass` : "—"],
+      ["evidence", `${d.evidenceIds.length} records cited`],
+      ["model", a ? `${a.model} · ${a.promptVersion}${p != null ? ` · p=${p.toFixed(2)}` : ""} · ${a.effective ?? a.status}` : "rules only"],
+      ["latency", a ? `${a.latencyMs} ms · ${a.inputTokens ?? "?"}→${a.outputTokens ?? "?"} tok${a.costUsd != null ? ` · $${a.costUsd.toFixed(4)}` : ""}` : "—"],
+    ];
+  }
+  if (section === "phone") {
+    const act = s.actions.filter((x) => x.person === h.id).at(-1);
+    return [
+      ["action", act ? `${id8(act.id)} · ${act.kind} · ${act.status}` : "none"],
+      ["receipt", act ? `${id8(act.receiptId)} · ${hhmm(act.time)}` : "—"],
+      ["decision", act ? id8(act.decisionId) : id8(d?.id)],
+      ["execution", t?.execution.length ? t.execution.map((x) => `${x.stage}:${x.status}`).join(" → ") : "—"],
+      ["channel", h.contactAllowed ? "in_app · service" : "none · no authority"],
+      ["provenance", act?.provenance ?? "—"],
+    ];
+  }
+  if (section === "actions") {
+    const mine = s.operations.outcomes.filter((o) => o.person === h.id);
+    const count = (st: string) => mine.filter((o) => o.check.status === st).length;
+    const next = mine.filter((o) => o.check.status === "waiting").sort((a, b) => Date.parse(a.dueAt) - Date.parse(b.dueAt))[0];
+    return [
+      ["contracts", `${mine.length} · ${count("met")} met · ${count("waiting")} waiting · ${count("unverified") + count("contradicted")} at risk`],
+      ["version", mine[0]?.version ?? "bt-outcomes-v1"],
+      ["next due", next ? `${next.goal} · ${formatDateTime(next.dueAt)}` : "—"],
+      ["expects", next ? next.expectedEvent : "—"],
+      ["evidence", `${mine.reduce((n, o) => n + o.check.evidenceIds.length, 0)} observation records`],
+      ["provenance", [...new Set(mine.map((o) => o.provenance))].join(", ") || "—"],
+    ];
+  }
+  if (section === "governance" && d) {
+    return [
+      ["policy", d.policyVersion],
+      ["moment", d.moment ? d.moment.kind : "—"],
+      ["authority", chosen?.authority ? `${chosen.authority.mode} · ${chosen.authority.role}` : "—"],
+      ["contact", h.contactAllowed ? "service · in_app · verified" : "not established"],
+      ["commercial", h.offersAllowed ? `opted in${h.offerApproved ? " · approved" : ""}` : "no consent"],
+      ["gates", chosen ? chosen.checks.map((c) => `${c.id}:${c.state}`).slice(0, 4).join(" ") : "—"],
+    ];
+  }
+  return [];
+}
+
 export function SectionDigest({ section, h, snapshot, decision }: { section: string; h: Household; snapshot: Snapshot; decision?: Decision; person?: PersonId }) {
   const cols =
     section === "customer" ? customer(h)
@@ -147,9 +237,11 @@ export function SectionDigest({ section, h, snapshot, decision }: { section: str
     : section === "governance" ? governance(h, decision)
     : [];
   const shown = cols.filter((c) => c.notes.length);
-  if (!shown.length) return null;
+  const spec = specs(section, h, snapshot, decision);
+  if (!shown.length && !spec.length) return null;
   return (
-    <div className="sd" style={{ gridTemplateColumns: `repeat(${Math.min(shown.length, 4)}, minmax(0, 1fr))` }}>
+    <>
+    {shown.length > 0 && <div className="sd" style={{ gridTemplateColumns: `repeat(${Math.min(shown.length, 4)}, minmax(0, 1fr))` }}>
       {shown.map((c) => (
         <article key={c.title}>
           <b>{c.title}</b>
@@ -162,6 +254,17 @@ export function SectionDigest({ section, h, snapshot, decision }: { section: str
           </ul>
         </article>
       ))}
-    </div>
+    </div>}
+    {spec.length > 0 && (
+      <dl className="sd-spec">
+        {spec.map(([k, v]) => (
+          <div key={k}>
+            <dt>{k}</dt>
+            <dd>{v}</dd>
+          </div>
+        ))}
+      </dl>
+    )}
+    </>
   );
 }

@@ -88,7 +88,8 @@ export function PresenterWorkspace({ snapshot, person, lane, deciding, phone, on
         </div>
         {chosen && <small className="presenter-count">Showing {previewChecks.length} of {chosen.checks.length} gates · {chosen.checks.filter(c => c.state === "pass").length} passed · full checks in the arbiter</small>}
       </>}
-      {!deciding || ['customer', 'operations'].includes(selected) ? <SectionDigest section={selected} h={h} snapshot={snapshot} decision={d ?? undefined} /> : null}
+      {selected === 'arbiter' && d && <SectionDigest section="arbiter" h={h} snapshot={snapshot} decision={d} />}
+      {selected !== 'arbiter' && (!deciding || ['customer', 'operations'].includes(selected)) ? <SectionDigest section={selected} h={h} snapshot={snapshot} decision={d ?? undefined} /> : null}
       {selected === 'operations' && <RouterTelemetry snapshot={snapshot} focus={person} />}
       {selected === 'phone' && <div className="presenter-effect"><span className="eyebrow">{lane.message ? 'Recorded customer message' : 'No new delivery at this beat'}</span><p>{lane.message?.body ?? 'Earlier messages remain in the thread. No new message is being claimed here.'}</p></div>}
       {selected === 'phone' && !lane.message && d && <div className="presenter-quiet"><span className="eyebrow">Recorded decision · {d.disposition}</span><h3>{d.title}</h3><p>{d.reason}</p>{chosen?.wake && <div className="presenter-effect"><span className="eyebrow">Reconsider when</span><p>{chosen.wake}</p></div>}</div>}

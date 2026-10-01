@@ -28,7 +28,12 @@ export function memoryFacts(h: Household): Fact[] {
   if (h.promise && !h.promiseFulfilled) out.push({ text: `${h.owner ?? "Adviser"} promised a call at ${at(h.promise)}`, weight: "high" });
   if (h.promise && h.promiseFulfilled) out.push({ text: `${h.evidence.filter(e => e.type === "promise.fulfilled").at(-1)?.payload.owner ?? h.owner ?? "Adviser"} kept the call on ${formatDateTime(h.promise)}` });
   if (h.restartTried && !h.restored) out.push({ text: "A restart was already tried and failed", weight: "high" });
-  if (h.activation.includes("unconfirmed")) out.push({ text: "New hub delivered; never connected", weight: "high" });
+  if (h.activation.includes("unconfirmed")) {
+    const delivered = h.evidence.find((e) => e.type === "order.delivered");
+    out.push({ text: `${first} hasn’t connected the new hub yet: it has never once been online`, weight: "high" });
+    out.push({ text: `Hub delivered${delivered ? ` ${new Date(delivered.occurredAt).toLocaleDateString("en-GB", { timeZone: "Europe/London", day: "numeric", month: "short" })}` : ""}; activation not yet confirmed`, weight: "high" });
+    out.push({ text: "Brand-new customer: no working service with us yet" });
+  }
   if (h.firstUseObserved) {
     const firstUse = h.evidence.find(e => e.type === "activation.first_use_observed");
     out.push({ text: `First connection verified${firstUse ? ` · ${formatDateTime(firstUse.occurredAt)}` : ""}` });
