@@ -6,24 +6,24 @@ const WHO: Record<PersonId, { role: string; line: string; watch: string }> = {
   daniel: {
     role: "An open fault and a promise",
     line: "BT spotted the line dropping before Daniel did. A restart didn’t fix it, and Aisha has promised to call at 21:15.",
-    watch: "Does Eve remember the promise?",
+    watch: "Does BT remember the promise?",
   },
   sam: {
     role: "A brand-new home",
     line: "Just moved in. The new hub was delivered this week but has never been online.",
-    watch: "Does Eve know delivered isn’t the same as working?",
+    watch: "Does BT know delivered isn’t the same as working?",
   },
   maya: {
     role: "A quiet routine",
     line: "A long-standing customer with a quiet evening routine, who has asked not to be alerted at night.",
-    watch: "Does Eve know when to stay quiet?",
+    watch: "Does BT know when to stay quiet?",
   },
 };
 const PEOPLE: PersonId[] = ["daniel", "sam", "maya"];
 const AGENDA = [
   { title: "Tonight", when: "20:45 – 21:18", what: "One network fault, three homes, six moments" },
   { title: "The weeks after", when: "Sat · Mon · 6 Nov", what: "Follow-up, early life and a relevant offer" },
-  { title: "2030", when: "Where it’s heading", what: "Eve works with the household’s own agent" },
+  { title: "2030", when: "Where it’s heading", what: "BT’s agent works with the household’s own agent" },
 ];
 const CHAIN = ["Trigger", "Context", "Decision", "Experience", "Tracking"];
 const PILLARS = [
@@ -44,7 +44,7 @@ export function IntroView({ onStart, onPerson }: { snapshot: Snapshot; onStart: 
           <em> Before they have to ask.</em>
         </h1>
         <p>
-          Eve knows each household’s context, notices what they need, acts within the rules, and checks that it
+          It knows each household’s context, notices what they need, acts within the rules, and checks that it
           worked. Over time it becomes a trusted companion: the part of BT that is always on the customer’s side.
         </p>
       </div>
@@ -61,7 +61,7 @@ export function IntroView({ onStart, onPerson }: { snapshot: Snapshot; onStart: 
 
       <div className="intro-test">
         <b>Tonight we put it to the test.</b> One network fault cuts off three homes at once. To the network it’s one
-        alarm. Watch what Eve does for each of them.
+        alarm. Watch what the agent does for each of them.
       </div>
 
       <div className="intro-people">
