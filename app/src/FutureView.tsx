@@ -102,6 +102,8 @@ const BEATS: Beat[] = [
       { check: "Agent may hear proposals", result: "pass" },
       { check: "Spend limit up to £15 a month", result: "pass" },
       { check: "New products need Sam’s own approval", result: "hold" },
+      { check: "Device cover is insurance: product information sent with the offer", result: "pass" },
+      { check: "BT’s agent says it is an automated agent", result: "pass" },
     ],
     lines: [
       {
@@ -188,11 +190,63 @@ const BEATS: Beat[] = [
   },
 ];
 
+
+/** What each signal would come from today. */
+const BASIS: Record<string, string> = {
+  "device.joined": "Hub device inventory · Broadband Forum TR-369 (USP) / TR-181",
+  "usage.trend": "Aggregated line statistics · volumes only, no content",
+  "line.utilisation": "Aggregated line statistics · volumes only, no content",
+  "qos.contention": "Hub Wi-Fi counters · TR-181 data model",
+  "memory.recalled": "Customer-stated, in a recorded Eve conversation",
+  "calendar.public": "JCQ’s published GCSE timetable · dates illustrative",
+  "usage.window": "Hub statistics by device · TR-369",
+  "agent.mandate_verified": "A2A agent card + signed intent mandate (AP2-style)",
+  "agent.reply": "A2A task message",
+  "action.committed": "Hub priority rule via TR-369 · cover issued by the insurer",
+  "offer.declined": "Contact-suppression record",
+  "outcome.checked": "Outcome contract check against hub statistics",
+};
+/** The rule behind each governance check. */
+const REF: Record<string, string> = {
+  "Commercial consent on record (opted in 2026)": "UK GDPR · PECR reg. 22 (electronic marketing)",
+  "Contact now? Not yet: avoid offer fatigue": "BT contact policy (illustrative)",
+  "Price and terms from the approved catalogue": "Ofcom General Conditions · C1 contract information",
+  "Out of contract: a better-value plan is something BT should tell them about": "Ofcom end-of-contract and annual best-tariff notices",
+  "Uses only what Sam told us": "UK GDPR Art. 5(1)(b) purpose limitation",
+  "Never Ava’s browsing or content": "ICO Age Appropriate Design Code · profiling off by default",
+  "Nothing addressed to Ava, a minor": "ICO Age Appropriate Design Code",
+  "Mandate signed by the account holder": "AP2 intent mandate · W3C Verifiable Credential",
+  "Agent may hear proposals": "Scope written into the intent mandate",
+  "Spend limit up to £15 a month": "Constraint written into the intent mandate",
+  "New products need Sam’s own approval": "AP2 human-present cart mandate",
+  "Device cover is insurance: product information sent with the offer": "FCA ICOBS · IPID · Consumer Duty fair value",
+  "BT’s agent says it is an automated agent": "Transparency: users are told they are dealing with AI",
+  "The customer’s own approval for a new product": "AP2 cart mandate, signed by Sam",
+  "Decision, mandate and consent recorded together": "Audit trail · UK GDPR accountability",
+  "A declined offer is not repeated": "Consumer Duty · avoiding unwanted contact",
+  "Any policy change is signed off by a named role": "Governance: named accountable owner",
+};
+const REAL: [string, string][] = [
+  ["TR-369 (USP) and TR-181", "Broadband Forum standards for managing home hubs remotely, including the list of connected devices and line statistics."],
+  ["A2A (Agent2Agent)", "Open protocol for agents to find and talk to each other. Announced by Google in April 2025, a Linux Foundation project since June 2025."],
+  ["AP2 (Agent Payments Protocol)", "Google, September 2025. Signed ‘mandates’: an intent mandate sets an agent’s limits; a cart mandate records exactly what the person approved."],
+  ["Ofcom General Conditions", "Providers must tell customers when their contract ends and remind them of their best available deals each year."],
+  ["ICO Age Appropriate Design Code", "High privacy by default for under-18s, with profiling switched off."],
+  ["FCA insurance rules and Consumer Duty", "Device cover is insurance: it needs a product information document (IPID) and must offer fair value."],
+  ["JCQ", "Publishes the GCSE exam timetable each year."],
+];
+const ASSUMED = [
+  "Households commonly run their own agent, with a mandate they have signed.",
+  "BT runs an A2A-compatible service agent alongside Eve.",
+  "Prices, dates and results here are illustrative.",
+];
+
 const WHO = { bt: "BT’s agent", agent: "Sam’s household agent", sam: "Sam" } as const;
 
 export function FutureView({ onBack }: { onBack: () => void }) {
   const [step, setStep] = useState(0);
   const [playing, setPlaying] = useState(false);
+  const [real, setReal] = useState(false);
   const beat = BEATS[step];
   useEffect(() => {
     if (!playing) return;
@@ -221,7 +275,7 @@ export function FutureView({ onBack }: { onBack: () => void }) {
           <span className="fx-badge">2030</span>
           <div>
             <strong>The Morgans, four years on</strong>
-            <small>BT’s agent starts the conversation · illustrative, not a live integration</small>
+            <small>BT’s agent starts the conversation · built on standards that exist today; prices and dates illustrative</small>
           </div>
         </div>
         <ol className="fx-clock" aria-label="Scenario steps">
@@ -229,7 +283,10 @@ export function FutureView({ onBack }: { onBack: () => void }) {
             <li key={b.at} className={i === step ? "is-now" : i < step ? "is-past" : ""}>
               <button onClick={() => { setPlaying(false); setStep(i); }} title={b.title}>
                 <i />
-                <time>{b.at.replace(/^\w+ /, "").replace(/ 2030/, "")}</time>
+                <time>
+                  {b.at.replace(/^\w+ /, "").replace(/ 2030.*$/, "")}
+                  <small>{b.at.split(" · ")[1]}</small>
+                </time>
               </button>
             </li>
           ))}
@@ -240,6 +297,7 @@ export function FutureView({ onBack }: { onBack: () => void }) {
             {playing ? "❚❚ Pause" : step === BEATS.length - 1 ? "↺ Replay" : "▶ Play"}
           </button>
           <button onClick={() => setStep(Math.min(BEATS.length - 1, step + 1))} disabled={step === BEATS.length - 1} aria-label="Next">→</button>
+          <button className={real ? "is-on" : ""} onClick={() => setReal(!real)}>What’s real</button>
           <button className="fx-exit" onClick={onBack}>Back to 2026 ✕</button>
         </div>
       </header>
@@ -257,6 +315,7 @@ export function FutureView({ onBack }: { onBack: () => void }) {
                 <code>{s.type}</code>
                 <span>{s.detail}</span>
                 <small>{s.source} · {s.at.replace(/^\w+ /, "").replace(/ 2030/, "")}</small>
+                {BASIS[s.type] && <small className="fx-basis">{BASIS[s.type]}</small>}
               </li>
             ))}
           </ol>
@@ -290,6 +349,7 @@ export function FutureView({ onBack }: { onBack: () => void }) {
                 <li key={g.check} className={`is-${g.result}`}>
                   <i>{g.result === "pass" ? "✓" : g.result === "hold" ? "!" : "·"}</i>
                   {g.check}
+                  {REF[g.check] && <small className="fx-ref">{REF[g.check]}</small>}
                 </li>
               ))}
             </ul>
@@ -317,6 +377,24 @@ export function FutureView({ onBack }: { onBack: () => void }) {
           )}
         </aside>
       </div>
+      {real && (
+        <aside className="fx-real" aria-label="What this is built on">
+          <header>
+            <b className="fx-label">What’s real today</b>
+            <button onClick={() => setReal(false)} aria-label="Close">✕</button>
+          </header>
+          <dl>
+            {REAL.map(([k, v]) => (
+              <div key={k}>
+                <dt>{k}</dt>
+                <dd>{v}</dd>
+              </div>
+            ))}
+          </dl>
+          <b className="fx-label">Assumed for 2030</b>
+          <ul>{ASSUMED.map((a) => <li key={a}>{a}</li>)}</ul>
+        </aside>
+      )}
     </div>
   );
 }

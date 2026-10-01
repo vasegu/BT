@@ -89,3 +89,15 @@
   .fx-stage { grid-template-columns: 1fr; }
   .fx-props { grid-template-columns: 1fr; }
 }
+.fx-basis { color: #b58cff !important; opacity: .85; }
+.fx-ref { display: block; margin-top: 1px; font: 9.5px var(--mono); color: #8e7fac; }
+.fx-controls .is-on { border-color: #b58cff; color: #fff; }
+.fx-real { position: absolute; top: 74px; right: 22px; width: 420px; max-height: calc(100% - 100px); overflow: auto; padding: 16px; border-radius: 14px; background: #1a1328; border: 1px solid #4d3c70; box-shadow: 0 20px 60px rgba(0, 0, 0, .5); animation: fx-in .3s ease both; z-index: 2; }
+.fx-real header { display: flex; justify-content: space-between; align-items: center; }
+.fx-real header button { border: 0; background: none; color: #a998c4; cursor: pointer; font-size: 14px; }
+.fx-real dl { margin: 0 0 14px; display: flex; flex-direction: column; gap: 10px; }
+.fx-real dt { font-size: 13px; font-weight: 600; color: #fff; }
+.fx-real dd { margin: 2px 0 0; font-size: 12.5px; line-height: 1.45; color: #c9bddd; }
+.fx-real ul { margin: 0; padding-left: 16px; font-size: 12.5px; line-height: 1.5; color: #c9bddd; }
+.fx-clock time { display: flex; flex-direction: column; align-items: center; line-height: 1.25; }
+.fx-clock time small { font-size: 9px; opacity: .7; }
