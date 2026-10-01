@@ -24,6 +24,7 @@ import type { Snapshot, PersonId, SourceEvent, Step } from "./types";
 import { momentView, moments } from "./presentation";
 import { NoteList, memoryFacts, operationsFacts, governanceFacts } from "./DecisionFlow";
 import { MomentSpine, MomentLanes, MomentSkeleton } from "./GuidedPresentation";
+import { IntroView } from "./IntroView";
 const formatTime = (iso: string) =>
   new Intl.DateTimeFormat("en-GB", {
     timeZone: "Europe/London",
@@ -208,6 +209,7 @@ export function App() {
   const records = params.get("view") === "records";
   const review = params.get("view") === "agent-review";
   const future = params.get("view") === "future";
+  const intro = params.get("view") === "intro";
   const focused = Boolean(panel || records || review);
   const cutoff = params.has("at") ? Number(params.get("at")) : undefined;
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null),
@@ -291,7 +293,7 @@ export function App() {
           session: session.id,
           at: null,
           person: "daniel",
-          view: null,
+          view: "intro",
           eval: null,
           study: null,
           panel: sessionId ? null : panel,
@@ -431,12 +433,18 @@ export function App() {
   };
   /** → moves the clock: replay a recorded moment, or record the next signal. */
   const nextMoment = async () => {
+    if (intro) return change({ view: null, at: "0" });
+    if (future) return;
+    if (snapshot && snapshot.cutoff === moments.length - 1) return change({ view: "future" });
     if (!snapshot || busy || view?.status !== "ready" || error) return;
     if (snapshot.cutoff < snapshot.session.revision)
       goChapter(snapshot.cutoff + 1);
     else if (snapshot.nextStep && (await advance())) change({ at: null });
   };
   const previousMoment = () => {
+    if (intro) return;
+    if (future) return change({ view: null });
+    if (!busy && snapshot && snapshot.cutoff === 0) return change({ view: "intro" });
     if (!busy && snapshot && snapshot.cutoff > 0) goChapter(snapshot.cutoff - 1);
   };
   useEffect(() => {
@@ -858,8 +866,10 @@ export function App() {
           {sessionUnavailable ? "Session unavailable" : error ? "Connection issue" : snapshot?.storage === "supabase" ? "Supabase connected" : "Local"}
         </span>
       </header>
-      {!focused && presenting && !future && (
+      {!focused && presenting && (
         <MomentSpine
+          place={intro ? "intro" : future ? "future" : null}
+          onIntro={() => change({ view: "intro" })}
           snapshot={snapshot}
           status={view?.status ?? null}
           busy={busy || !!error}
@@ -873,7 +883,7 @@ export function App() {
             change({ mode: "explore", person });
           }}
           onRestart={() => void newSession()}
-          onFuture={() => change({ view: "future" })}
+          onFuture={() => change({ view: "future", panel: null })}
         />
       )}
       {!focused && !presenting && (
@@ -1089,7 +1099,7 @@ export function App() {
                   : "Loading snapshot…"}
             </span>
           </div>
-        ) : future ? null : presenting && !(snapshot && view) ? (
+        ) : future || intro ? null : presenting && !(snapshot && view) ? (
           <MomentSkeleton />
         ) : presenting && snapshot && view ? (
           <MomentLanes
@@ -1163,6 +1173,8 @@ export function App() {
                 : "Loading the data model…"}
             </p>
           </div>
+        ) : intro ? (
+          <IntroView snapshot={snapshot} onStart={() => change({ view: null, at: "0" })} onPerson={(p) => change({ view: null, at: "0", person: p })} />
         ) : future ? (
           <FutureView onBack={() => change({ view: null })} />
         ) : review ? (

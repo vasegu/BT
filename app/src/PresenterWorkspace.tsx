@@ -11,6 +11,7 @@ import { SwayTile } from './SwayReview';
 import { HouseholdCard } from './CustomerProfile';
 import { RouterTelemetry } from './OperationsPanels';
 import { memoryFacts, operationsFacts } from './DecisionFlow';
+import { SectionDigest } from './SectionDigest';
 
 /** A stable architecture rail: time advances independently of the section being inspected. */
 export function PresenterWorkspace({ snapshot, person, lane, deciding, phone, onOpen, onInspect }: {
@@ -87,8 +88,7 @@ export function PresenterWorkspace({ snapshot, person, lane, deciding, phone, on
         </div>
         {chosen && <small className="presenter-count">Showing {previewChecks.length} of {chosen.checks.length} gates · {chosen.checks.filter(c => c.state === "pass").length} passed · full checks in the arbiter</small>}
       </>}
-      {facts.length > 0 && <ul className="presenter-facts">{facts.slice(0, 4).map((f, i) => <li key={i}>{f.text}</li>)}</ul>}
-      {selected === 'customer' && h.profile && <HouseholdCard compact p={h.profile} />}
+      {!deciding || ['customer', 'operations'].includes(selected) ? <SectionDigest section={selected} h={h} snapshot={snapshot} decision={d ?? undefined} /> : null}
       {selected === 'operations' && <RouterTelemetry snapshot={snapshot} focus={person} />}
       {selected === 'phone' && <div className="presenter-effect"><span className="eyebrow">{lane.message ? 'Recorded customer message' : 'No new delivery at this beat'}</span><p>{lane.message?.body ?? 'Earlier messages remain in the thread. No new message is being claimed here.'}</p></div>}
       {selected === 'phone' && !lane.message && d && <div className="presenter-quiet"><span className="eyebrow">Recorded decision · {d.disposition}</span><h3>{d.title}</h3><p>{d.reason}</p>{chosen?.wake && <div className="presenter-effect"><span className="eyebrow">Reconsider when</span><p>{chosen.wake}</p></div>}</div>}

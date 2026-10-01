@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { PresenterWorkspace } from "./PresenterWorkspace";
+import { CompareMatrix } from "./CompareMatrix";
 import type { Snapshot, PersonId, SourceEvent } from "./types";
 import { householdNames, moments, chapters, householdOutcome } from "./presentation";
 import type { MomentLane, momentView } from "./presentation";
@@ -33,7 +34,12 @@ export function MomentSpine({
   onFuture,
   target,
   opening = false,
+  place = null,
+  onIntro,
 }: {
+  /** Off the clock: the intro before 20:45, or the 2030 vision after six weeks. */
+  place?: "intro" | "future" | null;
+  onIntro?: () => void;
   snapshot: Snapshot | null;
   status: ReturnType<typeof momentView>["status"] | null;
   busy: boolean;
@@ -49,12 +55,22 @@ export function MomentSpine({
   /** A separate future-vision mode, apart from tonight's story. */
   onFuture?: () => void;
 }) {
-  const at = target ?? snapshot?.cutoff ?? 0;
+  const at = place === "intro" ? -1 : place === "future" ? moments.length : (target ?? snapshot?.cutoff ?? 0);
   const recorded = snapshot?.session.revision ?? 0;
-  const last = at === moments.length - 1;
+  const last = at === moments.length;
   return (
     <div className="spine" role="navigation" aria-label="Scenario clock">
       <div className="spine-chapters">
+        <div className={`spine-chapter spine-extra${place === "intro" ? " is-here" : ""}`}>
+          <small>Intro</small>
+          <ol className="spine-track" style={{ gridTemplateColumns: "1fr" }}>
+            <li className={place === "intro" ? "is-current" : "is-past"}>
+              <button aria-current={place === "intro" ? "step" : undefined} onClick={onIntro} disabled={!onIntro} title="Three households, one incident">
+                <time>Start</time>
+              </button>
+            </li>
+          </ol>
+        </div>
         {chapters.map((ch) => (
           <div key={ch.title} className={`spine-chapter${at >= ch.from && at <= ch.to ? " is-here" : ""}`}>
             <small>{ch.title}</small>
@@ -77,34 +93,47 @@ export function MomentSpine({
             </ol>
           </div>
         ))}
+        {onFuture && (
+          <div className={`spine-chapter spine-extra${place === "future" ? " is-here" : ""}`}>
+            <small>Future</small>
+            <ol className="spine-track" style={{ gridTemplateColumns: "1fr" }}>
+              <li className={place === "future" ? "is-current" : recorded >= moments.length - 1 ? "is-recorded" : ""}>
+                <button
+                  aria-current={place === "future" ? "step" : undefined}
+                  onClick={onFuture}
+                  disabled={!snapshot || busy}
+                  title="A future vision: BT’s agent and a customer’s agent"
+                >
+                  <time>2030</time>
+                </button>
+              </li>
+            </ol>
+          </div>
+        )}
       </div>
       <div className="spine-controls">
-        <button onClick={onBack} disabled={!snapshot || busy || opening || at === 0} aria-label="Previous moment">
+        <button onClick={onBack} disabled={!snapshot || busy || opening || at === -1} aria-label="Previous moment">
           ←
         </button>
         <button
           className="primary"
           onClick={onNext}
-          disabled={!snapshot || busy || opening || last || status !== "ready"}
+          disabled={!snapshot || busy || opening || last || (place === null && status !== "ready")}
         >
-          {opening
-            ? "Opening…"
-            : status === "deciding" || busy
-            ? "Deciding…"
-            : last
-              ? "End of story"
-              : `${moments[at + 1].time} →`}
+          {last
+            ? "End of story"
+            : place === "intro"
+              ? `Start · ${moments[0].time} →`
+              : opening
+                ? "Opening…"
+                : status === "deciding" || busy
+                  ? "Deciding…"
+                  : at === moments.length - 1
+                    ? "2030 →"
+                    : `${moments[at + 1].time} →`}
         </button>
       </div>
       <div className="spine-meta">
-        <button className="link" onClick={onExplore}>
-          Explore
-        </button>
-        {onFuture && (
-          <button className="link" onClick={onFuture} title="A future vision: a customer’s own AI agent talks to BT’s agent">
-            2030 vision
-          </button>
-        )}
         <button className="link" onClick={onRestart} disabled={busy} title="Start a fresh run of the scenario from 20:45">
           ↺ Restart
         </button>
@@ -199,7 +228,7 @@ export function MomentLanes({
             </div>
           )}
         </div>
-        {compare && <p>{moment.lead}</p>}
+
       </header>
       {status === "failed" && (
         <div className="moment-alert" role="alert">
@@ -227,9 +256,19 @@ export function MomentLanes({
         </button>
       </div>
       {!compare && focusLane ? <PresenterWorkspace key={focus} snapshot={snapshot} person={focus} lane={focusLane} deciding={status !== "ready"} phone={phone} onOpen={onOpen} onInspect={onInspect} /> : (
-      <div className="lanes">
-        {lanes.map((lane) => <Lane key={lane.person} lane={lane} deciding={status === "deciding"} final={final} focused={focus === lane.person} opening={snapshot.cutoff === 0} story={storySoFar(snapshot,lane.person)} onFocus={() => { onCompare?.(false); onFocus(lane.person); }} />)}
-      </div>)}
+      <CompareMatrix
+        snapshot={snapshot}
+        lanes={lanes}
+        deciding={status === "deciding"}
+        onFocus={(p) => {
+          onCompare?.(false);
+          onFocus(p);
+        }}
+        onOpen={(p, panel) => {
+          onFocus(p);
+          onOpen?.(panel);
+        }}
+      />)}
     </section>
   );
 }
