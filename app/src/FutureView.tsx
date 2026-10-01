@@ -72,7 +72,7 @@ const BEATS: Beat[] = [
     memory: ["Sam told us about Ava’s exams on 12 Mar", "Ava is 16: a minor in the household"],
     ops: ["Homework hours collide with gaming and streaming", "Priority for one device is possible remotely, for free"],
     proposals: [
-      { title: "Study hours for Ava’s laptop", state: "eligible", why: "Free: priority on weekdays 16:00–19:00 until 19 Jun" },
+      { title: "Study boost for Ava’s laptop", state: "eligible", why: "Free: priority on weekdays 16:00–19:00 until 19 Jun" },
       { title: "Device cover", state: "eligible", why: "New devices, nothing covering them" },
       { title: "Faster plan on renewal", state: "eligible", why: "Same price, three times the speed" },
     ],
@@ -92,7 +92,7 @@ const BEATS: Beat[] = [
     memory: [],
     ops: [],
     proposals: [
-      { title: "Study hours for Ava’s laptop", state: "eligible", why: "Within the mandate: free service" },
+      { title: "Study boost for Ava’s laptop", state: "eligible", why: "Within the mandate: free service" },
       { title: "Device cover", state: "held", why: "£9/mo is within the limit, but a new product needs Sam’s yes" },
       { title: "Faster plan on renewal", state: "held", why: "A contract change needs Sam’s yes" },
     ],
@@ -108,7 +108,7 @@ const BEATS: Beat[] = [
         from: "bt",
         via: "Agent channel",
         text:
-          "Hello, this is BT’s service agent for the Morgan household. Three things this month, most useful first. 1) Ava’s exams start on 11 May: we can give her laptop priority on weekdays from 16:00 to 19:00 until 19 June, free, and switch it off afterwards. 2) Two new devices joined this month with no cover; device cover for everything at home is £9 a month. 3) Evenings hit your plan’s limit on most nights; renewing for 12 months moves you to 1.6 Gb for the same £79. Terms attached. Nothing changes without your yes.",
+          "Hi, it’s BT. Good luck to Ava with her exams next month! If it helps, we can give her laptop the best connection after school while she revises. It’s free and switches off when exams finish. We also have a couple of optional extras if you’re interested: cover for your new gadgets, and a faster plan for the same price. No rush either way.",
       },
     ],
   },
@@ -116,20 +116,20 @@ const BEATS: Beat[] = [
     at: "Mon 22 Apr 2030 · 12:30",
     title: "Sam decides, by voice",
     lead: "The household agent accepts what its mandate allows and asks Sam about the rest.",
-    signals: [{ type: "agent.reply", source: "agent_channel", detail: "study hours accepted · 2 items referred to Sam" }],
+    signals: [{ type: "agent.reply", source: "agent_channel", detail: "study boost accepted · 2 items referred to Sam" }],
     memory: [],
     ops: [],
     proposals: [
-      { title: "Study hours for Ava’s laptop", state: "accepted", why: "Accepted by the agent within its mandate" },
+      { title: "Study boost for Ava’s laptop", state: "accepted", why: "Accepted by the agent within its mandate" },
       { title: "Device cover", state: "accepted", why: "Sam said yes" },
       { title: "Faster plan on renewal", state: "declined", why: "Sam: “leave it until the summer”" },
     ],
     decision: "Act on exactly what was agreed.",
     governance: [{ check: "The customer’s own approval for a new product", result: "pass" }],
     lines: [
-      { from: "agent", via: "Agent channel", text: "Verified. The study hours are free and within my mandate: accepted. Cover and the plan change need Sam; asking now." },
-      { from: "agent", via: "Voice, to Sam", text: "BT can prioritise Ava’s laptop after school until her exams end, for free. They also offer cover for the new devices at £9 a month, and a faster plan at the same price if you renew. Want any of these?" },
-      { from: "sam", via: "Voice", text: "Yes to Ava’s study hours and the cover. Leave the plan until the summer." },
+      { from: "agent", via: "Agent channel", text: "Thanks! The study boost sounds great, please go ahead. I’ll check with Sam about the extras." },
+      { from: "agent", via: "To Sam, by voice", text: "BT offered to boost Ava’s laptop after school while she revises, for free, so I said yes. They also mentioned gadget cover for £9 a month and a faster plan for the same price. Interested in either?" },
+      { from: "sam", via: "Voice", text: "Cover’s a good idea. Let’s leave the plan for now." },
     ],
   },
   {
@@ -144,7 +144,7 @@ const BEATS: Beat[] = [
     memory: ["Plan declined 22 Apr: don’t raise again before 21 Jul", "Device cover active from 22 Apr"],
     ops: ["Study profile scheduled on the hub", "Cover confirmation sent to the BT app"],
     proposals: [
-      { title: "Study hours for Ava’s laptop", state: "accepted", why: "Starts tomorrow 16:00" },
+      { title: "Study boost for Ava’s laptop", state: "accepted", why: "Starts tomorrow 16:00" },
       { title: "Device cover", state: "accepted", why: "Active today" },
       { title: "Faster plan on renewal", state: "declined", why: "Not raised again for 90 days" },
     ],
@@ -154,7 +154,7 @@ const BEATS: Beat[] = [
       { check: "A declined offer is not repeated", result: "pass" },
     ],
     lines: [
-      { from: "bt", via: "Agent channel", text: "Done. Study hours start tomorrow at 16:00 and end on 19 June. Cover is active from today at £9 a month; the confirmation is in the BT app. We won’t mention the plan again before July." },
+      { from: "bt", via: "Agent channel", text: "All set. Ava’s study boost starts tomorrow after school and stops when exams finish on 19 June. Gadget cover starts today at £9 a month, and the details are in the BT app. We’ll leave the plan for now." },
     ],
     outcomes: [
       { what: "Study profile in use on most weekdays · check 3 May", state: "tracking" },
@@ -173,13 +173,13 @@ const BEATS: Beat[] = [
     memory: ["Free help first, offers second: accepted 2 of 3"],
     ops: ["Homework hours are calm; evenings still hit the plan limit"],
     proposals: [
-      { title: "Study hours for Ava’s laptop", state: "proven", why: "Used every weekday; stalls down 91%" },
+      { title: "Study boost for Ava’s laptop", state: "proven", why: "Used every weekday; stalls down 91%" },
       { title: "Device cover", state: "proven", why: "Active and confirmed" },
       { title: "Faster plan on renewal", state: "declined", why: "Eligible again from 21 Jul" },
     ],
     decision: "Record the result for the governed learning loop; wake again on 21 Jul.",
     governance: [{ check: "Any policy change is signed off by a named role", result: "note" }],
-    lines: [{ from: "bt", via: "Agent channel", text: "Quick update: Ava’s study hours have been on every weekday, and slowdowns during homework time are down from 23 to 2 a week. They’ll switch off on 19 June." }],
+    lines: [{ from: "bt", via: "Agent channel", text: "Quick update: Ava’s study boost has been on every weekday and homework time has been much smoother. It switches off on 19 June. Good luck to her!" }],
     outcomes: [
       { what: "Study profile in use on most weekdays", state: "proven" },
       { what: "Homework-hour stalls under 5 a week", state: "proven" },
