@@ -1,6 +1,7 @@
 import type { PersonId, Snapshot } from "./types";
 import { householdNames, householdOutcome, moments, type MomentLane } from "./presentation";
-import { memoryNotes, sectionNotes, whatSetsApart } from "./section-notes";
+import { memoryNotes, sectionNotes } from "./section-notes";
+import { WHY_DIFFERENT } from "./why-different";
 
 // Compare: one alarm, three homes. Each section is a row, so the story reads top to bottom
 // (trigger, context, decision, what the customer sees, tracking) and across, why they differ.
@@ -38,15 +39,15 @@ export function CompareMatrix({
       : by.customer.changed || by.operations.changed
         ? { text: [...new Set([by.operations.changed ? by.operations.text : "", by.customer.changed ? by.customer.text : ""].flatMap((t) => t.split(" · ")).filter(Boolean))].join(" · "), changed: true }
         : { text: "Nothing new for this home at this moment", changed: false };
-    const apart = whatSetsApart(snapshot, p);
-    by.customer = { ...by.customer, notes: memoryNotes(snapshot, p).filter((t) => t !== apart).slice(0, 3) };
+    const apart = WHY_DIFFERENT[at]?.lines[p] ?? "";
+    by.customer = { ...by.customer, notes: memoryNotes(snapshot, p).slice(0, 3) };
     return { p, by, lane, trigger, apart };
   });
   return (
     <div className="cm-matrix" style={{ gridTemplateColumns: `160px repeat(${PEOPLE.length}, minmax(0, 1fr))` }}>
       <div className="cm-why">
-        <span className="eyebrow">Why three different journeys?</span>
-        <p>{moments[at].lead}</p>
+        <span className="eyebrow">Why three different journeys? · {moments[at].time}</span>
+        <p>{WHY_DIFFERENT[at]?.headline ?? moments[at].lead}</p>
       </div>
       {cols.map(({ p, lane, apart }) => (
         <button key={p} className={`cm-col-head lane-${p}`} onClick={() => onFocus(p)} title={`Follow ${householdNames[p].split(" ")[0]}’s story`}>
@@ -56,7 +57,7 @@ export function CompareMatrix({
             <small>{householdOutcome(snapshot, p).title}</small>
           </span>
           <em>
-            <b>What sets them apart</b>
+            <b>Why this journey</b>
             {apart}
           </em>
           <i className={`lane-tag tag-${deciding ? "deciding" : lane.changed || lane.message ? "changed" : "unchanged"}`}>
