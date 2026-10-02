@@ -8,6 +8,8 @@ import { PromiseTimeline } from "./PromiseTimeline";
 import { FocusHeader } from "./FocusHeader";
 import { LearningView } from "./LearningView";
 import { ScopeTag } from "./Scope";
+import { ValueTracking } from "./ValueImpact";
+import { formatDelta, impactOf, tone } from "./value-impact";
 import "./actions-view.css";
 
 // Actions & outcomes, expanded. One question: what did we do for this customer, and did it work?
@@ -258,6 +260,17 @@ function Chain({
         ) : (
           <p className="av-reason">Nothing to prove yet for this decision.</p>
         )}
+        {chosen && (() => {
+          const v = impactOf(chosen.id, who);
+          return (
+            <p className="av-value">
+              <em>Value to BT, expected:</em>{" "}
+              <span className={`is-${tone("revenue", v.revenue)}`}>{formatDelta("revenue", v.revenue)} net revenue</span> ·{" "}
+              <span className={`is-${tone("churn", v.churn)}`}>{formatDelta("churn", v.churn)} churn</span> ·{" "}
+              <span className={`is-${tone("cltv", v.cltv)}`}>{formatDelta("cltv", v.cltv)} CLTV</span>
+            </p>
+          );
+        })()}
         <button className="av-link" onClick={onOutcome}>
           See the whole evening →
         </button>
@@ -281,6 +294,7 @@ function Outcome({
     <div className="av-outcome">
       <PromiseTimeline snapshot={snapshot} person={h} onInspect={inspect} />
       <OutcomeProofs snapshot={snapshot} outcomes={outcomes} inspect={inspect} />
+      <ValueTracking h={h} snapshot={snapshot} />
     </div>
   );
 }

@@ -1,0 +1,269 @@
+/* Value to BT: modelled commercial impact in the arbiter and in tracking. */
+.is-good {
+  color: #0f7b5f;
+}
+.is-bad {
+  color: #d4145a;
+}
+.is-flat {
+  color: var(--muted);
+}
+
+.av-value {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.av-value em {
+  font-style: normal;
+  color: var(--ink);
+  font-weight: 600;
+}
+.av-value span {
+  font-family: var(--mono);
+}
+
+.vi-block {
+  padding: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.vi-metrics {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.vi-metrics > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 64px;
+  gap: 8px;
+  align-items: baseline;
+  font-size: 10px;
+}
+.vi-metrics dt {
+  color: var(--ink);
+}
+.vi-metrics dd {
+  margin: 0;
+  font: 600 10px var(--mono);
+  text-align: right;
+}
+.vi-metrics small {
+  font: 9px var(--mono);
+  text-align: right;
+}
+.vi-metrics small::before {
+  content: "Δ ";
+  color: var(--muted);
+}
+
+.vi-trade {
+  flex-shrink: 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.vi-trade > header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--line);
+}
+.vi-trade > header small {
+  font: 8.5px var(--mono);
+  color: var(--muted);
+  text-align: right;
+}
+.vi-table-wrap {
+  max-height: 150px;
+  overflow: auto;
+}
+.vi-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10px;
+}
+.vi-table th,
+.vi-table td {
+  padding: 5px 12px;
+  border-bottom: 1px solid var(--line);
+  text-align: right;
+  white-space: nowrap;
+}
+.vi-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--canvas);
+  font: 8.5px var(--mono);
+  color: var(--muted);
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.vi-table thead th:first-child,
+.vi-table tbody th {
+  text-align: left;
+  width: 34%;
+}
+.vi-table td {
+  font-family: var(--mono);
+}
+.vi-table tbody th button {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  font: 500 10px var(--sans);
+  color: var(--ink);
+  text-align: left;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  cursor: pointer;
+}
+.vi-table tbody th button em {
+  font: normal 8px var(--mono);
+  text-transform: uppercase;
+  color: var(--surface);
+  background: var(--brand);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+.vi-table tr.is-selected {
+  background: var(--soft);
+}
+.vi-table tr.is-inspected th button {
+  color: var(--brand);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.vi-table tr.is-gated td:not(.vi-gate) {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
+.vi-gate {
+  color: var(--muted);
+  font-family: var(--sans) !important;
+}
+.vi-table tr.is-gated .vi-gate {
+  color: #9b683e;
+}
+
+.vi-track {
+  margin-top: 18px;
+}
+.vi-track > header {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin-bottom: 10px;
+}
+.vi-track h3 {
+  margin: 0;
+  font: 600 15px var(--sans);
+}
+.vi-track > header span {
+  color: var(--muted);
+  font-size: 12px;
+}
+.vi-track-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+.vi-track-grid article {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.vi-track-grid article > small {
+  font-size: 11px;
+  color: var(--muted);
+}
+.vi-track-grid article > b {
+  font: 600 20px var(--mono);
+}
+.vi-track-grid dl {
+  margin: 4px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.vi-track-grid dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+}
+.vi-track-grid dt {
+  color: var(--muted);
+}
+.vi-track-grid dd {
+  margin: 0;
+  font-family: var(--mono);
+}
+.vi-observed {
+  margin: 10px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.vi-observed em {
+  font-style: normal;
+  color: var(--ink);
+  font-weight: 600;
+}
+.vi-ledger {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  overflow: hidden;
+}
+.vi-ledger li {
+  display: grid;
+  grid-template-columns: 130px minmax(0, 1fr) auto 80px 80px 80px;
+  gap: 12px;
+  align-items: baseline;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+}
+.vi-ledger li:last-child {
+  border-bottom: 0;
+}
+.vi-ledger li > span {
+  font: 10px var(--mono);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.vi-ledger li.is-evidenced > span {
+  color: #0f7b5f;
+}
+.vi-ledger li.is-pending > span {
+  color: var(--brand);
+}
+.vi-ledger li.is-at-risk > span {
+  color: #d4145a;
+}
+.vi-ledger li > small {
+  color: var(--muted);
+  font-size: 11px;
+}
+.vi-ledger li > code {
+  text-align: right;
+  font-size: 11px;
+}
+.vi-ledger li.is-empty {
+  display: block;
+  color: var(--muted);
+}

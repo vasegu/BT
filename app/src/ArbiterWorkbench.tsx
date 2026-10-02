@@ -7,6 +7,7 @@ import type {
   Snapshot,
   SourceEvent,
 } from "./types";
+import { TradeOffTable, ValueBlock } from "./ValueImpact";
 
 const time = (iso: string) =>
   new Date(iso).toLocaleTimeString("en-GB", {
@@ -657,6 +658,7 @@ export function ArbiterWorkbench({
                 )}
               </div>
             )}
+            <ValueBlock h={h} proposal={selected} chosen={trace.candidates.find((c) => c.id === trace.selectedId)} />
             {assessment && <ModelReadout assessment={assessment} />}
             <EligibilityChecks checks={selected.checks} context={context} inspect={inspect} />
             <div className="aw-factors">
@@ -711,9 +713,11 @@ export function ArbiterWorkbench({
         </section>
       </div>
 
+      <TradeOffTable h={h} decision={run} inspectedId={selected.id} onInspect={setCandidateId} />
+
       <section className="aw-execution">
         <header>
-          <span className="aw-kicker">04 / EXECUTION RECEIPT</span>
+          <span className="aw-kicker">05 / EXECUTION RECEIPT</span>
           <small>For the selected plan · {time(run.time)}</small>
         </header>
         <div className="aw-execution-steps">

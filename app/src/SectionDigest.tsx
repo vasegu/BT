@@ -1,6 +1,7 @@
 import type { Decision, Household, PersonId, Snapshot } from "./types";
 import { governanceFacts, memoryFacts, operationsFacts } from "./DecisionFlow";
 import { formatDateTime } from "./time";
+import { VALUE_MODEL, formatDelta, impactOf, valueSummary } from "./value-impact";
 
 // The summary level of each section: the richness of the drill-down, folded into a few note
 // columns in the arbiter's style, so the story reads without opening anything.
@@ -124,6 +125,19 @@ function tracking(h: Household, s: Snapshot): Column[] {
         ...trouble.map((o) => ({ text: `${o.title}: ${o.check.status === "contradicted" ? "contradicted, reassess" : "proof overdue"}`, key: true })),
       ],
     },
+    (() => {
+      const v = valueSummary(s, h);
+      return {
+        title: "Value to BT",
+        notes: v.ledger.length
+          ? [
+              { text: `Net revenue ${formatDelta("revenue", v.expected.revenue)} expected · ${formatDelta("revenue", v.evidenced.revenue)} evidenced`, key: true },
+              { text: `Churn ${formatDelta("churn", v.expected.churn)} · purchase ${formatDelta("purchase", v.expected.purchase)}` },
+              { text: `CLTV ${formatDelta("cltv", v.expected.cltv)} · cost to serve ${formatDelta("cost", v.expected.cost)}`, quiet: true },
+            ]
+          : [{ text: "No value moved yet", quiet: true }],
+      };
+    })(),
   ];
 }
 
@@ -187,6 +201,7 @@ function specs(section: string, h: Household, s: Snapshot, d?: Decision): Spec[]
       ["candidates", t ? `${t.candidates.length} · ${t.candidates.filter((c) => c.status === "blocked").length} blocked · ${t.candidates.filter((c) => c.status === "awaiting").length} awaiting` : "—"],
       ["gates", chosen ? `${chosen.checks.filter((c) => c.state === "pass").length}/${chosen.checks.length} pass` : "—"],
       ["evidence", `${d.evidenceIds.length} records cited`],
+      ...(chosen ? [["value to BT", (() => { const v = impactOf(chosen.id, h); return `${formatDelta("revenue", v.revenue)} net rev · ${formatDelta("churn", v.churn)} churn · ${formatDelta("cltv", v.cltv)} CLTV · ${VALUE_MODEL}`; })()] as Spec] : []),
       ["model", a ? `${a.model} · ${a.promptVersion}${p != null ? ` · p=${p.toFixed(2)}` : ""} · ${a.effective ?? a.status}` : "rules only"],
       ["latency", a ? `${a.latencyMs} ms · ${a.inputTokens ?? "?"}→${a.outputTokens ?? "?"} tok${a.costUsd != null ? ` · $${a.costUsd.toFixed(4)}` : ""}` : "—"],
     ];
